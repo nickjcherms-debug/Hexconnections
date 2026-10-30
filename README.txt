@@ -211,3 +211,9 @@ Post a Hex Space from its Post tab. Each posting chooses a class, an assignment
 name, a start date and an optional due date (end of day, your time zone), and
 gets its own code. Post the same Hex Space to a class again for another round.
 Students can open it from the start date; late work is accepted and marked Late.
+
+VERSION 4.3.0: MORE WAYS TO POST, FOLDERS AND EDITING
+Post a Hex Space to several classes at once, or post any Hex Space from a
+class page as often as you like. Create folders from the folder drop-down on a
+Hex Space. Delete Hex Spaces you no longer need. After editing a posted Hex
+Space, choose which postings should get the update.

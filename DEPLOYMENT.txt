@@ -1,3 +1,20 @@
+POSTING, FOLDERS AND EDITING 4.3.0
+=================================
+No database or Firebase step. Merging deploys through Workers Builds.
+- Post to several classes at once: the Post dialog lists classes with
+  checkboxes; each ticked class gets its own posting and code, same dates.
+- Class pages: "Post an assignment" picks any Hex Space and posts it to that
+  class; "Postings (n)" lists every posting newest first with dates, status,
+  code, Edit dates & details, Close/Reopen and Edit Hex Space.
+- Folder drop-down on a Hex Space: "+ New folder…" asks for a name and which
+  folder to put it inside (or top level), then moves the Hex Space into it.
+- Delete Hex Space (header and Setup tab): saves the deletion online, can
+  close its open postings, and keeps student work and teachers' copies.
+- Editing: Save workspace online on a posted Hex Space offers to update its
+  open postings; the Post tab also has "Update open postings". Turned-in work
+  keeps its version. Edit buttons on every Hex Space in the side list, on
+  class-page postings and on Shared links.
+
 POSTING WITH START AND DUE DATES 4.2.0
 =====================================
 Database: migrations/0005_multiple_posts.sql removes the old one-post-per-class

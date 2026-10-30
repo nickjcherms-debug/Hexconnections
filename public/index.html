@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Hexagonal thinking boards for classrooms: students arrange vocabulary hexagons and explain every connection, with optional Depth and Complexity icons.">
-<meta name="hex-connections-build" content="4.2.0">
+<meta name="hex-connections-build" content="4.3.0">
 <title>Hex Connections</title>
 
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=JetBrains+Mono:wght@500;700&display=swap">
@@ -356,6 +356,14 @@ td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:now
 .chip.late{background:var(--honey-soft);color:var(--honey-ink)}
 .chip.off{opacity:.75}
 input[type=date]{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:8px 10px;font-size:.95rem}
+.pick-classes{border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:6px}
+.pick-classes legend{font-weight:700;padding:0;margin-bottom:6px}
+.pick-row .chip{margin-left:auto}
+.posted-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.codebig.sm{font-size:1.05rem;padding:4px 10px}
+.list-h{margin-top:8px}
+.act-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:2px}
+.act-row .act-edit{padding:4px 8px;min-height:28px}
 .hero-login{margin:14px 0 0;color:var(--muted);font-size:.95rem}
 .hero-login a{font-weight:700}
 .benefits{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
@@ -1491,7 +1499,7 @@ function renderTeacher(){
   function tab(k, label){ return el('button',{class:'tab'+(TS.tab===k?' on':''),role:'tab','aria-selected':String(TS.tab===k),onclick:function(){ TS.tab=k; remember(); renderTeacher(); },text:label}); }
   var main = a ? el('div',{style:'min-width:0'},
     el('div',{class:'eyebrow',text:'Hex Space'}),
-    el('div',{class:'row',style:'justify-content:space-between;align-items:flex-start'}, el('h2',{text:a.title || 'Untitled Hex Space'}), el('div',{class:'row'}, folderPicker(a), el('button',{class:'btn sm',onclick:function(){ openShare(a); },text:'Share'}))),
+    el('div',{class:'row',style:'justify-content:space-between;align-items:flex-start'}, el('h2',{text:a.title || 'Untitled Hex Space'}), el('div',{class:'row'}, folderPicker(a), el('button',{class:'btn sm',onclick:function(){ openShare(a); },text:'Share'}), el('button',{class:'btn ghost sm danger-text','aria-label':'Delete this Hex Space',onclick:function(){ deleteHexSpace(a); },text:'Delete'}))),
     el('div',{class:'tabs',role:'tablist'}, tab('setup','Setup'), tab('codes','Post (' + postsFor(a.id).length + ')'), tab('subs','Submissions (' + rowsFor(a.id).length + ')')),
     TS.tab === 'setup' ? setupPane(a) : TS.tab === 'codes' ? codesPane(a) : subsPane(a)
   ) : el('div',{class:'panel'}, el('h3',{text:'No activities yet'}), el('p',{class:'muted',text:'Create one to paste in your unit vocabulary.'}), el('button',{class:'btn primary',onclick:newActivity,text:'New activity'}));
@@ -1806,8 +1814,7 @@ function setupPane(a){
     preview,
     el('div',{class:'row',style:'justify-content:space-between;border-top:1px solid var(--line);padding-top:14px'},
       el('button',{class:'btn',id:'f-try',onclick:function(){ previewAsStudent(a); },disabled:!a.terms.length,text:'Try it as a student'}),
-      TS.confirmDel ? el('div',{class:'row'}, el('span',{style:'font-weight:700',text:'Delete this activity?'}), el('button',{class:'btn ghost sm',onclick:function(){ TS.confirmDel=false; renderTeacher(); },text:'Keep'}), el('button',{class:'btn danger sm',onclick:function(){ TW.activities = TW.activities.filter(function(x){ return x.id !== a.id; }); if (!TW.activities.length) TW.activities.push(blankActivity()); TS.sel = TW.activities[0].id; TS.confirmDel=false; remember(); renderTeacher(); },text:'Delete'}))
-        : el('button',{class:'btn danger sm',onclick:function(){ TS.confirmDel=true; renderTeacher(); },text:'Delete activity'})
+      el('button',{class:'btn danger sm',onclick:function(){ deleteHexSpace(a); },text:'Delete Hex Space'})
     )
   );
 }
@@ -2440,9 +2447,11 @@ function teacherDashboard(courseId){
   if(courseId){
    dashboardAdd(body,el('a',{class:'btn ghost',href:'#teacher',text:'← All classes'}));
    var course=courses.get(courseId)||{id:courseId,name:'Classroom'};
-   dashboardAdd(body,el('div',{class:'row',style:'justify-content:space-between'},el('h3',{text:course.name}),course.link?el('a',{class:'btn sm',href:course.link,target:'_blank',rel:'noopener',text:'Open in Google Classroom ↗'}):null),el('button',{class:'btn primary',onclick:function(){newCourseAssignment(course)},text:'New Hex Space for this class'}));
+   dashboardAdd(body,el('div',{class:'row',style:'justify-content:space-between'},el('h3',{text:course.name}),course.link?el('a',{class:'btn sm',href:course.link,target:'_blank',rel:'noopener',text:'Open in Google Classroom ↗'}):null),el('div',{class:'row'},course.classId?el('button',{class:'btn primary',onclick:function(){openPostDialog(null,null,{pickActivity:true,classIds:[course.classId]})},text:'Post an assignment'}):null,el('button',{class:'btn',onclick:function(){newCourseAssignment(course)},text:'New Hex Space for this class'})));
    var issued=assignments.filter(function(a){return a.courseId===courseId});
-   if(!issued.length)dashboardMessage(body,course.manual?'Nothing posted for this class yet. Open a Hex Space, go to its Post tab and post it to this class.':'No assignments have been issued here through Hex Connections yet.');
+   PX.posts=assignments;
+   dashboardAdd(body,el('h3',{class:'list-h',text:'Postings ('+issued.length+')'}));
+   if(!issued.length)dashboardMessage(body,'Nothing posted to this class yet. Choose Post an assignment to post any Hex Space with its own start and due dates. You can post as many as you like.');
    issued.forEach(function(a){dashboardAdd(body,teacherAssignmentCard(a))});
   }else{
    if(!courses.size)dashboardMessage(body,'No classes yet. Import your Google Classroom classes, or add a code-only class for students without Classroom.');
@@ -3529,7 +3538,7 @@ function renderSharedLinks(){
           el('span',{class:'muted',style:'font-size:.88rem',text:sh.copies+' teacher'+(sh.copies===1?' has':'s have')+' saved a copy · updated '+fmtWhen(sh.updatedAt)})),
         el('div',{class:'row'},
           sh.revoked?null:el('button',{class:'btn sm',onclick:function(){copyText(link,'Share link')},text:'Copy link'}),
-          el('a',{class:'btn sm ghost',href:'#teacher/edit-'+encodeURIComponent(sh.activityId),text:'Open Hex Space'}),
+          el('a',{class:'btn sm',href:'#teacher/edit-'+encodeURIComponent(sh.activityId),text:'Edit Hex Space'}),
           sh.revoked?null:el('button',{class:'btn sm danger-ghost',onclick:function(e){var b=e.currentTarget||e.target;b.disabled=true;platformApi('shares/'+sh.code+'/revoke',{}).then(function(){toast('Sharing turned off. The link no longer works.');renderSharedLinks()}).catch(function(err){b.disabled=false;platformError(err)})},text:'Stop sharing'}))));
     });
   }).catch(function(e){if(seq!==PX.routeId)return;fill(body,el('p',{class:'err',role:'alert',text:e.message}))});
@@ -3617,7 +3626,8 @@ actRow=function(x,showPath){
 
 function openPostDialog(a,post){
   var editing=!!post;
-  var cls=editing?TW.classes.find(function(c){return c.id===post.classId})||{id:post.classId,name:post.className,classroomId:post.manual?null:post.courseId}:null;
+  var W=TW||PX.teacherData||{classes:[],activities:[]};
+  var cls=editing?(W.classes||[]).find(function(c){return c.id===post.classId})||{id:post.classId,name:post.className,classroomId:post.manual?null:post.courseId}:null;
   var classSel=editing?null:el('select',{id:'pd-class','aria-label':'Class'},TW.classes.map(function(c){return el('option',{value:c.id,selected:c.id===TS.postClass||null,text:c.name+(c.classroomId?' (Google Classroom)':' (code only)')})}));
   if(classSel)classSel.value=(TW.classes.some(function(c){return c.id===TS.postClass})?TS.postClass:TW.classes[0].id);
   var name=el('input',{type:'text',id:'pd-name',maxlength:200,value:editing?post.title:(a.title||'')});
@@ -3644,10 +3654,10 @@ function openPostDialog(a,post){
     var classroom=!!c.classroomId;
     function send(){
       go.disabled=true;go.textContent=editing?'Saving…':'Posting…';
-      var save=(!editing||body.refresh)?saveWorkspaceCloud():Promise.resolve();
+      var save=((!editing||body.refresh)&&TW)?saveWorkspaceCloud():Promise.resolve();
       save.then(function(){return platformApi(editing?'posts/'+post.id+'/edit':'posts/new',body,classroom)}).then(function(r){
         closeModal();TS.postClass=c.id;
-        return loadPosts().then(function(){renderTeacher();if(editing)toast('Assignment updated.');else postedDialog(r,c);});
+        return loadPosts().then(function(){refreshPostViews();if(editing)toast('Assignment updated.');else postedDialog(r,c);});
       }).catch(function(e){go.disabled=false;go.textContent=editing?'Save changes':'Post';
         if(e.code==='classroom-reconnect'){closeModal();connectClassroom('teacher',function(){openPostDialog(a,post)},true);return;}
         err.textContent=e.message;});
@@ -3684,7 +3694,7 @@ function postCard(a,p){
   var st=postState(p);
   function toggle(e){
     var b=e.currentTarget||e.target;b.disabled=true;
-    platformApi('posts/'+p.id+'/edit',{open:p.open===false}).then(function(){return loadPosts()}).then(function(){renderTeacher();toast(p.open===false?'Reopened for students.':'Closed. Students can no longer open or turn it in.')}).catch(function(err){b.disabled=false;platformError(err)});
+    platformApi('posts/'+p.id+'/edit',{open:p.open===false}).then(function(){return loadPosts()}).then(function(){refreshPostViews();toast(p.open===false?'Reopened for students.':'Closed. Students can no longer open or turn it in.')}).catch(function(err){b.disabled=false;platformError(err)});
   }
   return el('div',{class:'panel post-card'},
     el('div',{class:'row',style:'justify-content:space-between;align-items:flex-start;gap:8px'},
@@ -3716,12 +3726,21 @@ codesPane=function(a){
   return pane;
 };
 teacherAssignmentCard=function(a){
-  var st=postState(a);
+  var st=postState(a),W=TW||PX.teacherData||{activities:[]};
+  var act=(W.activities||[]).find(function(x){return x.id===a.activityId})||{id:a.activityId,title:a.title};
+  function toggle(e){
+    var b=e.currentTarget||e.target;b.disabled=true;
+    platformApi('posts/'+a.id+'/edit',{open:a.open===false}).then(function(){return loadPosts()}).then(function(){refreshPostViews();toast(a.open===false?'Reopened for students.':'Closed. Students can no longer open or turn it in.')}).catch(function(err){b.disabled=false;platformError(err)});
+  }
   return el('div',{class:'panel stack'},
     el('div',{class:'row',style:'justify-content:space-between'},el('h3',{text:a.title}),el('span',{class:'chip '+st.cls,text:st.label})),
     el('p',{style:'margin:0',text:postDatesText(a)+(a.code?' · code '+fmtCode(a.code):'')}),
-    el('p',{class:'muted',style:'margin:0',text:a.turnedIn+' turned in · '+a.submissions+' saved submissions'}),
-    el('div',{class:'row'},el('a',{class:'btn primary',href:'#teacher/post-'+a.id,text:'View submissions & groups'}),el('a',{class:'btn',href:'#teacher/edit-'+encodeURIComponent(a.activityId),text:'Open Hex Space'}),a.classroomUrl?el('a',{class:'btn ghost',href:a.classroomUrl,target:'_blank',rel:'noopener',text:'Open in Google Classroom ↗'}):null));
+    el('p',{class:'muted',style:'margin:0',text:(a.createdAt?'Posted '+fmtDay(String(a.createdAt).slice(0,10))+' · ':'')+a.turnedIn+' turned in · '+a.submissions+' saved submissions'}),
+    el('div',{class:'row'},el('a',{class:'btn primary',href:'#teacher/post-'+a.id,text:'View submissions & groups'}),
+      el('button',{class:'btn',onclick:function(){openPostDialog(act,a)},text:'Edit dates & details'}),
+      el('button',{class:'btn ghost',onclick:toggle,text:a.open===false?'Reopen':'Close'}),
+      el('a',{class:'btn ghost',href:'#teacher/edit-'+encodeURIComponent(a.activityId),text:'Edit Hex Space'}),
+      a.classroomUrl?el('a',{class:'btn ghost',href:a.classroomUrl,target:'_blank',rel:'noopener',text:'Open in Google Classroom ↗'}):null));
 };
 studentAssignmentCard=function(a){
   var early=a.startAt&&Date.now()<Date.parse(a.startAt);
@@ -3738,6 +3757,215 @@ newCourseAssignment=function(course){
   if(TS.folder&&!act.folder)act.folder=TS.folder;if(!TW.activities.some(function(x){return x.id===act.id}))TW.activities.push(act);
   TS.sel=act.id;TS.tab='setup';TS.postClass=cls.id;saveWork();remember();NAV.hash='teacher/edit-'+act.id;
   toast('Build the Hex Space, then use the Post tab to post it to '+cls.name+'.');
+};
+
+
+/* ===================== 4.3: post to several classes at once, post from a class page, new folder from the picker ===================== */
+function refreshPostViews(){
+  if(TW&&/^#teacher\/(editor|edit-)/.test(NAV.hash||''))renderTeacher();else route();
+}
+function readyActivity(x){return String(x.title||'').trim()&&(x.terms||[]).some(function(t){return String(t.term||'').trim()});}
+var v42OpenPost=openPostDialog;
+openPostDialog=function(a,post,opts){
+  if(post)return v42OpenPost(a,post);
+  opts=opts||{};
+  var W=TW||PX.teacherData||{classes:[],activities:[]},classes=W.classes||[];
+  if(!classes.length){toast('Add a class first: import your Google Classroom classes or add a code-only class.');return;}
+  var acts=(W.activities||[]).filter(readyActivity);
+  if(opts.pickActivity&&!acts.length){
+    openModal([el('h3',{style:'font-size:1.2rem',text:'No Hex Spaces ready to post'}),el('p',{style:'margin:0',text:'Give a Hex Space a title and at least one term, then post it here.'}),
+      el('div',{class:'row',style:'justify-content:flex-end'},el('button',{class:'btn ghost',onclick:closeModal,text:'Cancel'}),el('a',{class:'btn primary',href:'#teacher/new',onclick:closeModal,text:'+ New Hex Space'}))]);return;
+  }
+  var chosen=a||acts[0];
+  var actSel=opts.pickActivity?el('select',{id:'pd-act','aria-label':'Hex Space'},acts.map(function(x){return el('option',{value:x.id,text:(x.folder&&typeof folderPath==='function'&&W===TW?folderPath(x.folder).join(' › ')+' › ':'')+x.title})})):null;
+  if(actSel)actSel.value=chosen.id;
+  var pre=opts.classIds||(TS.postClass?[TS.postClass]:[]);
+  var boxes=classes.map(function(c){return {c:c,box:el('input',{type:'checkbox',id:'pd-c-'+c.id,checked:pre.indexOf(c.id)>=0||(classes.length===1)})}});
+  var name=el('input',{type:'text',id:'pd-name',maxlength:200,value:chosen.title||''}),nameTouched=false;
+  name.addEventListener('input',function(){nameTouched=true});
+  if(actSel)actSel.addEventListener('change',function(){chosen=acts.find(function(x){return x.id===actSel.value})||chosen;if(!nameTouched)name.value=chosen.title;});
+  var start=el('input',{type:'date',id:'pd-start',value:todayLocal()});
+  var due=el('input',{type:'date',id:'pd-due',value:''});
+  var pts=el('input',{type:'number',id:'pd-points',min:1,max:10000,value:100});
+  var ptsRow=el('label',{class:'fld',for:'pd-points'},'Points (Google Classroom)',pts,el('span',{class:'hint',text:'Used for grades returned to Google Classroom.'}));
+  var err=el('p',{class:'err',role:'alert'});
+  var go=el('button',{class:'btn primary',text:'Post'});
+  function picked(){return boxes.filter(function(b){return b.box.checked}).map(function(b){return b.c});}
+  function sync(){var list=picked(),cr=list.some(function(c){return c.classroomId});ptsRow.style.display=cr?'':'none';go.textContent=list.length>1?'Post to '+list.length+' classes':'Post';}
+  boxes.forEach(function(b){b.box.addEventListener('change',sync)});
+  go.addEventListener('click',function(){
+    var list=picked();err.textContent='';
+    if(!list.length){err.textContent='Tick at least one class.';return;}
+    if(!String(name.value||'').trim()){err.textContent='Give the assignment a name.';name.focus();return;}
+    if(start.value&&due.value&&due.value<start.value){err.textContent='The due date must be on or after the start date.';return;}
+    if(due.value&&due.value<todayLocal()){err.textContent='Choose a due date that hasn’t passed.';return;}
+    var classroom=list.some(function(c){return c.classroomId});
+    var max=Number(pts.value);if(classroom&&(!Number.isFinite(max)||max<=0||max>10000)){err.textContent='Enter points between 1 and 10,000.';return;}
+    if(classroom&&!classroomReady('teacher')){closeModal();connectClassroom('teacher',function(){openPostDialog(a,null,{pickActivity:opts.pickActivity,classIds:list.map(function(c){return c.id})});toast('Classroom connected. Choose Post again.')},true);return;}
+    var base={activityId:chosen.id,title:String(name.value).trim(),start:start.value||'',due:due.value||'',tz:TEACHER_TZ};
+    go.disabled=true;go.textContent='Posting…';
+    var results=[];
+    var chain=(TW?saveWorkspaceCloud():Promise.resolve());
+    list.forEach(function(c){
+      chain=chain.then(function(){
+        var body=Object.assign({},base,{classId:c.id});if(c.classroomId)body.maxPoints=max;
+        return platformApi('posts/new',body,!!c.classroomId).then(function(r){results.push({c:c,r:r})},function(e){results.push({c:c,e:e})});
+      });
+    });
+    chain.then(function(){
+      TS.postClass=list[0].id;closeModal();
+      return loadPosts().catch(function(){}).then(function(){refreshPostViews();postedSummary(results);});
+    }).catch(function(e){go.disabled=false;sync();err.textContent=e.message;});
+  });
+  openModal([el('div',{class:'eyebrow',text:'Post an assignment'}),
+    el('h3',{style:'font-size:1.25rem',text:actSel?'Post a Hex Space':'Post “'+(chosen.title||'Untitled')+'”'}),
+    actSel?el('label',{class:'fld',for:'pd-act'},'Hex Space',actSel):null,
+    el('fieldset',{class:'pick-classes'},el('legend',{text:'Classes'}),
+      el('div',{class:'pick-list'},boxes.map(function(b){return el('label',{class:'pick-row',for:'pd-c-'+b.c.id},b.box,el('span',{text:b.c.name}),el('span',{class:'chip '+(b.c.classroomId?'gc':'code'),text:b.c.classroomId?'Classroom':'Code only'}))})),
+      el('span',{class:'hint',text:'Each class gets its own posting and code. Post again any time for another assignment in the same class.'})),
+    el('label',{class:'fld',for:'pd-name'},'Assignment name',name),
+    el('div',{class:'date-pair'},
+      el('label',{class:'fld',for:'pd-start'},'Start date',start,el('span',{class:'hint',text:'Students can open it from this day.'})),
+      el('label',{class:'fld',for:'pd-due'},'Due date (optional)',due,el('span',{class:'hint',text:'Due at the end of the day. Late work is accepted and marked Late.'}))),
+    ptsRow,
+    el('p',{class:'hint',style:'margin:0',text:'Dates use your time zone ('+TEACHER_TZ.replace(/_/g,' ')+').'}),
+    err,
+    el('div',{class:'row',style:'justify-content:flex-end'},el('button',{class:'btn ghost',onclick:closeModal,text:'Cancel'}),go)]);
+  sync();
+};
+function postedSummary(results){
+  var ok=results.filter(function(x){return x.r}),bad=results.filter(function(x){return x.e});
+  if(ok.length===1&&!bad.length){postedDialog(ok[0].r,ok[0].c);return;}
+  openModal([el('div',{class:'eyebrow',text:bad.length?(ok.length?'Partly posted':'Not posted'):'Posted'}),
+    el('h3',{style:'font-size:1.25rem',text:ok.length?(ok[0].r.title+' · '+ok.length+' class'+(ok.length===1?'':'es')):'Nothing was posted'}),
+    ok.length?el('p',{style:'margin:0',text:postDatesText(ok[0].r)+'.'}):null,
+    el('div',{class:'stack',style:'gap:8px'},ok.map(function(x){
+      return el('div',{class:'posted-row'},el('b',{text:x.c.name}),el('span',{class:'codebig sm',text:fmtCode(x.r.code)}),
+        el('button',{class:'btn sm',onclick:function(){copyText(fmtCode(x.r.code),'Code')},text:'Copy code'}),
+        x.c.classroomId?(x.r.classroomUrl?el('a',{class:'btn sm',href:x.r.classroomUrl,target:'_blank',rel:'noopener',text:x.r.scheduled?'Scheduled in Classroom ↗':'Open in Classroom ↗'}):null)
+          :el('button',{class:'btn sm',onclick:function(){copyText(siteLink('#c-'+x.r.code),'Student link')},text:'Copy student link'}));
+    })),
+    bad.length?el('div',{class:'stack',style:'gap:4px'},bad.map(function(x){return el('p',{class:'err',style:'margin:0',text:x.c.name+': '+(x.e.message||'Couldn’t post.')})})):null,
+    el('div',{class:'row',style:'justify-content:flex-end'},el('button',{class:'btn primary','data-autofocus':true,onclick:closeModal,text:'Done'}))]);
+}
+
+
+/* Delete a Hex Space: removes it from the workspace (saved online right away), can close its
+   open postings, and never deletes student work. */
+function deleteHexSpace(a){
+  if(!TW||!a)return;
+  var open=postsFor(a.id).filter(function(p){return p.open!==false&&p.status==='PUBLISHED'});
+  var classroom=postsFor(a.id).some(function(p){return !p.manual});
+  var closeBox=open.length?el('input',{type:'checkbox',id:'del-close',checked:true}):null;
+  var go=el('button',{class:'btn danger-solid',text:'Delete Hex Space',onclick:function(){
+    go.disabled=true;
+    var name=a.title||'Untitled Hex Space',closeThem=closeBox&&closeBox.checked;
+    TW.activities=TW.activities.filter(function(x){return x.id!==a.id});
+    if(!TW.activities.length)TW.activities.push(blankActivity());
+    if(TS.sel===a.id){var next=TW.activities.find(function(x){return (x.folder||null)===(a.folder||null)})||TW.activities[0];TS.sel=next.id;}
+    TS.tab='setup';TS.confirmDel=false;remember();saveWork();closeModal();
+    if(/^#teacher\/edit-/.test(NAV.hash||''))navReplace('teacher/editor');
+    renderTeacher();
+    saveWorkspaceCloud().then(function(){
+      var chain=Promise.resolve();
+      if(closeThem)open.forEach(function(p){chain=chain.then(function(){return platformApi('posts/'+p.id+'/edit',{open:false}).catch(function(){})})});
+      return chain.then(function(){return loadPosts().catch(function(){})}).then(function(){renderTeacher();toast('Deleted “'+name+'”.'+(closeThem?' Its postings are closed.':''))});
+    },function(){toast('Deleted here, but saving online failed. Select Save workspace online to finish.');ensureBar();});
+  }});
+  openModal([el('h3',{style:'font-size:1.2rem',text:'Delete “'+(a.title||'Untitled Hex Space')+'”?'}),
+    el('p',{style:'margin:0',text:'It’s removed from your Hex Space and its folder. This can’t be undone, but student work that was saved or turned in is kept, and teachers who copied it keep their copies.'}),
+    open.length?el('label',{class:'row',for:'del-close',style:'font-weight:700'},closeBox,'Also close its '+open.length+' open posting'+(open.length===1?'':'s')+' so students can’t open them'):null,
+    open.length?el('p',{class:'hint',style:'margin:0',text:'If you leave them open, students can keep working on the posted copy and you can still review it from the class page.'+(classroom?' Assignments in Google Classroom stay there until you delete them in Classroom.':'')}):null,
+    el('div',{class:'row',style:'justify-content:flex-end'},el('button',{class:'btn ghost','data-autofocus':true,onclick:closeModal,text:'Keep it'}),go)]);
+}
+
+
+/* ---------- Editing Hex Spaces: clear Edit buttons, and pushing edits to open postings ---------- */
+function contentOf(a){return JSON.stringify({title:a.title||'',instructions:a.instructions||'',terms:(a.terms||[]).map(function(t){return [t.id,t.term,t.def||'']}),minTerms:a.minTerms==null?null:a.minTerms,minWords:a.minWords||0,dcOn:!!a.dcOn,dc:a.dc||[],board:a.board||null});}
+function openPostingsFor(ids){return (PX.posts||[]).filter(function(p){return ids.indexOf(p.activityId)>=0&&p.open!==false&&p.status==='PUBLISHED'});}
+function refreshPostings(list,done){
+  if(!list.length)return;
+  if(list.some(function(p){return !p.manual})&&!classroomReady('teacher')){connectClassroom('teacher',function(){refreshPostings(list,done)},true);return;}
+  toast('Updating '+list.length+' posting'+(list.length===1?'':'s')+'…');
+  var ok=0,failed=[],chain=Promise.resolve();
+  list.forEach(function(p){chain=chain.then(function(){return platformApi('posts/'+p.id+'/edit',{refresh:true},!p.manual).then(function(){ok++},function(e){failed.push(p.title+' · '+p.className+': '+e.message)})})});
+  chain.then(function(){return loadPosts().catch(function(){})}).then(function(){
+    refreshPostViews();
+    if(failed.length)openModal([el('h3',{text:'Some postings weren’t updated'}),el('div',{class:'stack',style:'gap:4px'},failed.map(function(t){return el('p',{class:'err',style:'margin:0',text:t})})),el('div',{class:'row',style:'justify-content:flex-end'},el('button',{class:'btn primary',onclick:closeModal,text:'OK'}))]);
+    else toast('Updated '+ok+' posting'+(ok===1?'':'s')+'. Students who haven’t turned in now see your changes.');
+    if(done)done();
+  });
+}
+function offerPostingUpdate(ids){
+  var list=openPostingsFor(ids);if(!list.length)return;
+  var boxes=list.map(function(p){return {p:p,box:el('input',{type:'checkbox',id:'up-'+p.id,checked:true})}});
+  openModal([el('div',{class:'eyebrow',text:'Saved'}),el('h3',{style:'font-size:1.2rem',text:'Update the posted '+(list.length===1?'copy':'copies')+' too?'}),
+    el('p',{style:'margin:0',text:'Students only see your changes in postings you update. Work already turned in keeps the version the student submitted.'}),
+    el('div',{class:'pick-list'},boxes.map(function(b){return el('label',{class:'pick-row',for:'up-'+b.p.id},b.box,el('span',{text:b.p.title+' · '+b.p.className}),el('span',{class:'chip '+postState(b.p).cls,text:postState(b.p).label}))})),
+    el('div',{class:'row',style:'justify-content:flex-end'},el('button',{class:'btn ghost',onclick:closeModal,text:'Not now'}),
+      el('button',{class:'btn primary','data-autofocus':true,onclick:function(){var pick=boxes.filter(function(b){return b.box.checked}).map(function(b){return b.p});closeModal();refreshPostings(pick)},text:'Update postings'}))]);
+}
+publishNow=function(){
+  var before=PX.teacherData||{activities:[]};
+  var changed=TW.activities.filter(function(a){var old=(before.activities||[]).find(function(x){return x.id===a.id});return old&&contentOf(old)!==contentOf(a)}).map(function(a){return a.id});
+  saveWorkspaceCloud().then(function(){renderTeacher();toast('Saved online.');if(changed.length){(PX.posts?Promise.resolve():loadPosts()).then(function(){offerPostingUpdate(changed)}).catch(function(){})}}).catch(platformError);
+};
+var v42Codes=codesPane;
+codesPane=function(a){
+  var pane=v42Codes(a),open=openPostingsFor([a.id]);
+  if(open.length&&pane&&pane.children){
+    var saved=(PX.teacherData&&(PX.teacherData.activities||[]).find(function(x){return x.id===a.id}));
+    var unsaved=!saved||contentOf(saved)!==contentOf(a);
+    var box=el('div',{class:'panel row',style:'justify-content:space-between;gap:10px'},
+      el('p',{style:'margin:0;max-width:60ch',text:'Changed this Hex Space after posting? Update its '+open.length+' open posting'+(open.length===1?'':'s')+' so students who haven’t turned in see the changes.'}),
+      el('button',{class:'btn',onclick:function(){(unsaved?saveWorkspaceCloud():Promise.resolve()).then(function(){refreshPostings(open)}).catch(platformError)},text:'Update open postings'}));
+    pane.insertBefore(box,pane.children[1]||null);
+  }
+  return pane;
+};
+actRow=function(x,showPath){
+  var n=rowsFor(x.id).length,np=postsFor(x.id).length;
+  function open(tab){TS.sel=x.id;TS.folder=x.folder||null;TS.confirmDel=false;if(tab)TS.tab=tab;remember();renderTeacher();}
+  var b=el('button',{class:'aitem'+(x.id===TS.sel?' on':''),onclick:function(){open()}},
+    el('b',{text:x.title||'Untitled Hex Space'}),
+    el('span',{text:(showPath&&x.folder?folderPath(x.folder).join(' › ')+' · ':'')+hexList(x).length+' hexagons · '+(np?np+' posted':'not posted')+' · '+n+' submission'+(n===1?'':'s')}));
+  var edit=el('button',{class:'btn ghost sm act-edit','aria-label':'Edit '+(x.title||'Untitled Hex Space'),onclick:function(){open('setup');setTimeout(function(){var t=document.getElementById('f-title');if(t&&t.focus)t.focus()},30)},text:'Edit'});
+  return dragSource(el('div',{class:'act-row'},b,edit),'act',x.id);
+};
+
+/* New folder straight from the Hex Space folder drop-down. */
+function newFolderFor(a,after){
+  var name=el('input',{type:'text',id:'nf-name',maxlength:80,placeholder:'e.g. Unit 3: Cells','data-autofocus':true});
+  var inside=el('select',{id:'nf-parent','aria-label':'Put the new folder inside'},el('option',{value:'',text:'Top level'}),folderOptions(null,0));
+  inside.value='';
+  var err=el('p',{class:'err',role:'alert'});
+  function create(){
+    var nm=String(name.value||'').trim(),parent=inside.value||null;
+    if(!nm){err.textContent='Enter a folder name.';name.focus();return;}
+    if(parent&&folderDepth(parent)>=8){err.textContent='Folders can be up to 8 levels deep. Choose a higher folder.';return;}
+    if(folders().length>=300){err.textContent='You’ve reached the 300-folder limit.';return;}
+    var f={id:uid(),name:nm.slice(0,80),parent:parent};folders().push(f);if(parent)setOpen(parent,true);setOpen(f.id,true);
+    closeModal();
+    if(a){a.folder=f.id;revealFolder(f.id);TS.folder=f.id;ensureBar();renderTeacher();toast('Created “'+f.name+'” and moved this Hex Space into it.');}
+    else{TS.folder=f.id;ensureBar();renderTeacher();toast('Folder created.');}
+    if(after)after(f);
+  }
+  name.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();create()}});
+  openModal([el('h3',{style:'font-size:1.2rem',text:'New folder'}),
+    el('label',{class:'fld',for:'nf-name'},'Folder name',name),
+    el('label',{class:'fld',for:'nf-parent'},'Put it inside',inside,el('span',{class:'hint',text:a?'This Hex Space moves into the new folder.':'Choose Top level or any folder.'})),
+    err,
+    el('div',{class:'row',style:'justify-content:flex-end'},el('button',{class:'btn ghost',onclick:closeModal,text:'Cancel'}),el('button',{class:'btn primary',onclick:create,text:'Create folder'}))]);
+}
+folderPicker=function(a){
+  if(!a)return null;
+  var sel=el('select',{id:'f-folder','aria-label':'Folder'},el('option',{value:'',text:'No folder'}),folderOptions(null,0),el('option',{value:'__new',text:'+ New folder…'}));
+  sel.value=a.folder||'';
+  sel.addEventListener('change',function(){
+    if(sel.value==='__new'){sel.value=a.folder||'';newFolderFor(a);return;}
+    moveActivity(a,sel.value||null);
+  });
+  return el('label',{class:'folder-pick',for:'f-folder'},folderIcon(),sel);
 };
 
 /* The homepage is the starting page: a visit to the bare site address opens it,
