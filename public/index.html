@@ -2176,7 +2176,7 @@ renderStudentShell=function(){
   if(ST&&!ST.preview&&PX.activePost){
     var cloud=el('span',{class:'chip',id:'hx-cloud-status',role:'status',text:'Saved work loads from your account'});
     var row=el('div',{class:'row'},cloud,el('button',{class:'btn sm',onclick:function(){queueCloudDraft();flushCloudDraft().then(function(){toast('Board saved online.')}).catch(platformError)},text:'Save online'}),
-      el('button',{class:'btn sm',onclick:function(){
+      el('button',{class:'btn sm',id:'hx-reclaim',style:boardTurnedIn()?'':'display:none',onclick:function(){
         var manual=postIsManual();
         function reclaim(){platformApi('posts/'+PX.activePost+'/reclaim',{},!manual).then(function(){PX.postState.status='DRAFT';ST.d.submittedAt=null;localSaveDraft();updateStudent();toast(manual?'Unsubmitted. You can edit and submit again.':'Assignment reclaimed. You can edit and submit again.');}).catch(platformError)}
         if(manual||classroomReady('student'))reclaim();else connectClassroom('student',reclaim);
@@ -2184,6 +2184,10 @@ renderStudentShell=function(){
     root.insertBefore(row,root.children[2]||null);
   }
 };
+/* Unsubmit/Reclaim only makes sense once the board has been turned in. */
+function boardTurnedIn(){var st=PX.postState&&PX.postState.status;return !!(ST&&ST.d&&ST.d.submittedAt)||st==='TURNED_IN';}
+var reclaimUpdate=updateStudent;
+updateStudent=function(){reclaimUpdate.apply(this,arguments);var b=document.getElementById('hx-reclaim');if(b&&b.style)b.style.display=boardTurnedIn()?'':'none';};
 submit=function(){
   if(!ST||ST.preview){toast('Preview boards cannot be submitted.');return;}
   if(PX.submitting){toast('Your submission is already being sent.');return;}
@@ -2199,7 +2203,7 @@ submit=function(){
     var saved=shared?(queueCloudDraft(),flushCloudDraft()):Promise.resolve();
     saved.then(function(){return platformApi('posts/'+id+'/submit',{draft:clone(board.d),groupRevision:shared?shared.revision:undefined},!postIsManual())}).then(function(r){
       if(!GA.user||GA.user.uid!==account||ST!==board)return;
-      board.d.submittedAt=r.submittedAt;localSaveDraft();updateStudent();
+      board.d.submittedAt=r.submittedAt;if(PX.postState)PX.postState.status='TURNED_IN';localSaveDraft();updateStudent();
       toast(postIsManual()?'Turned in. Your teacher can now review your board.':'Turned in to Google Classroom. Your teacher can now review your board.');
     }).catch(function(e){if(GA.user&&GA.user.uid===account)platformError(e)}).finally(function(){PX.submitting=false;});
   }
@@ -2953,7 +2957,10 @@ function hexSpaceSidebar(){
 }
 var v3NewActivity=newActivity;
 newActivity=function(){
-  v3NewActivity();
+  /* Reuse an empty, never-saved Hex Space instead of piling up "Untitled" ones. */
+  var blank=TW.activities.filter(function(x){return isUntouched(x)&&!Object.keys(x.assign||{}).length})[0];
+  if(blank){blank.folder=undefined;TS.sel=blank.id;TS.tab='setup';remember();renderTeacher();setTimeout(function(){var t=document.getElementById('f-title');if(t&&t.focus)t.focus()},30);}
+  else v3NewActivity();
   var a=curAct();
   if(a&&TS.folder&&folderById(TS.folder)&&!a.folder){a.folder=TS.folder;revealFolder(TS.folder);ensureBar();renderTeacher();}
 };
