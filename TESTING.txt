@@ -1,6 +1,6 @@
 VERIFICATION — VERSION 4.0.0
 ============================
-71 automated tests pass (40 backend, 31 frontend) using in-memory SQLite,
+74 automated tests pass (40 backend, 34 frontend) using in-memory SQLite,
 simulated Firebase/Classroom responses, and execution of the actual frontend
 script in a DOM test harness. No real Google Classroom assignment was created
 or modified by these tests.
@@ -11,7 +11,9 @@ and unknown codes, reposting and code clashes; group codes in code-only classes;
 the share lifecycle (create, preview, copy count, update, revoke, non-teacher
 blocking); the homepage; the pending code flow through sign-in; New Hex Space
 hidden from students; folder create/move/delete; Classroom class import;
-share preview and copy; students blocked from share pages.
+share preview and copy; students blocked from share pages; imported Classroom
+classes saved to the Hex Space and listed under Your classes without
+reconnecting Classroom; the homepage as the starting page with Log in.
 
 Earlier coverage remains: Google signup/profile persistence; account/workspace
 isolation; Classroom permissions, course discovery and assignment membership;

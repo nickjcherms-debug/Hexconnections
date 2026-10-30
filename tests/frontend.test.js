@@ -33,8 +33,8 @@ function make(){
  getData(){return DATA},setData(w){DATA=w},setView(fn){viewSubmission=fn},
  setWork(w){TW=w;TS.rows={};TS.sel=w.activities[0].id},setRenderTeacher(fn){renderTeacher=fn},
  setApi(fn){platformApi=fn},setTeacher(fn){startTeacher=fn;teacherDashboard=fn},
- v4:{renderHome,hexSpaceSidebar,newFolder,deleteFolder,moveActivity,folderById,childFolders,folderActs,canMoveFolder,syncClassroomClasses,sharePreview,copyShared,postManual,codesPane,TS,getTW(){return TW},startTeacher(){startTeacher()},renderTeacher(){renderTeacher()},setSave(fn){saveWorkspaceCloud=fn},setTS(o){Object.assign(TS,o)}}};`;
- vm.runInContext(script.replace(/route\(\);\nbootGoogle\(\);\n\}\)\(\);\s*$/,hooks+'})();'),context);
+ v4:{startPage,renderHome,hexSpaceSidebar,newFolder,deleteFolder,moveActivity,folderById,childFolders,folderActs,canMoveFolder,syncClassroomClasses,importClassroomClasses,sharePreview,copyShared,postManual,codesPane,TS,getTW(){return TW},startTeacher(){startTeacher()},renderTeacher(){renderTeacher()},setSave(fn){saveWorkspaceCloud=fn},setTS(o){Object.assign(TS,o)}}};`;
+ vm.runInContext(script.replace(/startPage\(\);\nroute\(\);\nbootGoogle\(\);\n\}\)\(\);\s*$/,hooks+'})();'),context);
  const h=context.hx;
  function flatten(n=root){return [n,...(n.children||[]).flatMap(flatten)]}
  const text=()=>[...flatten(),...flatten(document.body)].map(n=>n.textContent).join(' ');
@@ -257,4 +257,39 @@ test('a shared Hex Space previews for teachers and copies into a chosen folder',
 test('students see a teacher-profile message instead of a shared Hex Space',()=>{
  const {h,text,location}=make();h.GA.ready=true;h.GA.user={uid:'s'};h.PX.loaded=true;h.PX.profile={role:'student'};location.hash='#share-ABCDEFGHJK';h.route();
  assert.match(text(),/Teacher profile needed/);assert.doesNotMatch(text(),/Copy to my Hex Space/);
+});
+
+test('imported Classroom classes stay in the Your classes list without reconnecting Classroom',async()=>{
+ const {h,text,location}=make();h.GA.ready=true;h.GA.user={uid:'teacher'};h.PX.loaded=true;h.PX.profile={role:'teacher'};
+ h.PX.teacherData={version:4,folders:[],classes:[{id:'gc-g1',name:'Biology · P2',classroomId:'g1'},{id:'club',name:'Science club'}],activities:[]};
+ const calls=[];h.setApi(async path=>{calls.push(path);if(path==='teacher/dashboard')return {assignments:[]};throw new Error(path)});
+ location.hash='#teacher';h.route();await tick();
+ assert.ok(!calls.some(p=>p.startsWith('classroom/')));
+ assert.match(text(),/Biology · P2/);assert.match(text(),/Science club/);assert.match(text(),/Google Classroom/);assert.match(text(),/Code only/);assert.match(text(),/Connect Google Classroom and import classes/);
+ location.hash='#teacher/class-g1';h.route();await tick();assert.match(text(),/Biology · P2/);assert.match(text(),/New Hex Space for this class/);
+});
+test('importing Classroom classes from the class list creates them in the saved Hex Space',async()=>{
+ const {h,text,location}=make();h.GA.ready=true;h.GA.user={uid:'teacher'};h.PX.loaded=true;h.PX.profile={role:'teacher'};h.PX.revision=4;
+ h.PX.token='token';h.PX.tokenRole='teacher';h.PX.tokenUntil=Date.now()+10000;
+ h.PX.teacherData={version:4,folders:[],classes:[{id:'club',name:'Science club'}],activities:[]};
+ const saves=[];let dash=false;
+ h.setApi(async(path,body)=>{
+  if(path==='classroom/courses?role=teacher')return {courses:dash?[{id:'g1',name:'Biology',section:'P2'},{id:'g2',name:'Chemistry'}]:[]};
+  if(path==='teacher/dashboard')return {assignments:[]};
+  if(path==='workspace'&&body){saves.push(body);return {revision:body.revision+1}}
+  throw new Error(path)});
+ location.hash='#teacher';h.route();await tick();await tick();
+ dash=true;h.v4.importClassroomClasses();for(let i=0;i<6;i++)await tick();
+ assert.equal(saves.length,1);assert.equal(saves[0].revision,4);
+ assert.equal(JSON.stringify(saves[0].workspace.classes.map(c=>[c.name,c.classroomId||null])),JSON.stringify([['Science club',null],['Biology · P2','g1'],['Chemistry','g2']]));
+ assert.equal(h.PX.teacherData.classes.length,3);assert.equal(h.PX.revision,5);
+ assert.match(text(),/Biology · P2/);assert.match(text(),/Chemistry/);assert.match(text(),/2 Google Classroom classes added to your class list/);
+ h.v4.importClassroomClasses();for(let i=0;i<6;i++)await tick();assert.equal(saves.length,1);assert.match(text(),/already in your class list/);
+});
+
+test('the bare site address opens the homepage, and the menu offers Log in',()=>{
+ const {h,text,location,flatten}=make();h.GA.ready=true;location.hash='';h.v4.startPage();assert.equal(location.hash,'#home');h.route();
+ assert.match(text(),/The benefits of hexagonal thinking/);assert.match(text(),/Ways to use it in class/);assert.match(text(),/A shared language for thinking/);assert.match(text(),/Patterns/);
+ const login=flatten().filter(n=>n.textContent==='Log in');assert.ok(login.some(n=>n.attrs?.href==='#signin'));
+ location.hash='#teacher';h.v4.startPage();assert.equal(location.hash,'#teacher');
 });

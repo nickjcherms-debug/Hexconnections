@@ -170,6 +170,9 @@ Apply migrations/0003_group_boards.sql to existing databases, then deploy the
 complete Worker. See DEPLOYMENT.txt for exact commands and setup requirements.
 
 VERSION 4.0.0: HOMEPAGE, FOLDERS, CLASSES AND SHARING
+The bare site address always opens the homepage, signed in or not. The menu
+has Log in for returning users. The homepage explains the benefits of hexagonal
+thinking, ways to use it in class, and why Depth and Complexity icons help.
 The site opens on a homepage that explains hexagonal thinking and the eight
 Depth and three Complexity icons, with a live sample board. Enter a class code
 and New Hex Space (teachers) are the main menu actions; both resume after
@@ -181,7 +184,10 @@ it never deletes Hex Spaces. Drag a Hex Space onto a folder or use the folder
 picker in its header.
 
 Classes come from two places: Import Classroom classes (courses you teach) and
-Add a class for code-only classes. Assign a Hex Space to any class under
+Add a class for code-only classes. Imported courses are created as classes in
+your saved Hex Space right away, so they stay under Your classes after a reload
+or on another device without reconnecting Classroom. Connecting Classroom also
+adds any new courses automatically. Assign a Hex Space to any class under
 Classes & codes. Classroom classes publish to Google Classroom; code-only
 classes are posted on this site and students join with the code.
 

@@ -268,6 +268,8 @@ td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:now
 .nav-link.on{color:var(--ink);background:var(--panel);box-shadow:inset 0 0 0 1px var(--line)}
 .nav-link.cta{background:var(--blue);color:var(--on-blue)}
 .nav-link.cta:hover{filter:brightness(1.06)}
+.nav-link.login{color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--line-strong,var(--line))}
+.nav-link.login:hover{box-shadow:inset 0 0 0 1.5px var(--blue)}
 .nav-mobile{display:none}
 .menu-wrap{position:relative}
 .menu-pop{position:absolute;right:0;top:calc(100% + 6px);z-index:30;min-width:230px;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 34px var(--shadow);padding:6px;display:flex;flex-direction:column}
@@ -313,6 +315,31 @@ td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:now
 .dc-card b{display:block}
 .dc-card p{margin:2px 0 0;font-size:.88rem;color:var(--muted)}
 .credit{font-size:.82rem;color:var(--muted);max-width:80ch}
+.class-card .chip{flex:none}
+.class-card .btn{align-self:flex-start}
+.hero-login{margin:14px 0 0;color:var(--muted);font-size:.95rem}
+.hero-login a{font-weight:700}
+.benefits{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.benefit{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:start;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+.benefit-hex{width:22px;height:25px;margin-top:2px;background:var(--teal,var(--blue));clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
+.benefit b{display:block;margin-bottom:2px}
+.benefit p{margin:0;font-size:.92rem;color:var(--muted)}
+.uses{background:var(--t1);border-radius:16px;padding:18px 20px;display:flex;flex-direction:column;gap:12px}
+.uses-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 18px}
+.use{display:flex;flex-direction:column;gap:2px}
+.use-when{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.use p{margin:0;font-size:.9rem}
+.dc-why{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;align-items:stretch}
+.dc-why-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.dc-why-list .benefit-hex{background:var(--honey)}
+.dc-example{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:10px}
+.dc-pair{display:flex;align-items:center;gap:0}
+.mini-hex{width:92px;height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-weight:700;font-size:.82rem;color:var(--ink);text-align:center;clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)}
+.mini-hex.term{background:var(--t3,var(--t1))}
+.mini-hex.icon{background:var(--honey-soft)}
+.mini-hex svg{width:18px;height:18px}
+.dc-link{width:18px;height:4px;background:var(--teal,var(--blue));border-radius:2px;margin:0 -2px;position:relative;z-index:1}
+.dc-quote{margin:0;font-size:1rem;line-height:1.45}
 .roles-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .role-card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:10px;align-items:flex-start}
 .role-card ul{margin:0;padding-left:18px;color:var(--muted)}
@@ -324,7 +351,7 @@ td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:now
 #hx-code{font-size:1.5rem;text-align:center;padding:12px}
 @media (max-width:860px){
   .hero{grid-template-columns:minmax(0,1fr)}
-  .steps,.why,.roles-2{grid-template-columns:minmax(0,1fr)}
+  .steps,.why,.roles-2,.benefits,.uses-grid,.dc-why,.dc-why-list{grid-template-columns:minmax(0,1fr)}
 }
 
 /* Hex Space sidebar: folders */
@@ -2006,10 +2033,10 @@ function connectClassroom(role,after){
   }).catch(function(e){if(GA.user&&GA.user.uid===account.uid){PX.token=null;PX.tokenRole=null;PX.tokenUntil=0;}platformError(e.code&&e.code.indexOf('auth/')===0?new Error(googleError(e)):e)}).finally(function(){GA.busy=false;var header=root.querySelector('.top');if(header)header.replaceWith(topBar());});
 }
 function classroomReady(role){return !!(PX.token && Date.now()<PX.tokenUntil && PX.tokenRole===role);}
-function saveWorkspaceCloud(){
+function saveWorkspaceCloud(ws){
   if(PX.saving)return Promise.reject(new Error('A workspace save is already running. Try again when it finishes.'));
   PX.saving=true;
-  var out=clone(TW), account=GA.user.uid;
+  var out=clone(ws||TW), account=GA.user.uid;
   return platformApi('workspace',{workspace:out,revision:PX.revision}).then(function(r){
     if(GA.user&&GA.user.uid===account){PX.revision=r.revision;PX.teacherData=clone(out);DATA=clone(out);lsSet('hx-workspace-base',r.revision);}
     return r;
@@ -2258,18 +2285,23 @@ function dashboardError(parent,error){dashboardAdd(parent,el('p',{class:'err',ro
 function teacherDashboard(courseId){
  var seq=PX.routeId,body=el('div',{class:'stack'});
  fill(root,topBar(),el('div',{class:'row'},el('h2',{text:courseId?'Class assignments':'Your classes'}),el('a',{class:'btn',href:'#teacher/editor',text:'Open Hex Space'})),body);
- if(courseId)dashboardAdd(body,el('a',{class:'btn ghost',href:'#teacher',text:'← All classes'}));
- dashboardMessage(body,'Loading classrooms…');
+ dashboardMessage(body,'Loading classes…');
  var courseError=null;
  Promise.all([platformApi('teacher/dashboard'),classroomReady('teacher')?platformApi('classroom/courses?role=teacher',undefined,true).catch(function(e){courseError=e;return {courses:[]}}):Promise.resolve({courses:[]})]).then(function(results){
   if(seq!==PX.routeId)return;body.replaceChildren();
   var assignments=results[0].assignments||[],courses=new Map();
   assignments.forEach(function(a){courses.set(a.courseId,{id:a.courseId,name:a.courseName||a.className})});
-  (results[1].courses||[]).forEach(function(c){courses.set(c.id,c)});if(results[1].courses&&results[1].courses.length)PX.lastCourses=results[1].courses;
-  ((PX.teacherData&&PX.teacherData.classes)||[]).forEach(function(c){if(!c.classroomId&&!courses.has('manual:'+c.id))courses.set('manual:'+c.id,{id:'manual:'+c.id,name:c.name,manual:true,classId:c.id})});
+  var live=results[1].courses||[];if(live.length){PX.lastCourses=live;importCoursesQuietly(live).then(function(n){if(n&&seq===PX.routeId)teacherDashboard(courseId)})}
+  live.forEach(function(c){courses.set(c.id,{id:c.id,name:(c.name+(c.section?' · '+c.section:'')).slice(0,100)})});
+  hexSpaceClasses().forEach(function(c){
+   if(c.classroomId)courses.set(c.classroomId,{id:c.classroomId,name:c.name,classId:c.id});
+   else courses.set('manual:'+c.id,{id:'manual:'+c.id,name:c.name,manual:true,classId:c.id});
+  });
   courses.forEach(function(c,id){if(id.indexOf('manual:')===0){c.manual=true;c.classId=id.slice(7)}});
   PX.dashboardCourses=Array.from(courses.values());
-  if(!classroomReady('teacher'))dashboardAdd(body,el('div',{class:'panel stack'},el('p',{text:'Connect Google Classroom to load the courses you teach. Classes you added yourself appear below either way.'}),el('button',{class:'btn primary',onclick:function(){connectClassroom('teacher',function(){route()})},text:'Connect Google Classroom'})));
+  if(!courseId)dashboardAdd(body,el('div',{class:'row'},
+   el('button',{class:'btn'+(hexSpaceClasses().some(function(c){return c.classroomId})?'':' primary'),onclick:importClassroomClasses,text:classroomReady('teacher')?'Import Classroom classes':'Connect Google Classroom and import classes'}),
+   el('button',{class:'btn ghost',onclick:addClassFromDashboard,text:'Add a code-only class'})));
   if(courseError)dashboardError(body,courseError);
   if(courseId){
    dashboardAdd(body,el('a',{class:'btn ghost',href:'#teacher',text:'← All classes'}));
@@ -2279,9 +2311,9 @@ function teacherDashboard(courseId){
    if(!issued.length)dashboardMessage(body,course.manual?'Nothing posted for this class yet. Create a Hex Space, tick this class on Classes & codes, then choose Post.':'No assignments have been issued here through Hex Connections yet.');
    issued.forEach(function(a){dashboardAdd(body,teacherAssignmentCard(a))});
   }else{
-   if(!courses.size)dashboardMessage(body,'Your classes appear here after you connect Google Classroom or add a class in your Hex Space.');
+   if(!courses.size)dashboardMessage(body,'No classes yet. Import your Google Classroom classes, or add a code-only class for students without Classroom.');
    var grid=el('div',{class:'grid2'});
-   courses.forEach(function(c){var issued=assignments.filter(function(a){return a.courseId===c.id});dashboardAdd(grid,el('div',{class:'panel stack'},el('h3',{text:c.name}),el('p',{text:issued.length+' issued assignment'+(issued.length===1?'':'s')+' · '+issued.reduce(function(n,a){return n+a.submissions},0)+' submissions'}),el('span',{class:'chip '+(c.manual?'code':'gc'),text:c.manual?'Code only':'Google Classroom'}),el('a',{class:'btn primary',href:'#teacher/class-'+encodeURIComponent(c.id),text:'Open class'})))});dashboardAdd(body,grid);
+   Array.from(courses.values()).sort(function(x,y){return String(x.name).localeCompare(String(y.name))}).forEach(function(c){var issued=assignments.filter(function(a){return a.courseId===c.id});dashboardAdd(grid,el('div',{class:'panel stack class-card'},el('div',{class:'row',style:'justify-content:space-between;align-items:flex-start;gap:8px'},el('h3',{text:c.name}),el('span',{class:'chip '+(c.manual?'code':'gc'),text:c.manual?'Code only':'Google Classroom'})),el('p',{class:'muted',style:'margin:0',text:issued.length+' issued assignment'+(issued.length===1?'':'s')+' · '+issued.reduce(function(n,a){return n+a.submissions},0)+' submission'+(issued.reduce(function(n,a){return n+a.submissions},0)===1?'':'s')}),el('a',{class:'btn primary',href:'#teacher/class-'+encodeURIComponent(c.id),text:'Open class'})))});dashboardAdd(body,grid);
   }
  }).catch(function(e){if(seq===PX.routeId){body.replaceChildren();dashboardError(body,e)}});
 }
@@ -2473,19 +2505,19 @@ function menuButton(label,items,opts){
 function navItems(){
   var role=profileRole();
   if(!GA.user)return [
-    {label:'How it works',onclick:function(){goHomeSection('how')}},
+    {label:'Hexagonal thinking',onclick:function(){goHomeSection('how')}},
     {label:'Depth & Complexity',onclick:function(){goHomeSection('dc')}},
     {label:'Enter a class code',href:'#code'},
-    {label:'New Hex Space',href:'#new',cta:true,hint:'For teachers'},
-    {label:'Sign in',href:'#signin'}];
+    {label:'Log in',href:'#signin',login:true,match:/^#(signin|signup)$/},
+    {label:'New Hex Space',href:'#new',cta:true,hint:'For teachers'}];
   if(role==='teacher')return [
     {label:'Classes',href:'#teacher',match:/^#teacher(\/class-|\/post-|$)/},
     {label:'Hex Space',href:'#teacher/editor',match:/^#teacher\/(editor|edit-)/},
-    {label:'About',href:'#home',match:/^#home$/},
+    {label:'Home',href:'#home',match:/^#home$/},
     {label:'+ New Hex Space',href:'#teacher/new',cta:true}];
   if(role==='student')return [
     {label:'My assignments',href:'#',match:/^(#|#a-.*|)$/},
-    {label:'About',href:'#home',match:/^#home$/},
+    {label:'Home',href:'#home',match:/^#home$/},
     {label:'Enter a class code',href:'#code',cta:true}];
   return [{label:'About',href:'#home'}];
 }
@@ -2493,7 +2525,7 @@ topBar=function(){
   var items=navItems(),h=location.hash||'';
   var nav=el('nav',{class:'nav','aria-label':'Main'},items.map(function(it){
     var on=it.match?it.match.test(h):(it.href&&it.href===h);
-    if(it.href!=null)return el('a',{class:'nav-link'+(it.cta?' cta':'')+(on?' on':''),href:it.href,'aria-current':on?'page':null,title:it.hint||null,text:it.label});
+    if(it.href!=null)return el('a',{class:'nav-link'+(it.cta?' cta':'')+(it.login?' login':'')+(on?' on':''),href:it.href,'aria-current':on?'page':null,title:it.hint||null,text:it.label});
     return el('button',{class:'nav-link',onclick:it.onclick,text:it.label});
   }));
   var mobile=menuButton('Menu',items.map(function(it){return {label:it.label+(it.hint?' ('+it.hint.toLowerCase()+')':''),href:it.href,onclick:it.onclick}}),{cls:'nav-mobile',btnCls:'sm',aria:'Open menu'});
@@ -2529,12 +2561,33 @@ var DEMO_CONNS={'1-3':{why:'Leaves are shaped to catch as much sunlight as possi
 function homeDemoBoard(){
   try{return boardSVG(DEMO_ACT,DEMO_PLACE,DEMO_CONNS,{orient:'pointy'})}catch(e){return el('div')}
 }
+var HOME_BENEFITS=[
+  ['Deeper understanding','Students move past memorized definitions and explain how and why ideas relate.'],
+  ['Thinking you can see','Each written connection shows a student’s reasoning, so misconceptions surface early.'],
+  ['Vocabulary in context','Unit terms get used in full sentences, again and again, alongside the ideas they belong with.'],
+  ['Every student can start','Placing two hexagons side by side is easy. Building a dense, well-argued cluster is a real challenge.'],
+  ['Discussion and collaboration','Different boards spark debate. Group boards let students build and defend one map together.'],
+  ['Ready-made writing plans','A cluster of connected hexagons is an outline: each link can become a topic sentence or a claim.']];
+var HOME_USES=[
+  ['Start of a unit','Pre-assessment','See what students already connect before you teach.'],
+  ['Middle of a unit','Check for understanding','Spot gaps and misconceptions while there is time to reteach.'],
+  ['Before a test','Review','Students rebuild the unit from memory, linking every major idea.'],
+  ['Before a discussion','Seminar prep','Boards give every student evidence-backed points to bring to the circle.'],
+  ['Before writing','Essay planning','Turn the strongest cluster into a thesis and supporting paragraphs.'],
+  ['Any time','Group project','Students share one board, divide the work and each turn in their own copy.']];
+var DC_BENEFITS=[
+  ['A shared language for thinking','The same icons work in every subject, so students learn what “go deeper” actually means.'],
+  ['Built-in rigor and differentiation','Icons raise the challenge for students who are ready without changing the vocabulary for anyone.'],
+  ['Questions experts ask','Patterns, Rules, Ethics and Multiple Perspectives push students to think like scientists, historians and authors.'],
+  ['Clear prompts for writing','Each icon comes with a question, so students always know what kind of explanation to write.']];
+function benefitCard(b){return el('div',{class:'benefit'},el('span',{class:'benefit-hex','aria-hidden':'true'}),el('div',null,el('b',{text:b[0]}),el('p',{text:b[1]})))}
 function dcCard(d){return el('div',{class:'dc-card'},el('span',{class:'dc-hex','aria-hidden':'true'},glyphSVG(d.k,24)),el('div',null,el('b',{text:d.name}),el('p',{text:d.hint})))}
 function renderHome(){
   var role=profileRole();
   var primary=!GA.user?[el('a',{class:'btn honey',href:'#code',text:'Enter a class code'}),el('a',{class:'btn primary',href:'#new',text:'New Hex Space (teachers)'})]
-    :role==='teacher'?[el('a',{class:'btn primary',href:'#teacher/new',text:'+ New Hex Space'}),el('a',{class:'btn',href:'#teacher/editor',text:'Open my Hex Space'})]
-    :[el('a',{class:'btn honey',href:'#code',text:'Enter a class code'}),el('a',{class:'btn',href:'#',text:'My assignments'})];
+    :role==='teacher'?[el('a',{class:'btn primary',href:'#teacher',text:'Go to my classes'}),el('a',{class:'btn',href:'#teacher/new',text:'+ New Hex Space'})]
+    :[el('a',{class:'btn primary',href:'#',text:'Go to my assignments'}),el('a',{class:'btn honey',href:'#code',text:'Enter a class code'})];
+  var signedInAs=GA.user?el('p',{class:'hero-login',text:'Signed in'+(GA.user.displayName?' as '+GA.user.displayName:'')+'.'}):el('p',{class:'hero-login'},'Already have an account? ',el('a',{href:'#signin',text:'Log in'}),' with your school Google account.');
   var depth=DC.filter(function(d){return ['perspectives','change','across'].indexOf(d.k)<0});
   var complexity=DC.filter(function(d){return ['perspectives','change','across'].indexOf(d.k)>=0});
   fill(root,topBar(),el('main',{class:'home'},
@@ -2543,7 +2596,7 @@ function renderHome(){
         el('div',{class:'eyebrow',text:'Hexagonal thinking for every classroom'}),
         el('h2',{id:'hero-h',text:'Every idea connects. Show how.'}),
         el('p',{class:'lede',text:'Students place vocabulary hexagons side by side and explain every edge that touches. The board becomes a map of what they understand, and every link has a reason behind it.'}),
-        el('div',{class:'hero-ctas'},primary)),
+        el('div',{class:'hero-ctas'},primary),signedInAs),
       el('figure',{class:'hero-board',style:'margin:0'},homeDemoBoard(),el('figcaption',{class:'hero-caption',text:'A sample board: each teal edge is a connection a student has explained. The amber hexagon is a Depth and Complexity icon.'}))),
     el('section',{class:'sec',id:'how','aria-labelledby':'how-h'},
       el('div',{class:'sec-head'},el('div',{class:'eyebrow',text:'How it works'}),el('h2',{id:'how-h',text:'What is hexagonal thinking?'}),
@@ -2556,9 +2609,23 @@ function renderHome(){
         el('div',null,el('b',{text:'Thinking made visible'}),el('p',{text:'Teachers see not just what students know, but how they link ideas together.'})),
         el('div',null,el('b',{text:'Many right answers'}),el('p',{text:'Two boards can look completely different and both be excellent. Discussion follows naturally.'})),
         el('div',null,el('b',{text:'Works for any subject'}),el('p',{text:'Science processes, historical causes, literary themes, math concepts: anything with ideas to connect.'})))),
+    el('section',{class:'sec',id:'benefits','aria-labelledby':'ben-h'},
+      el('div',{class:'sec-head'},el('div',{class:'eyebrow',text:'Why teachers use it'}),el('h2',{id:'ben-h',text:'The benefits of hexagonal thinking'}),
+        el('p',{text:'Defining a term shows that a student remembers it. Explaining how two terms connect shows that they understand it. Every edge on a hex board is a small piece of reasoning you can read.'})),
+      el('div',{class:'benefits'},HOME_BENEFITS.map(benefitCard)),
+      el('div',{class:'uses'},
+        el('h3',{text:'Ways to use it in class'}),
+        el('div',{class:'uses-grid'},HOME_USES.map(function(u){return el('div',{class:'use'},el('span',{class:'use-when',text:u[0]}),el('b',{text:u[1]}),el('p',{text:u[2]}))})))),
     el('section',{class:'sec',id:'dc','aria-labelledby':'dc-h'},
       el('div',{class:'sec-head'},el('div',{class:'eyebrow',text:'Go deeper'}),el('h2',{id:'dc-h',text:'Depth and Complexity icons'}),
         el('p',{text:'Depth and Complexity is a framework of thinking prompts that pushes students to look deeper into a topic and wider across it. Teachers can add any of its 11 prompts as special amber hexagons. When a student connects a term to an icon, they describe the term through that lens.'})),
+      el('div',{class:'dc-why'},
+        el('div',{class:'dc-why-list'},DC_BENEFITS.map(benefitCard)),
+        el('div',{class:'dc-example'},
+          el('div',{class:'eyebrow',text:'An icon connection in action'}),
+          el('div',{class:'dc-pair'},el('span',{class:'mini-hex term',text:'Glucose'}),el('span',{class:'dc-link','aria-hidden':'true'}),el('span',{class:'mini-hex icon'},glyphSVG('patterns',18),el('span',{text:'Patterns'}))),
+          el('p',{class:'dc-quote',text:'“Plants make glucose every day the sun is up and use it up at night, so the amount rises and falls in a daily cycle.”'}),
+          el('p',{class:'muted',style:'margin:0;font-size:.88rem',text:'Instead of “glucose is a sugar,” the Patterns icon asks the student to notice what repeats. Each icon is a different lens on the same term.'}))),
       el('div',{class:'dc-group'},el('h3',null,'Depth',el('small',{text:'Going deeper into one topic'})),el('div',{class:'dc-grid'},depth.map(dcCard))),
       el('div',{class:'dc-group'},el('h3',null,'Complexity',el('small',{text:'Going wider across topics and time'})),el('div',{class:'dc-grid'},complexity.map(dcCard))),
       el('p',{class:'credit',text:'The Depth and Complexity framework was developed by Dr. Sandra Kaplan and colleagues. The icons on this site are original drawings, not the published icon set.'})),
@@ -2630,34 +2697,83 @@ function prefillCode(code){
   if(button&&button.click)setTimeout(function(){button.click()},0);
 }
 
-/* ---------- Classroom courses become classes ---------- */
-function syncClassroomClasses(courses){
-  if(!TW||!courses)return 0;
-  TW.classes=TW.classes||[];var added=0;
+/* ---------- Classroom courses become classes ----------
+   Imported courses are created as classes in the teacher's saved Hex Space
+   (workspace JSON in D1), so they stay in the class list after reloads and on
+   other devices, without needing Classroom to be connected again. */
+var CLASS_LIMIT=100;
+function hexSpaceClasses(){return ((TW||PX.teacherData||{}).classes)||[];}
+function courseClassName(course){return (String(course.name||'Classroom class')+(course.section?' · '+course.section:'')).slice(0,100);}
+function syncClassroomClasses(courses,ws){
+  ws=ws||TW;
+  if(!ws||!courses)return 0;
+  ws.classes=ws.classes||[];var added=0;PX.classLimitHit=false;
   courses.forEach(function(course){
-    if(TW.classes.some(function(c){return c.classroomId===course.id}))return;
-    TW.classes.push({id:'gc-'+course.id,name:(course.name+(course.section?' · '+course.section:'')).slice(0,100),classroomId:course.id});added++;
+    if(!course||!course.id||ws.classes.some(function(c){return c.classroomId===course.id}))return;
+    if(ws.classes.length>=CLASS_LIMIT){PX.classLimitHit=true;return;}
+    var id='gc-'+course.id;
+    while(ws.classes.some(function(c){return c.id===id}))id='gc-'+uid();
+    ws.classes.push({id:id,name:courseClassName(course),classroomId:course.id});added++;
   });
   return added;
 }
+/* Add any new courses to the Hex Space and save it online. Resolves to the number added. */
+function importCourses(courses){
+  if(!GA.user||!PX.profile||PX.profile.role!=='teacher')return Promise.resolve(0);
+  var ws=TW||(PX.teacherData?clone(PX.teacherData):{version:4,folders:[],classes:[],activities:[]});
+  var n=syncClassroomClasses(courses,ws);
+  if(!n)return Promise.resolve(0);
+  if(TW&&!previewing&&caps.teacher&&isTeacherHash()&&/^#teacher\/(editor|edit-)/.test(location.hash||''))renderTeacher();
+  return saveWorkspaceCloud(ws).then(function(){return n},function(e){
+    if(!TW){PX.teacherData=ws;DATA=clone(ws);} /* keep them for this visit even if the save failed */
+    PX.classSaveFailed=true;throw e;
+  });
+}
+var importingQuietly=null;
+function importCoursesQuietly(courses){
+  if(importingQuietly||PX.saving)return Promise.resolve(0);
+  importingQuietly=importCourses(courses).then(function(n){
+    if(n)toast(n+' Google Classroom class'+(n===1?' was':'es were')+' added to your class list.');
+    return n;
+  },function(){return 0}).finally(function(){importingQuietly=null});
+  return importingQuietly;
+}
+function refreshClassViews(){
+  var h=location.hash||'';
+  if(/^#teacher\/(editor|edit-)/.test(h)&&TW)renderTeacher();
+  else if(/^#teacher(\/class-.*)?$/.test(h))route();
+}
 function importClassroomClasses(){
-  if(!classroomReady('teacher')){connectClassroom('teacher',importClassroomClasses);return;}
+  if(!classroomReady('teacher')){connectClassroom('teacher',importClassroomClasses,true);return;}
   toast('Loading your Google Classroom courses…');
   platformApi('classroom/courses?role=teacher',undefined,true).then(function(r){
     PX.lastCourses=r.courses||[];
     if(!PX.lastCourses.length){toast('No active Google Classroom courses list this account as a teacher.');return;}
-    if(!TW){if(PX.teacherData)DATA=clone(PX.teacherData);startTeacher();}
-    var n=syncClassroomClasses(PX.lastCourses);
-    if(!n){toast('Your Google Classroom classes are already in your Hex Space.');renderTeacher();return;}
-    return saveWorkspaceCloud().then(function(){renderTeacher();toast(n+' Google Classroom class'+(n===1?'':'es')+' added to your class list.')},function(){renderTeacher();toast(n+' class'+(n===1?'':'es')+' added. Select Save online to keep them.')});
+    return importCourses(PX.lastCourses).then(function(n){
+      refreshClassViews();
+      if(!n)toast(PX.classLimitHit?'Your class list is full ('+CLASS_LIMIT+' classes). Remove a class to import more.':'All of your Google Classroom classes are already in your class list.');
+      else toast(n+' Google Classroom class'+(n===1?'':'es')+' added to your class list.'+(PX.classLimitHit?' Some were skipped because the list is full.':''));
+    },function(e){
+      refreshClassViews();
+      toast(e&&e.code==='workspace-conflict'?'Classes added here, but your Hex Space changed on another device. Reload, then import again.':'Classes added for this visit, but saving online failed. Select Save workspace online to keep them.');
+    });
   }).catch(platformError);
 }
+function addClassFromDashboard(){
+  promptDialog('Add a class','Class name','',function(name){
+    var ws=TW||(PX.teacherData?clone(PX.teacherData):{version:4,folders:[],classes:[],activities:[]});
+    ws.classes=ws.classes||[];
+    if(ws.classes.length>=CLASS_LIMIT){toast('Your class list is full ('+CLASS_LIMIT+' classes).');return;}
+    ws.classes.push({id:uid(),name:name.slice(0,100)});
+    saveWorkspaceCloud(ws).then(function(){toast('Class added. Students join it with a code; no Google Classroom needed.')},function(){if(!TW){PX.teacherData=ws;DATA=clone(ws);}toast('Class added for this visit. Saving online failed.')}).then(refreshClassViews);
+  },{placeholder:'e.g. Science club',ok:'Add class',hint:'For classes that aren’t in Google Classroom. Students join with the class code.'});
+}
 var v3Connect=connectClassroom;
-connectClassroom=function(role,after){
+connectClassroom=function(role,after,skipSync){
   v3Connect(role,function(){
-    if(role==='teacher')platformApi('classroom/courses?role=teacher',undefined,true).then(function(r){
+    if(role==='teacher'&&!skipSync)platformApi('classroom/courses?role=teacher',undefined,true).then(function(r){
       PX.lastCourses=r.courses||[];
-      if(TW&&caps.teacher&&!previewing){var n=syncClassroomClasses(PX.lastCourses);if(n){renderTeacher();toast(n+' Google Classroom class'+(n===1?'':'es')+' added. Save online to keep them.')}}
+      return importCoursesQuietly(PX.lastCourses).then(function(n){if(n)refreshClassViews()});
     }).catch(function(){});
     if(after)after();else route();
   });
@@ -2681,7 +2797,11 @@ function postManual(a,c){
   }).catch(platformError);
 }
 function addManualClass(){
-  promptDialog('Add a class','Class name','',function(name){TW.classes.push({id:uid(),name:name.slice(0,100)});ensureBar();renderTeacher();toast('Class added. Students join it with a code; no Google Classroom needed.')},{placeholder:'e.g. Science club',ok:'Add class',hint:'For classes that aren’t in Google Classroom. Students join with the class code.'});
+  promptDialog('Add a class','Class name','',function(name){
+    if(TW.classes.length>=CLASS_LIMIT){toast('Your class list is full ('+CLASS_LIMIT+' classes).');return;}
+    TW.classes.push({id:uid(),name:name.slice(0,100)});renderTeacher();
+    saveWorkspaceCloud().then(function(){renderTeacher();toast('Class added. Students join it with a code; no Google Classroom needed.')},function(){ensureBar();renderTeacher();toast('Class added. Select Save workspace online to keep it.')});
+  },{placeholder:'e.g. Science club',ok:'Add class',hint:'For classes that aren’t in Google Classroom. Students join with the class code.'});
 }
 codesPane=function(a){
   a.assign=a.assign||{};
@@ -2918,7 +3038,7 @@ startTeacher=function(){
   TW.folders=TW.folders||[];
   if(TS.folder&&!folderById(TS.folder))TS.folder=null;
   var cur=curAct();if(cur&&cur.folder&&TS.folder==null)TS.folder=cur.folder;
-  if(PX.lastCourses&&syncClassroomClasses(PX.lastCourses))renderTeacher();
+  if(PX.lastCourses&&PX.lastCourses.length)importCoursesQuietly(PX.lastCourses);
   if(PX.wantNew){PX.wantNew=false;newActivity();setTimeout(function(){var t=document.getElementById('f-title');if(t&&t.focus)t.focus()},40);}
 };
 
@@ -2944,6 +3064,13 @@ route=function(){
   if(h==='#code'&&profileRole()==='student'){var input=document.getElementById('add-code-input');if(input&&input.focus)setTimeout(function(){input.focus();var box=document.getElementById('add-code');if(box&&box.scrollIntoView)box.scrollIntoView({block:'center'})},30);}
 };
 
+/* The homepage is the starting page: a visit to the bare site address opens it,
+   signed in or not. In-app links to "#" still go to the student dashboard. */
+function startPage(){
+  if(location.hash&&location.hash!=='#')return;
+  try{history.replaceState(null,'',location.pathname+(location.search||'')+'#home')}catch(e){location.hash='home'}
+}
+startPage();
 route();
 bootGoogle();
 })();
