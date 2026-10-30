@@ -1,0 +1,2315 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Hexagonal thinking boards: arrange vocabulary hexagons and explain every connection.">
+<title>Hex Connections</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-family:system-ui,-apple-system,sans-serif;font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<style id="hx-style">
+/* Layout: a working honeycomb board with a tile tray beside it (stacked on phones); teacher side is a two-pane setup + dashboard. */
+:root{
+  --paper:#F1F7FF; --panel:#FFFFFF; --ink:#1E2A47; --muted:#55627F; --line:#D2DEEF; --cell:#DCE7F6;
+  --tile:#FFFFFF; --tile-edge:#AFC3E2; --honey:#FFC229; --honey-soft:#FFF0BF; --honey-ink:#7A4E00;
+  --teal:#0B8A82; --teal-soft:#D3F4EF; --danger:#D9472F; --ok:#1E9A55; --shadow:rgba(30,42,71,.13);
+  --blue:#2F6FED; --on-blue:#FFFFFF;
+  --t1:#E1EFFF; --t2:#FFE6DE; --t3:#E2F7E8; --t4:#EEE6FF; --t5:#DDF6F5; --t6:#FFE5F0;
+  --f-display:"Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --f-body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0F1730; --panel:#17213F; --ink:#EAF0FF; --muted:#A5B2D1; --line:#2B3962; --cell:#1F2B50;
+  --tile:#1D2A4F; --tile-edge:#3C5088; --honey:#FFC94D; --honey-soft:#3E3414; --honey-ink:#FFE08A;
+  --teal:#3FD0C4; --teal-soft:#12393A; --danger:#FF8A73; --ok:#5BD68A; --shadow:rgba(0,0,0,.45);
+  --blue:#78A6FF; --on-blue:#0B1430;
+  --t1:#20325E; --t2:#43293A; --t3:#1E3D35; --t4:#2F2A5A; --t5:#183D48; --t6:#42284A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0F1730; --panel:#17213F; --ink:#EAF0FF; --muted:#A5B2D1; --line:#2B3962; --cell:#1F2B50;
+  --tile:#1D2A4F; --tile-edge:#3C5088; --honey:#FFC94D; --honey-soft:#3E3414; --honey-ink:#FFE08A;
+  --teal:#3FD0C4; --teal-soft:#12393A; --danger:#FF8A73; --ok:#5BD68A; --shadow:rgba(0,0,0,.45);
+  --blue:#78A6FF; --on-blue:#0B1430;
+  --t1:#20325E; --t2:#43293A; --t3:#1E3D35; --t4:#2F2A5A; --t5:#183D48; --t6:#42284A; color-scheme:dark}
+
+html,body{background:var(--paper);color:var(--ink)}
+body{font-family:var(--f-body);font-size:15px;line-height:1.5}
+*{box-sizing:border-box}
+button,input,textarea,select{font:inherit;color:inherit}
+#root{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-block:18px 14px;border-bottom:3px solid transparent;border-image:linear-gradient(90deg,var(--blue),var(--teal),var(--honey),var(--danger)) 1;margin-bottom:20px}
+.brand{display:flex;align-items:center;gap:10px;margin-right:auto;min-width:0}
+.brand svg{flex:none}
+.brand h1{font-family:var(--f-display);font-weight:800;font-size:1.35rem;letter-spacing:-.01em;margin:0;line-height:1.1}
+.brand small{display:block;color:var(--muted);font-size:.8rem;letter-spacing:.04em;text-transform:uppercase}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:.8rem;color:var(--muted);background:var(--panel)}
+.chip.ok{color:var(--ok);border-color:currentColor}
+h2{font-family:var(--f-display);font-weight:800;font-size:1.6rem;line-height:1.15;letter-spacing:-.015em;margin:0;text-wrap:balance}
+h3{font-family:var(--f-display);font-weight:600;font-size:1.05rem;margin:0;text-wrap:balance}
+.eyebrow{font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.muted{color:var(--muted)}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:700;font-size:.9rem;line-height:1.2;min-height:38px;text-align:center}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--blue);color:var(--on-blue);border-color:var(--blue)}
+.btn.honey{background:var(--honey);color:#2A1B00;border-color:var(--honey)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn.ghost:hover{color:var(--ink)}
+.btn.danger{color:var(--danger);border-color:currentColor;background:transparent}
+.btn.danger-solid{background:var(--danger);color:var(--panel);border-color:var(--danger)}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.btn.sm{min-height:30px;padding:4px 10px;font-size:.82rem}
+:focus-visible{outline:3px solid var(--honey);outline-offset:2px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.stack{display:flex;flex-direction:column;gap:12px}
+label.fld{display:flex;flex-direction:column;gap:4px;font-weight:700;font-size:.85rem;min-width:0}
+label.fld span.hint,.hint{font-weight:400;color:var(--muted);font-size:.8rem}
+input[type=text],input[type=number],textarea,select{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:8px 10px;width:100%;font-weight:400;font-size:.95rem}
+input[type=file]{max-width:100%;font-size:.85rem}
+textarea{resize:vertical;min-height:90px;line-height:1.45}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.toast-act{margin-left:12px;background:transparent;border:1px solid currentColor;color:inherit;border-radius:6px;padding:3px 10px;font-weight:700;cursor:pointer}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:10px;font-weight:700;font-size:.9rem;box-shadow:0 8px 24px var(--shadow);z-index:60;max-width:min(92vw,520px);text-align:center}
+
+/* ---------- Student board ---------- */
+.act-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:end;margin-bottom:16px}
+.act-head .ins{max-width:65ch;margin:6px 0 0;color:var(--muted)}
+.who{display:flex;gap:8px;flex-wrap:wrap}
+.who input{width:170px}
+.who input.per{width:110px}
+.status{display:flex;gap:16px;flex-wrap:wrap;align-items:center;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel);margin-bottom:14px}
+.stat{display:flex;align-items:baseline;gap:6px}
+.stat b{font-family:var(--f-mono);font-size:1.1rem}
+.stat.done b{color:var(--ok)}
+.status .row{margin-left:auto}
+.play{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:16px;align-items:start}
+.board{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;min-width:0}
+.board-scroll{overflow:auto;max-height:76vh;overscroll-behavior:contain}
+.board-svg{display:block;width:100%;height:auto;max-height:76vh;touch-action:pan-x pan-y;user-select:none;-webkit-user-select:none}
+.board-svg.zoomed{max-height:none}
+.board-tools{position:absolute;top:8px;right:8px;display:flex;gap:4px;z-index:2;flex-wrap:wrap;justify-content:flex-end}
+.board-tools .btn{min-height:32px;min-width:32px;padding:4px 9px;background:var(--panel);box-shadow:0 1px 3px var(--shadow)}
+.board-tools .zl{font-family:var(--f-mono);font-size:.75rem;color:var(--muted);align-self:center;padding:0 2px;background:var(--panel);border-radius:6px}
+.bprev{border:1px solid var(--line);border-radius:10px;background:var(--paper);max-width:340px}
+.bprev .board-svg{max-height:220px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex-wrap:wrap}
+.seg label{display:flex;align-items:center;gap:6px;padding:6px 10px;cursor:pointer;font-size:.86rem;font-weight:700;border-right:1px solid var(--line)}
+.seg label:last-child{border-right:0}
+.seg label:has(input:checked){background:var(--honey-soft)}
+.seg input{accent-color:var(--honey)}
+.cell{fill:var(--paper);stroke:var(--cell);stroke-width:1.5}
+.cell.hot{fill:var(--honey-soft);stroke:var(--honey);stroke-width:2.5}
+.hexg{cursor:grab;touch-action:none}
+.hexg .hx{fill:var(--tile);stroke:var(--tile-edge);stroke-width:1.5}
+.hexg.dc .hx{fill:var(--honey-soft);stroke:var(--honey);stroke-width:2.5}
+.hexg.locked .hx{stroke:var(--teal);stroke-width:2}
+.hexg.sel .hx{stroke:var(--blue);stroke-width:4}
+.hexg.c1 .hx,.tile.c1{fill:var(--t1);background:var(--t1)}
+.hexg.c2 .hx,.tile.c2{fill:var(--t2);background:var(--t2)}
+.hexg.c3 .hx,.tile.c3{fill:var(--t3);background:var(--t3)}
+.hexg.c4 .hx,.tile.c4{fill:var(--t4);background:var(--t4)}
+.hexg.c5 .hx,.tile.c5{fill:var(--t5);background:var(--t5)}
+.hexg.c6 .hx,.tile.c6{fill:var(--t6);background:var(--t6)}
+.hexg.dragging{opacity:.25}
+.hexg .num{font-family:var(--f-mono);font-size:10.5px;font-weight:700;fill:var(--muted)}
+.hexg .term{font-family:var(--f-body);font-weight:700;fill:var(--ink)}
+.hexg .lk{fill:var(--teal)}
+.glyph{fill:none;stroke:var(--honey-ink);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.edge{stroke:var(--teal);stroke-width:5;stroke-linecap:round}
+.badge{cursor:pointer}
+.badge circle{fill:var(--teal);stroke:var(--panel);stroke-width:2}
+.badge text{font-family:var(--f-mono);font-weight:700;font-size:10px;fill:var(--panel)}
+.badge:hover circle,.badge:focus-visible circle{fill:var(--honey)}
+.board-legend{font-size:.75rem;color:var(--muted);display:flex;gap:12px;flex-wrap:wrap;padding:6px 12px;border-top:1px solid var(--line);background:var(--panel)}
+.side{display:flex;flex-direction:column;gap:14px;min-width:0}
+.tray{display:flex;flex-wrap:wrap;gap:4px 6px;padding:10px;border:2px dashed var(--line);border-radius:12px;min-height:120px;align-content:flex-start;background:var(--panel)}
+.tray.over{border-color:var(--honey);background:var(--honey-soft)}
+.tray-empty{color:var(--muted);font-size:.85rem;padding:6px}
+.tile-w{filter:drop-shadow(0 1px 0 var(--tile-edge)) drop-shadow(0 2px 3px var(--shadow))}
+.tile{width:78px;aspect-ratio:0.866;max-width:100%;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:var(--tile);border:0;padding:14px 3px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;text-align:center}
+.tile .n{font-family:var(--f-mono);font-size:.66rem;color:var(--muted);font-weight:700}
+.tile .t{font-weight:700;font-size:.72rem;line-height:1.15;overflow-wrap:anywhere;hyphens:auto}
+.tile .t.l1{font-size:.62rem}
+.tile .t.l2{font-size:.54rem;letter-spacing:-.01em}
+.tile.dc{background:var(--honey-soft)}
+.tile.dc .t{font-size:.6rem}
+.tile.dc svg{width:18px;height:18px}
+.tile.sel{box-shadow:inset 0 0 0 4px var(--blue)}
+.drag-ghost{position:fixed;z-index:50;pointer-events:none;transform:translate(-50%,-50%) scale(1.06);filter:drop-shadow(0 8px 14px var(--shadow))}
+.detail{display:flex;flex-direction:column;gap:10px}
+.detail .def{margin:0;color:var(--ink)}
+.clist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.clist li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:start;font-size:.88rem}
+.clist li.btnrow{display:block}
+.cbtn{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:start;width:100%;text-align:left;background:transparent;border:1px solid transparent;border-radius:8px;padding:6px;cursor:pointer;font-size:.88rem}
+.cbtn:hover{border-color:var(--line);background:var(--paper)}
+.cnum{font-family:var(--f-mono);font-weight:700;font-size:.75rem;background:var(--teal);color:var(--panel);border-radius:999px;padding:1px 7px;margin-top:2px}
+.why{color:var(--muted);overflow-wrap:anywhere}
+.banner{padding:10px 14px;border-radius:10px;background:var(--t1);color:var(--ink);margin-bottom:14px;font-size:.92rem}
+.banner.warn{background:var(--honey-soft)}
+
+/* ---------- Activity picker ---------- */
+.picks{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-top:16px}
+.pick{text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:6px}
+.pick:hover{border-color:var(--honey)}
+
+/* ---------- Modal ---------- */
+.scrim{position:fixed;inset:0;background:rgba(10,16,17,.5);z-index:40;display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.modal{background:var(--panel);border-radius:14px;max-width:560px;width:100%;max-height:100%;overflow:auto;padding:20px;box-shadow:0 20px 50px var(--shadow);display:flex;flex-direction:column;gap:14px}
+.modal.wide{max-width:980px}
+.pair{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:10px;align-items:stretch}
+.pt{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--paper);min-width:0}
+.pt.dc{background:var(--honey-soft);border-color:transparent}
+.pt b{display:block}
+.pt p{margin:4px 0 0;font-size:.82rem;color:var(--muted)}
+.pt.dc p{color:var(--ink)}
+.pair .link{align-self:center;font-family:var(--f-mono);font-weight:700;color:var(--teal)}
+.lens{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:10px;background:var(--honey-soft)}
+.lens svg{flex:none;width:28px;height:28px}
+.choice{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.count{font-size:.8rem;color:var(--muted)}
+.count.ok{color:var(--ok)}
+
+/* ---------- Teacher ---------- */
+.teach{display:grid;grid-template-columns:260px minmax(0,1fr);gap:20px;align-items:start}
+.alist{display:flex;flex-direction:column;gap:6px}
+.aitem{text-align:left;border:1px solid transparent;background:transparent;border-radius:10px;padding:10px 12px;cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.aitem:hover{background:var(--panel);border-color:var(--line)}
+.aitem.on{background:var(--panel);border-color:var(--blue);box-shadow:inset 3px 0 0 var(--blue)}
+.aitem b{font-size:.95rem}
+.aitem span{font-size:.8rem;color:var(--muted)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:14px 0 16px}
+.tab{border:0;background:transparent;padding:8px 12px;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px}
+.tab.on{color:var(--ink);border-bottom-color:var(--blue)}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.dcgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px 12px}
+.dcopt{display:flex;gap:8px;align-items:center;font-size:.88rem;padding:6px 8px;border-radius:8px;border:1px solid var(--line);cursor:pointer}
+.dcopt:has(input:checked){background:var(--honey-soft);border-color:var(--honey)}
+.dcopt svg{flex:none;width:20px;height:20px}
+.vt{display:flex;flex-direction:column;gap:6px}
+.vt-head,.vt-row{display:grid;grid-template-columns:48px minmax(0,1fr) minmax(0,2fr) 96px;gap:8px;align-items:center}
+.vt-head{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.vt-num{font-family:var(--f-mono);font-weight:700;font-size:.8rem;color:var(--ink);text-align:center;border-radius:8px;padding:8px 0;background:var(--paper);border:1px dashed var(--line)}
+.vt-num.c1{background:var(--t1);border:0}.vt-num.c2{background:var(--t2);border:0}.vt-num.c3{background:var(--t3);border:0}.vt-num.c4{background:var(--t4);border:0}.vt-num.c5{background:var(--t5);border:0}.vt-num.c6{background:var(--t6);border:0}
+.vt-del{min-height:36px;padding:4px 10px;border:1.5px solid var(--danger);background:var(--panel);color:var(--danger);font-size:.85rem;font-weight:700;gap:5px;justify-self:stretch;white-space:nowrap}
+.vt-del .ic{font-size:1rem;line-height:1}
+.vt-del:hover{background:var(--danger);color:var(--panel)}
+.vt-del[disabled]{opacity:1;border-color:var(--line);color:var(--muted);background:transparent;cursor:not-allowed}
+.vt-del[disabled]:hover{background:transparent;color:var(--muted)}
+.vt-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+@media (max-width:600px){
+  .vt-head{display:none}
+  .vt-row{grid-template-columns:48px minmax(0,1fr) auto;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .vt-row .vt-num{grid-row:1 / 3}
+  .vt-row .vt-def{grid-column:2;grid-row:2}
+  .vt-row .vt-del{grid-column:3;grid-row:1}
+}
+.gate{max-width:460px;margin:24px auto 0;display:flex;flex-direction:column;gap:14px}
+.gate .panel{display:flex;flex-direction:column;gap:12px}
+#st-code{font-family:var(--f-mono);font-size:1.5rem;letter-spacing:.18em;text-transform:uppercase;text-align:center;padding:12px}
+.err{margin:0;color:var(--danger);font-weight:700}
+.codebig{font-family:var(--f-mono);font-size:1.5rem;font-weight:700;letter-spacing:.1em;color:var(--ink);background:var(--t1);border-radius:10px;padding:6px 14px}
+.cls-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.cls-card{display:flex;flex-direction:column;gap:10px}
+.cls-card.off{background:var(--paper)}
+.cls-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
+.chip.late{color:var(--danger);border-color:currentColor}
+.chip.due{color:var(--ink);background:var(--honey-soft);border-color:transparent}
+.side-h{display:flex;justify-content:space-between;align-items:center;margin-top:14px}
+.btn.ai{background:var(--t4);border-color:transparent;color:var(--ink)}
+.gen-list{display:flex;flex-direction:column;gap:4px;max-height:46vh;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:6px}
+.gen-item{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;padding:6px 8px;border-radius:8px;cursor:pointer}
+.gen-item:hover{background:var(--paper)}
+.gen-item b{display:block}
+.gen-item span{color:var(--muted);font-size:.86rem}
+.thinking{display:flex;gap:10px;align-items:center;color:var(--muted)}
+.dots{display:inline-flex;gap:4px}.dots i{width:7px;height:7px;border-radius:50%;background:var(--blue);animation:pulse 1s infinite ease-in-out}
+.dots i:nth-child(2){animation-delay:.15s}.dots i:nth-child(3){animation-delay:.3s}
+@keyframes pulse{0%,100%{opacity:.25}50%{opacity:1}}
+.tscroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--paper)}
+tr:last-child td{border-bottom:0}
+td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.savebar{position:sticky;bottom:calc(10px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px;border-radius:12px;background:var(--ink);color:var(--paper);margin-top:16px;box-shadow:0 8px 24px var(--shadow)}
+.savebar .btn{background:var(--honey);border-color:var(--honey);color:#2A1B00}
+.savebar .btn.ghost{background:transparent;border-color:transparent;color:var(--paper)}
+.codebox{font-family:var(--f-mono);font-size:.75rem;word-break:break-all}
+.linkcode{font-family:var(--f-mono);background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:2px 8px}
+
+@media (max-width:900px){
+  .play{grid-template-columns:minmax(0,1fr)}
+  .teach{grid-template-columns:minmax(0,1fr)}
+  .alist{flex-direction:row;overflow-x:auto;padding-bottom:4px}
+  .aitem{flex:none;max-width:220px}
+  .act-head{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:600px){
+  .grid2,.choice{grid-template-columns:minmax(0,1fr)}
+  .who input,.who input.per{width:100%}
+  .status .row{margin-left:0}
+  .pair{grid-template-columns:minmax(0,1fr)}
+  .pair .link{justify-self:center}
+  .tile{width:70px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+<div id="root"></div>
+<script type="application/json" id="hx-data">{"version":4,"classes":[],"activities":[]}</script>
+<!-- Public Firebase web configuration. Classroom permissions are checked by the server. -->
+<script type="application/json" id="hx-auth-config">{
+  "firebase": {
+    "apiKey": "AIzaSyDoKGDkeoowOISA8tMBuoNgh6mPXeCxqh0",
+    "authDomain": "hex-connections-a5214.firebaseapp.com",
+    "projectId": "hex-connections-a5214",
+    "storageBucket": "hex-connections-a5214.firebasestorage.app",
+    "messagingSenderId": "186652811329",
+    "appId": "1:186652811329:web:d361f28afb2df4816666c0",
+    "measurementId": "G-YRTB93FTB2"
+  }
+}</script>
+<script id="hx-main">
+(function(){
+'use strict';
+var FONT_HREF = 'https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=JetBrains+Mono:wght@500;700&display=swap';
+var DATA;
+try { DATA = JSON.parse(document.getElementById('hx-data').textContent); } catch(e){ DATA = {version:2, activities:[]}; }
+if(!DATA.activities) DATA.activities = [];
+if(!DATA.classes) DATA.classes = [];
+DATA.activities.forEach(function(a){ (a.terms||[]).forEach(function(t){ if (!t.id) t.id = t.n; a.idSeq = Math.max(a.idSeq || 0, t.id); }); });
+
+var SQ3 = Math.sqrt(3), R = 46;
+var DIRS = [[1,0],[1,-1],[0,-1],[-1,0],[-1,1],[0,1]];
+var SVGNS = 'http://www.w3.org/2000/svg';
+var root = document.getElementById('root');
+
+/* Firebase signs users in; the Cloudflare API enforces ownership and Classroom membership. */
+var AUTH_CONFIG;
+try { AUTH_CONFIG = JSON.parse(document.getElementById('hx-auth-config').textContent); }
+catch(e){ AUTH_CONFIG = {}; }
+AUTH_CONFIG.firebase = AUTH_CONFIG.firebase || {};
+var GA = { user:null, ready:false, busy:false, error:'', auth:null, sdk:null };
+function googleConfigured(){
+  return ['apiKey','authDomain','projectId','appId'].every(function(k){ return typeof AUTH_CONFIG.firebase[k] === 'string' && !!AUTH_CONFIG.firebase[k].trim(); });
+}
+function googleTeacher(){ return !!(GA.user && typeof PX!=='undefined' && PX.profile && PX.profile.role==='teacher'); }
+function googleError(error){
+  var messages = {
+    'auth/popup-blocked':'Your browser blocked the Google window. Allow pop-ups for this site and try again.',
+    'auth/popup-closed-by-user':'Sign-in was canceled. Select Sign in with Google to try again.',
+    'auth/cancelled-popup-request':'Another sign-in window was opened. Finish signing in there, or try again.',
+    'auth/unauthorized-domain':'This website’s domain must be added to Authorized domains in Firebase Authentication.',
+    'auth/operation-not-allowed':'The site owner needs to enable Google in Firebase Authentication.',
+    'auth/network-request-failed':'Google could not be reached. Check your internet connection and try again.',
+    'auth/invalid-api-key':'The site owner needs to check the Firebase web app configuration.',
+    'auth/web-storage-unsupported':'Sign-in needs browser storage. Enable storage for this site and try again.',
+    'auth/user-disabled':'This account has been disabled for this site. Contact your teacher.'
+  };
+  return messages[error && error.code] || 'Google sign-in is unavailable. Try again, or ask the site owner to check the Firebase configuration and network access.';
+}
+function renderGoogleGate(){
+  var configured = googleConfigured();
+  var heading = !configured ? 'Google sign-in needs setup' : (!GA.ready && !GA.error ? 'Connecting to Google…' : 'Sign in to Hex Connections');
+  fill(root, topBar(), el('div',{class:'gate'}, el('div',{class:'panel'},
+    el('div',{class:'eyebrow',text:'Welcome'}), el('h2',{text:heading}),
+    el('p',{class:'muted',style:'margin:0',text:configured ? 'Sign in with Google to create a teacher or student account and open your Classroom assignments.' : 'The site owner needs to add the Firebase configuration and enable Google sign-in. See the included README.txt.'}),
+    GA.error ? el('p',{class:'err',role:'alert',text:GA.error}) : null,
+    configured && GA.auth ? el('div',{class:'stack'},
+      el('button',{class:'btn primary',disabled:GA.busy,onclick:function(){PX.loginRole='teacher';googleSignIn()},text:GA.busy?'Signing in…':'Teacher · Sign in with Google'}),
+      el('button',{class:'btn honey',disabled:GA.busy,onclick:function(){PX.loginRole='student';googleSignIn()},text:GA.busy?'Signing in…':'Student · Sign in with Google'})) : null,
+    configured && !GA.auth && GA.error ? el('button',{class:'btn',onclick:function(){ location.reload(); },text:'Retry connection'}) : null,
+    el('p',{class:'hint',text:'Your account keeps your assignments and saved boards together. Connect Google Classroom when prompted. Sign out on shared computers.'})
+  )));
+}
+function googleSignIn(){
+  if (GA.busy || !GA.auth) return;
+  GA.busy = true; GA.error = '';
+  var provider = new GA.sdk.GoogleAuthProvider();
+  provider.setCustomParameters({prompt:'select_account'});
+  // Open the popup directly in the click handler (no preceding await).
+  var task;
+  try { task = GA.sdk.signInWithPopup(GA.auth, provider); }
+  catch(e){ task = Promise.reject(e); }
+  renderGoogleGate();
+  task.catch(function(e){ GA.error = googleError(e); }).finally(function(){ GA.busy = false; route(); });
+}
+function googleSignOut(){
+  if (!GA.auth || GA.busy) return;
+  saveDraft(); saveWork();
+  GA.busy = true;
+  GA.sdk.signOut(GA.auth).catch(function(){ toast('Sign-out failed. Check your connection and try again.'); }).finally(function(){ GA.busy = false; route(); });
+}
+function clearAccountView(){
+  closeModal();
+  var t = document.getElementById('toast'); if(t) t.remove();
+  ST = null; TW = null; refs = {}; previewing = false;
+  TS = { sel:null, tab:'setup', period:'all', cls:'all', subs:[], imports:[], localImports:[], confirmDel:false, busy:false, subsReady:false, importDraft:'' };
+}
+function bootGoogle(){
+  caps.standalone = true;
+  if (!googleConfigured()){ GA.ready = true; caps.ready = true; route(); return; }
+  if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1'){
+    GA.ready = true; caps.ready = true;
+    GA.error = 'Open this site from its HTTPS website address. Google sign-in cannot run from a downloaded file.';
+    route(); return;
+  }
+  var base = 'https://www.gstatic.com/firebasejs/13.1.0/';
+  Promise.all([import(base + 'firebase-app.js'), import(base + 'firebase-auth.js')]).then(function(modules){
+    GA.sdk = modules[1];
+    GA.auth = GA.sdk.getAuth(modules[0].initializeApp(AUTH_CONFIG.firebase));
+    GA.auth.useDeviceLanguage();
+    return GA.sdk.setPersistence(GA.auth, GA.sdk.browserSessionPersistence);
+  }).then(function(){
+    GA.sdk.onAuthStateChanged(GA.auth, function(user){
+      var changed = (GA.user && GA.user.uid) !== (user && user.uid);
+      if (changed) clearAccountView();
+      GA.user = user; GA.ready = true; GA.error = ''; caps.ready = true;
+      caps.teacher = isTeacherHash() && googleTeacher();
+      // Leave caps.db null: Firebase is used only for authentication.
+      route();
+    }, function(e){ GA.user = null; clearAccountView(); GA.ready = true; GA.error = googleError(e); route(); });
+  }).catch(function(e){ GA.ready = true; caps.ready = true; GA.error = googleError(e); route(); });
+}
+
+
+/* Depth & Complexity: original glyphs drawn for this page (24-unit box, stroke only) */
+var DC = [
+  {k:'language', name:'Language of the Discipline', hint:'What words would an expert in this subject use to talk about it?', d:'M4 5h16v10H10l-4 4v-4H4z M8 9h8 M8 12h5'},
+  {k:'details', name:'Details', hint:'What specific facts, parts or features describe it?', d:'M10 4a6 6 0 1 0 0 12a6 6 0 1 0 0-12z M14.5 14.5L20 20'},
+  {k:'patterns', name:'Patterns', hint:'What repeats or is predictable about it?', d:'M3 15l3-6 3 6 3-6 3 6 3-6 3 6'},
+  {k:'rules', name:'Rules', hint:'What laws, structures or rules govern it?', d:'M5 6h14 M5 12h14 M5 18h9 M17 16l1.5 1.5L21 15'},
+  {k:'trends', name:'Trends', hint:'What factors influence it or push it in a direction over time?', d:'M3 18l6-6 4 4 8-8 M15 8h6v6'},
+  {k:'unanswered', name:'Unanswered Questions', hint:'What is still unknown, unclear or worth investigating about it?', d:'M8.5 9a3.5 3.5 0 1 1 5 3.2c-1 .5-1.5 1.2-1.5 2.3V16 M12 19.5v.5'},
+  {k:'ethics', name:'Ethics', hint:'What is right, wrong or debatable about it?', d:'M12 4v16 M7 20h10 M5 8h14 M5 8l-3 6h6z M19 8l-3 6h6z'},
+  {k:'bigidea', name:'Big Idea', hint:'What larger concept or generalization does it belong to?', d:'M9 18h6 M10 21h4 M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z'},
+  {k:'perspectives', name:'Multiple Perspectives', hint:'How would different people, roles or groups see it?', d:'M2 12s4-6.5 10-6.5S22 12 22 12s-4 6.5-10 6.5S2 12 2 12z M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6z'},
+  {k:'change', name:'Change Over Time', hint:'How has it changed, or how does it change, over time?', d:'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18z M12 7v5l3 2'},
+  {k:'across', name:'Across Disciplines', hint:'How does it connect to another subject or field?', d:'M9 6a6 6 0 1 0 0 12a6 6 0 1 0 0-12z M15 6a6 6 0 1 0 0 12a6 6 0 1 0 0-12z'}
+];
+var DCI = {}; DC.forEach(function(d,i){ DCI[d.k] = i; });
+
+/* ---------------- tiny helpers ---------------- */
+function el(tag, attrs){ var e = document.createElement(tag); setAttrs(e, attrs); for (var i=2;i<arguments.length;i++) add(e, arguments[i]); return e; }
+function sv(tag, attrs){ var e = document.createElementNS(SVGNS, tag); setAttrs(e, attrs); for (var i=2;i<arguments.length;i++) add(e, arguments[i]); return e; }
+function setAttrs(e, a){
+  if(!a) return;
+  Object.keys(a).forEach(function(k){
+    var v = a[k];
+    if (v === null || v === undefined || v === false) return;
+    if (k.slice(0,2) === 'on' && typeof v === 'function') e.addEventListener(k.slice(2), v);
+    else if (k === 'text') e.textContent = v;
+    else if (k === 'value') e.value = v;
+    else if (k === 'checked') e.checked = !!v;
+    else e.setAttribute(k, v === true ? '' : v);
+  });
+}
+function add(e, c){
+  if (c === null || c === undefined || c === false) return;
+  if (Array.isArray(c)) { c.forEach(function(x){ add(e, x); }); return; }
+  e.appendChild(typeof c === 'object' ? c : document.createTextNode(String(c)));
+}
+/* replace a node's children; null/false entries are skipped and arrays are flattened */
+function fill(node){ node.replaceChildren(); for (var i=1;i<arguments.length;i++) add(node, arguments[i]); return node; }
+function fitCls(t){ var w = Math.max.apply(null, String(t).split(/\s+/).map(function(x){ return x.length; })); return w >= 10 ? 't l2' : w >= 8 ? 't l1' : 't'; }
+function glyphSVG(k, size){ var d = DC[DCI[k]]; return sv('svg',{viewBox:'0 0 24 24',width:size||20,height:size||20,'aria-hidden':'true'}, sv('path',{class:'glyph',d:d?d.d:''})); }
+function clone(o){ return JSON.parse(JSON.stringify(o)); }
+function words(s){ return (s||'').trim().split(/\s+/).filter(Boolean).length; }
+function pkey(a,b){ return a<b ? a+'-'+b : b+'-'+a; }
+function accountKey(k){ return 'hx-account:' + AUTH_CONFIG.firebase.projectId + ':' + (GA.user ? GA.user.uid : 'signed-out') + ':' + k; }
+function lsGet(k){ try { var v = localStorage.getItem(accountKey(k)); return v ? JSON.parse(v) : null; } catch(e){ return null; } }
+function lsSet(k,v){ try { localStorage.setItem(accountKey(k), JSON.stringify(v)); } catch(e){} }
+function uid(){ return Math.random().toString(36).slice(2,8) + Date.now().toString(36).slice(-3); }
+function fmtTime(iso){ if(!iso) return ''; var d = new Date(iso); if(isNaN(d)) return ''; return d.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); }
+function b64d(s){ var bin = atob(s), b = new Uint8Array(bin.length); for (var i=0;i<bin.length;i++) b[i]=bin.charCodeAt(i); return new TextDecoder().decode(b); }
+function slug(s){ return (s||'hex').replace(/[^\w\- ]+/g,'').trim().replace(/\s+/g,'-').toLowerCase().slice(0,40) || 'hex'; }
+
+var CODE_ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+function normCode(x){ return String(x||'').toUpperCase().replace(/[^A-Z0-9]/g,''); }
+function fmtCode(c){ return c.length === 6 ? c.slice(0,3) + '-' + c.slice(3) : c; }
+function usedCodes(data){ var u = {}; data.activities.forEach(function(a){ Object.keys(a.assign||{}).forEach(function(k){ u[a.assign[k].code] = 1; }); }); return u; }
+function newCode(data){ var u = usedCodes(data), c; do { c = ''; for (var i=0;i<6;i++) c += CODE_ABC[Math.floor(Math.random()*CODE_ABC.length)]; } while (u[c]); return c; }
+function classOf(data, id){ return (data.classes||[]).filter(function(c){ return c.id === id; })[0] || null; }
+function findByCode(code){
+  code = normCode(code); var hit = null;
+  DATA.activities.forEach(function(a){ Object.keys(a.assign||{}).forEach(function(cid){ var g = a.assign[cid]; if (g.code === code){ var c = classOf(DATA, cid); if (c) hit = { act:a, cls:c, asg:g }; } }); });
+  return hit;
+}
+function dueEnd(due){ if (!due) return null; var d = new Date(due + 'T23:59:59'); return isNaN(d) ? null : d; }
+function isLate(due, iso){ var e = dueEnd(due); return !!(e && iso && new Date(iso) > e); }
+function fmtDue(due){ var d = new Date(due + 'T12:00:00'); return isNaN(d) ? due : d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}); }
+/* minimum terms to use: blank means every term; a term counts once it's on the board with a justified connection */
+function needTerms(act){ var n = (act.terms||[]).length, m = act.minTerms; return (m === null || m === undefined || m === '') ? n : Math.min(n, Math.max(0, +m || 0)); }
+function termsUsedIn(conns){ var u = {}; (conns||[]).forEach(function(c){ if (c.a < 1000) u[c.a] = 1; if (c.b < 1000) u[c.b] = 1; }); return Object.keys(u).length; }
+var DEFAULT_INS = 'Drag every term onto the board. Each time two hexagons touch, explain how the two ideas are connected.';
+/* every hexagon in an activity: term hexes (T#) plus any Depth & Complexity hexes (DC#) */
+function hexList(act){
+  var out = (act.terms||[]).map(function(t, i){ return { id:t.id || t.n, kind:'term', label:'T'+(i+1), ci:(i%6)+1, name:t.term, def:t.def||'' }; });
+  if (act.dcOn) (act.dc||[]).filter(function(k){ return k in DCI; }).sort(function(a,b){ return DCI[a]-DCI[b]; }).forEach(function(k, i){
+    var d = DC[DCI[k]]; out.push({ id:1001+DCI[k], kind:'dc', key:k, label:'DC'+(i+1), name:d.name, def:d.hint });
+  });
+  return out;
+}
+function hexMap(act){ var m = {}; hexList(act).forEach(function(h){ m[h.id] = h; }); return m; }
+function iconOf(H, a, b){ var n = [H[a], H[b]].filter(function(h){ return h && h.kind === 'dc'; }).map(function(h){ return h.name; }); return n.join(' & '); }
+
+var toastTimer;
+function toast(msg, action){
+  var t = document.getElementById('toast');
+  if(!t){ t = el('div',{id:'toast',class:'toast',role:'status','aria-live':'polite'}); document.body.appendChild(t); }
+  fill(t, el('span',{text:msg}), action ? el('button',{class:'toast-act',onclick:function(){ t.hidden = true; action.fn(); },text:action.label}) : null);
+  t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(function(){ t.hidden = true; }, action ? 7000 : 3400);
+}
+
+var modalClose = null;
+function openModal(content, opts){
+  closeModal();
+  opts = opts || {};
+  var box = el('div',{class:'modal'+(opts.wide?' wide':''),role:'dialog','aria-modal':'true'}, content);
+  var scrim = el('div',{class:'scrim',id:'scrim'}, box);
+  scrim.addEventListener('pointerdown', function(e){ if(e.target === scrim && opts.dismiss !== false){ (opts.onDismiss||closeModal)(); } });
+  document.body.appendChild(scrim);
+  modalClose = opts.onDismiss || closeModal;
+  setTimeout(function(){ var f = box.querySelector('[data-autofocus]') || box.querySelector('textarea,input,button'); if(f) f.focus(); }, 30);
+}
+function closeModal(){ var s = document.getElementById('scrim'); if(s) s.remove(); modalClose = null; }
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && modalClose) modalClose(); });
+
+function copyText(text, label){
+  var done = function(){ toast((label||'Text') + ' copied.'); };
+  var fail = function(){
+    var ta = el('textarea',{class:'codebox',rows:8,readonly:true,value:text});
+    openModal([el('h3',{text:'Copy this'}), el('p',{class:'muted',style:'margin:0',text:'Your browser blocked automatic copying. Select the text below and copy it.'}), ta, el('div',{class:'row'}, el('button',{class:'btn primary',text:'Done',onclick:closeModal}))]);
+    setTimeout(function(){ ta.focus(); ta.select(); }, 50);
+  };
+  try { navigator.clipboard.writeText(text).then(done, fail); } catch(e){ fail(); }
+}
+function csvCell(v){ v = v == null ? '' : String(v); return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v; }
+function toCSV(rows){ return rows.map(function(r){ return r.map(csvCell).join(','); }).join('\r\n'); }
+function parseCSV(text){
+  var rows=[], row=[], f='', q=false;
+  text = (text||'').replace(/^﻿/,'');
+  for (var i=0;i<text.length;i++){
+    var c = text[i];
+    if (q){ if (c === '"'){ if (text[i+1] === '"'){ f+='"'; i++; } else q=false; } else f+=c; }
+    else if (c === '"') q = true;
+    else if (c === ','){ row.push(f); f=''; }
+    else if (c === '\n'){ row.push(f); rows.push(row); row=[]; f=''; }
+    else if (c !== '\r') f += c;
+  }
+  if (f !== '' || row.length){ row.push(f); rows.push(row); }
+  return rows.filter(function(r){ return r.some(function(x){ return x.trim(); }); });
+}
+function parseTerms(text){
+  var seps = ['\t',' | ','|',' — ',' – ',' - ',': '];
+  return (text||'').split('\n').map(function(l){ return l.trim(); }).filter(Boolean).slice(0,60).map(function(l, i){
+    var t = l, d = '';
+    for (var s=0;s<seps.length;s++){ var k = l.indexOf(seps[s]); if (k > 0){ t = l.slice(0,k).trim(); d = l.slice(k+seps[s].length).trim(); break; } }
+    return { n: i+1, term: t.slice(0,60), def: d.slice(0,400) };
+  });
+}
+function termsToText(terms){ return (terms||[]).map(function(t){ return t.term + (t.def ? ' | ' + t.def : ''); }).join('\n'); }
+function readFile(file){ return new Promise(function(res, rej){ var r = new FileReader(); r.onload = function(){ res(String(r.result||'')); }; r.onerror = rej; r.readAsText(file); }); }
+
+/* ---------------- platform capabilities ---------------- */
+var caps = { ready:false, user:null, db:null, artifact:null, downloads:null, sample:null, uid:null, teacher:false, standalone:false };
+/* standalone retains CSV/local rendering; the platform integration below adds the shared API. */
+function isTeacherHash(){ return /^#teacher\b/i.test(location.hash || ''); }
+function siteLink(hash){ return location.origin + location.pathname + hash; }
+function downloadBlob(filename, text, type){
+  var url = URL.createObjectURL(new Blob([text], { type: type || 'text/plain' }));
+  var a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 1000);
+}
+function waitClaude(ms){
+  return new Promise(function(res){
+    var t0 = Date.now();
+    (function poll(){ if (window.claude && window.claude.use) res(window.claude); else if (Date.now()-t0 > ms) res(null); else setTimeout(poll, 100); })();
+  });
+}
+function use(c, name){ try { return c.use(name).catch(function(){ return null; }); } catch(e){ return Promise.resolve(null); } }
+
+/* save a file for the viewer, falling back to copyable text */
+function saveFile(filename, text, what){
+  var fallback = function(){
+    var ta = el('textarea',{class:'codebox',rows:10,readonly:true,value:text});
+    openModal([el('h3',{text:'Save this text'}), el('p',{style:'margin:0',text:'Downloads aren’t available in this view. Copy the text below into a file named ' + filename + ' (or a doc you can come back to). You can paste it back into “Open saved file” later.'}), ta,
+      el('div',{class:'row',style:'justify-content:flex-end'}, el('button',{class:'btn ghost',onclick:closeModal,text:'Close'}), el('button',{class:'btn primary',onclick:function(){ copyText(text, what); },text:'Copy text'}))]);
+  };
+  if (caps.standalone){ try { downloadBlob(filename, text, 'text/csv'); toast((what||'File') + ' saved as ' + filename + '.'); } catch(e){ fallback(); } return; }
+  if (!caps.downloads){ fallback(); return; }
+  caps.downloads.save({ filename: filename, data: text }).then(function(){ toast((what||'File') + ' saved as ' + filename + '.'); }, function(err){ if (err && err.code === 'declined') return; fallback(); });
+}
+
+/* ---------------- geometry ---------------- */
+/* Axial coordinates never change; "flat" is the pointy layout rotated 30 degrees, so turning the board keeps every connection. */
+var C30 = Math.cos(Math.PI/6), S30 = 0.5, MAXD = 14;
+var SHAPES = [
+  {k:'hexagon', name:'Honeycomb', hint:'A round hexagon of cells'},
+  {k:'wide', name:'Wide', hint:'Landscape rectangle, good for timelines and chains'},
+  {k:'tall', name:'Tall', hint:'Portrait rectangle, good for hierarchies and flows'},
+  {k:'open', name:'Open', hint:'Starts small and grows wherever students build'}
+];
+var ROOM = [ {k:'snug', name:'Snug', f:1.5}, {k:'roomy', name:'Roomy', f:2.5}, {k:'spacious', name:'Spacious', f:4} ];
+function boardOf(act){ var b = act.board || {}; return { shape: b.shape || 'hexagon', size: b.size || 'roomy', orient: b.orient === 'flat' ? 'flat' : 'pointy', rotate: b.rotate !== false }; }
+function hexDist(q,r){ return Math.max(Math.abs(q),Math.abs(r),Math.abs(q+r)); }
+function onBoardLimit(q,r){ return hexDist(q,r) <= MAXD; }
+function center(q,r,o){ var x = R*SQ3*(q + r/2), y = R*1.5*r; return o === 'flat' ? [x*C30 - y*S30, x*S30 + y*C30] : [x, y]; }
+function hexPts(cx,cy,rad,o){ var off = o === 'flat' ? 0 : -30, p=[]; for (var i=0;i<6;i++){ var a = Math.PI/180*(60*i+off); p.push((cx+rad*Math.cos(a)).toFixed(1)+','+(cy+rad*Math.sin(a)).toFixed(1)); } return p.join(' '); }
+/* every cell on the board: the teacher's base shape plus room around anything already placed, so building at an edge grows the board */
+function boardCells(act, place, o){
+  var b = boardOf(act), n = Math.max(hexList(act).length, 1);
+  var f = (ROOM.filter(function(x){ return x.k === b.size; })[0] || ROOM[1]).f;
+  var target = Math.max(Math.round(n * f), 19);
+  var set = {}, list = [];
+  function addc(q,r){ var k = q+','+r; if (!set[k] && onBoardLimit(q,r)){ set[k] = 1; list.push([q,r]); } }
+  var q, r;
+  if (b.shape === 'open'){ for (q=-2;q<=2;q++) for (r=-2;r<=2;r++) if (hexDist(q,r) <= 2) addc(q,r); }
+  else if (b.shape === 'hexagon'){ var N = 2; while (1 + 3*N*(N+1) < target && N < MAXD) N++; for (q=-N;q<=N;q++) for (r=-N;r<=N;r++) if (hexDist(q,r) <= N) addc(q,r); }
+  else {
+    var area = target * 1.15 * 2.598 * R * R, ar = 1.75, W = Math.sqrt(area*ar)/2, Hh = W/ar;
+    if (b.shape === 'tall'){ var t = W; W = Hh; Hh = t; }
+    for (q=-MAXD;q<=MAXD;q++) for (r=-MAXD;r<=MAXD;r++){ if (!onBoardLimit(q,r)) continue; var c = center(q,r,o); if (Math.abs(c[0]) <= W + 1 && Math.abs(c[1]) <= Hh + 1) addc(q,r); }
+  }
+  var grow = b.shape === 'open' ? 2 : 1;
+  Object.keys(place||{}).forEach(function(k){ var p = place[k]; for (var dq=-grow;dq<=grow;dq++) for (var dr=-grow;dr<=grow;dr++) if (hexDist(dq,dr) <= grow) addc(p[0]+dq, p[1]+dr); });
+  return { list:list, set:set };
+}
+function pixToHex(x,y,o){
+  if (o === 'flat'){ var x2 = x*C30 + y*S30, y2 = -x*S30 + y*C30; x = x2; y = y2; }
+  var q = (SQ3/3*x - y/3)/R, r = (2/3*y)/R, s = -q-r;
+  var rq = Math.round(q), rr = Math.round(r), rs = Math.round(s);
+  var dq = Math.abs(rq-q), dr = Math.abs(rr-r), ds = Math.abs(rs-s);
+  if (dq > dr && dq > ds) rq = -rr-rs; else if (dr > ds) rr = -rq-rs;
+  return [rq, rr];
+}
+function wrapText(text, maxC, maxLines){
+  var out = [], cur = '';
+  text.split(/\s+/).forEach(function(w){
+    while (w.length > maxC){ if (cur){ out.push(cur); cur=''; } out.push(w.slice(0,maxC-1)+'-'); w = w.slice(maxC-1); }
+    if (!cur) cur = w; else if ((cur+' '+w).length <= maxC) cur += ' ' + w; else { out.push(cur); cur = w; }
+  });
+  if (cur) out.push(cur);
+  if (out.length > maxLines){ out = out.slice(0,maxLines); out[maxLines-1] = out[maxLines-1].slice(0,maxC-1) + '…'; }
+  return out;
+}
+function wrapTerm(term){
+  var l = wrapText(term, 11, 9);
+  if (l.length > 3) return { lines: wrapText(term, 14, 4), size: 10.5 };
+  return { lines: l, size: 12.5 };
+}
+
+/* positions -> adjacency */
+function posIndex(place){ var m = {}; Object.keys(place||{}).forEach(function(n){ m[place[n][0]+','+place[n][1]] = +n; }); return m; }
+function neighborsOf(n, place){
+  var p = place[n]; if (!p) return [];
+  var idx = posIndex(place), out = [];
+  DIRS.forEach(function(d){ var m = idx[(p[0]+d[0])+','+(p[1]+d[1])]; if (m) out.push(m); });
+  return out;
+}
+function adjacentPairs(place){
+  var idx = posIndex(place), seen = {}, out = [];
+  Object.keys(place).forEach(function(n){
+    n = +n; var p = place[n];
+    DIRS.forEach(function(d){ var m = idx[(p[0]+d[0])+','+(p[1]+d[1])]; if (m){ var k = pkey(n,m); if (!seen[k]){ seen[k]=1; out.push([Math.min(n,m),Math.max(n,m)]); } } });
+  });
+  return out;
+}
+/* justified, currently-touching connections, numbered by when they were made */
+function activeConns(place, conns){
+  return adjacentPairs(place).map(function(pr){ var c = conns[pkey(pr[0],pr[1])]; return c && c.why ? {a:pr[0], b:pr[1], why:c.why, at:c.at||0} : null; })
+    .filter(Boolean).sort(function(x,y){ return x.at - y.at || x.a - y.a || x.b - y.b; })
+    .map(function(c,i){ c.num = i+1; return c; });
+}
+
+/* ---------------- board renderer (shared by student + teacher review) ---------------- */
+function boardSVG(act, place, conns, opt){
+  opt = opt || {};
+  var H = hexMap(act), o = opt.orient || boardOf(act).orient;
+  var cells = opt.cells || boardCells(act, place, o);
+  var minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+  cells.list.forEach(function(cr){ var c = center(cr[0],cr[1],o); minX = Math.min(minX,c[0]); maxX = Math.max(maxX,c[0]); minY = Math.min(minY,c[1]); maxY = Math.max(maxY,c[1]); });
+  var pad = R + 8;
+  var svg = sv('svg',{class:'board-svg',viewBox:(minX-pad).toFixed(1)+' '+(minY-pad).toFixed(1)+' '+(maxX-minX+2*pad).toFixed(1)+' '+(maxY-minY+2*pad).toFixed(1),role:'img','aria-label':'Hexagon board for ' + act.title});
+  var g = sv('g'); svg.appendChild(g);
+  var occ = posIndex(place);
+  cells.list.forEach(function(cr){
+    var q = cr[0], r = cr[1], c = center(q,r,o);
+    var poly = sv('polygon',{class:'cell',points:hexPts(c[0],c[1],R-1,o),'data-cell':q+','+r});
+    if (opt.onCell && !occ[q+','+r]) poly.addEventListener('click', function(){ opt.onCell(q,r); });
+    g.appendChild(poly);
+  });
+  var live = activeConns(place, conns);
+  var locked = {};
+  live.forEach(function(cn){ locked[cn.a]=1; locked[cn.b]=1; });
+  Object.keys(place).forEach(function(n){
+    n = +n; var h = H[n]; if (!h) return;
+    var c = center(place[n][0], place[n][1], o);
+    var gg = sv('g',{class:'hexg' + (h.kind==='dc'?' dc':' c'+h.ci) + (locked[n]?' locked':'') + (opt.selected===n?' sel':''), 'data-n':n, tabindex: opt.interactive ? 0 : null, role: opt.interactive ? 'button':null, 'aria-label': h.label+' '+h.name + (locked[n]?' (locked)':'')});
+    gg.appendChild(sv('polygon',{class:'hx',points:hexPts(c[0],c[1],R-3,o)}));
+    gg.appendChild(sv('text',{class:'num','text-anchor':'middle',x:c[0],y:c[1]-R+20,text:h.label}));
+    if (h.kind === 'dc'){
+      gg.appendChild(sv('g',{transform:'translate('+(c[0]-9)+','+(c[1]-22)+') scale(0.75)'}, sv('path',{class:'glyph',d:DC[DCI[h.key]].d})));
+      var dl = wrapText(h.name, 12, 3);
+      var dt = sv('text',{class:'term','text-anchor':'middle','font-size':9.5});
+      dl.forEach(function(line,i){ dt.appendChild(sv('tspan',{x:c[0],y:(c[1]+8+i*10.5).toFixed(1),text:line})); });
+      gg.appendChild(dt);
+    } else {
+      var wt = wrapTerm(h.name);
+      var startY = c[1] + 4 - (wt.lines.length-1)*wt.size*0.55;
+      var tx = sv('text',{class:'term','text-anchor':'middle','font-size':wt.size});
+      wt.lines.forEach(function(line,i){ tx.appendChild(sv('tspan',{x:c[0],y:(startY + i*wt.size*1.1).toFixed(1),text:line})); });
+      gg.appendChild(tx);
+    }
+    if (locked[n]) {
+      var lx = c[0]-4, ly = c[1]+R-20;
+      gg.appendChild(sv('rect',{class:'lk',x:lx,y:ly+3,width:8,height:6,rx:1.2}));
+      gg.appendChild(sv('path',{d:'M'+(lx+1.6)+' '+(ly+3.5)+'v-1.6a2.4 2.4 0 0 1 4.8 0v1.6',fill:'none',stroke:'var(--teal)','stroke-width':1.4}));
+    }
+    gg.appendChild(sv('title',{text:h.label+' · '+h.name+(h.def?' — '+h.def:'')}));
+    if (opt.onHexDown) gg.addEventListener('pointerdown', function(e){ opt.onHexDown(n, e); });
+    if (opt.onHexKey) gg.addEventListener('keydown', function(e){ if (e.key==='Enter'||e.key===' '){ e.preventDefault(); opt.onHexKey(n); } });
+    g.appendChild(gg);
+  });
+  live.forEach(function(cn){
+    var A = center(place[cn.a][0],place[cn.a][1],o), B = center(place[cn.b][0],place[cn.b][1],o);
+    var mx = (A[0]+B[0])/2, my = (A[1]+B[1])/2, dx = B[0]-A[0], dy = B[1]-A[1], L = Math.hypot(dx,dy);
+    var px = -dy/L*R*0.42, py = dx/L*R*0.42;
+    g.appendChild(sv('line',{class:'edge',x1:(mx-px).toFixed(1),y1:(my-py).toFixed(1),x2:(mx+px).toFixed(1),y2:(my+py).toFixed(1)}));
+    var la = H[cn.a] ? H[cn.a].label : '?', lb = H[cn.b] ? H[cn.b].label : '?';
+    var bg = sv('g',{class:'badge',tabindex:0,role:'button','aria-label':'Connection C'+cn.num+': '+la+' to '+lb});
+    bg.appendChild(sv('circle',{cx:mx,cy:my,r:11}));
+    bg.appendChild(sv('text',{x:mx,y:my+3.5,'text-anchor':'middle',text:'C'+cn.num}));
+    bg.appendChild(sv('title',{text:'C'+cn.num+' · '+la+'–'+lb+': '+cn.why}));
+    var openIt = function(){ if (opt.onBadge) opt.onBadge(cn); };
+    bg.addEventListener('click', openIt);
+    bg.addEventListener('keydown', function(e){ if (e.key==='Enter'||e.key===' '){ e.preventDefault(); openIt(); } });
+    g.appendChild(bg);
+  });
+  return svg;
+}
+
+/* ---------------- CSV save file (student export / resume / teacher upload) ---------------- */
+var SAVE_HEAD = 'Hex Connections save file';
+function buildSaveCSV(act, name, cls, place, conns, savedAt){
+  var H = hexMap(act), list = activeConns(place, conns);
+  var rows = [[SAVE_HEAD,'v1'],['Activity ID',act.id],['Activity',act.title],['Name',name],['Class',cls ? cls.name : ''],['Class ID',cls ? cls.id : ''],['Saved',savedAt],[''],
+    ['Connection #','Hex A #','Hex A','Hex B #','Hex B','D&C icon','Justification']];
+  list.forEach(function(c){ rows.push(['C'+c.num, H[c.a].label, H[c.a].name, H[c.b].label, H[c.b].name, iconOf(H,c.a,c.b), c.why]); });
+  rows.push(['']); rows.push(['Hex #','Hex','Board Q','Board R']);
+  hexList(act).forEach(function(h){ var p = place[h.id]; rows.push([h.label, h.name, p ? p[0] : '', p ? p[1] : '']); });
+  return toCSV(rows);
+}
+/* returns {ok, error, act, name, period, saved, place, conns(array of {a,b,why}), skipped} — resolved against the activity */
+function readSaveCSV(text, actFor){
+  var rows = parseCSV(text);
+  if (!rows.length || (rows[0][0]||'').trim() !== SAVE_HEAD) return { ok:false, error:'This isn’t a Hex Connections save file.' };
+  var meta = {}, i = 1;
+  for (; i < rows.length; i++){ var k = (rows[i][0]||'').trim(); if (k === 'Connection #') break; meta[k] = (rows[i][1]||'').trim(); }
+  var act = actFor(meta['Activity ID']);
+  if (!act) return { ok:false, error:'This file is for an activity that isn’t on this page (' + (meta['Activity']||meta['Activity ID']||'unknown') + ').' };
+  var hexes = hexList(act), byLabel = {}, byName = {};
+  hexes.forEach(function(h){ byLabel[h.label.toUpperCase()] = h; byName[h.name.toLowerCase()] = h; });
+  function resolve(label, name){
+    var h = byLabel[(label||'').trim().toUpperCase()];
+    if (h && (!name || h.name.toLowerCase() === name.trim().toLowerCase())) return h.id;
+    var h2 = byName[(name||'').trim().toLowerCase()];
+    return h2 ? h2.id : null;
+  }
+  var connRows = [], placeRows = [], mode = 'conn';
+  for (i = i + 1; i < rows.length; i++){
+    var r = rows[i];
+    if ((r[0]||'').trim() === 'Hex #'){ mode = 'place'; continue; }
+    if (mode === 'conn') connRows.push(r); else placeRows.push(r);
+  }
+  var place = {}, used = {}, skipped = 0;
+  placeRows.forEach(function(r){
+    var id = resolve(r[0], r[1]); var q = parseInt(r[2],10), rr = parseInt(r[3],10);
+    if (id == null){ skipped++; return; }
+    if (isNaN(q) || isNaN(rr)) return;
+    if (!onBoardLimit(q, rr) || used[q+','+rr]){ skipped++; return; }
+    used[q+','+rr] = 1; place[id] = [q, rr];
+  });
+  var conns = [];
+  connRows.forEach(function(r){
+    var a = resolve(r[1], r[2]), b = resolve(r[3], r[4]), why = (r[6]||'').trim().slice(0,600);
+    if (a == null || b == null || !why){ skipped++; return; }
+    conns.push({ a:Math.min(a,b), b:Math.max(a,b), why:why });
+  });
+  return { ok:true, act:act, name:(meta['Name']||'').slice(0,60), period:(meta['Class']||meta['Period']||'').slice(0,60), classId:(meta['Class ID']||'').slice(0,40), saved:meta['Saved']||'', place:place, conns:conns, skipped:skipped };
+}
+
+/* =====================================================================
+   STUDENT
+   ===================================================================== */
+var ST = null; // { act, cls, asg, H, d:{name,place,conns,submittedAt,view}, sel, unlocked, preview }
+function draftKey(actId, clsId){ return 'hx-draft-' + actId + '-' + clsId; }
+function saveDraft(){ if (ST) lsSet(draftKey(ST.act.id, ST.cls.id) + (ST.preview ? '-preview' : ''), ST.d); }
+function subKey(){ return ST.act.id + '~' + ST.cls.id; }
+function routeCode(){ var h = (location.hash||'').replace(/^#/,''); return h.indexOf('c-') === 0 ? normCode(h.slice(2)) : null; }
+function findAct(id){ return DATA.activities.filter(function(a){ return a.id === id; })[0] || null; }
+
+function renderStudentHome(problem, tried){
+  var input = el('input',{type:'text',id:'st-code',autocomplete:'off',autocapitalize:'characters',spellcheck:'false',maxlength:9,placeholder:'ABC-123','aria-label':'Class code',value:tried ? fmtCode(tried) : ''});
+  var err = el('p',{class:'err',role:'alert',text: problem === 'closed' ? 'That assignment is closed for your class. Ask your teacher if you still need to turn it in.' : problem === 'notfound' ? 'We couldn’t find that code. Check it with your teacher and try again.' : ''});
+  err.hidden = !problem;
+  function go(){
+    var c = normCode(input.value);
+    if (c.length < 6){ err.textContent = 'Codes have 6 letters and numbers.'; err.hidden = false; input.focus(); return; }
+    var f = findByCode(c);
+    if (!f){ err.textContent = 'We couldn’t find that code. Check it with your teacher and try again.'; err.hidden = false; return; }
+    if (f.asg.open === false){ err.textContent = 'That assignment is closed for your class. Ask your teacher if you still need to turn it in.'; err.hidden = false; return; }
+    location.hash = 'c-' + c;
+  }
+  input.addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); go(); } });
+  fill(root, 
+    topBar(),
+    el('div',{class:'gate'},
+      el('div',{class:'panel'},
+        el('div',{class:'eyebrow',text:'Hexagonal thinking'}),
+        el('h2',{text:'Enter your class code'}),
+        el('p',{class:'muted',style:'margin:0',text:'Your teacher gave your class a 6-character code for this assignment.'}),
+        input, err,
+        el('button',{class:'btn honey',onclick:go,text:'Open assignment'})),
+      el('div',{class:'row',style:'justify-content:center'}, el('span',{class:'muted',text:'Saved your work last time?'}), el('button',{class:'btn sm',onclick:function(){ openImport(); },text:'Open a saved file'}))
+    )
+  );
+  if (!problem) setTimeout(function(){ input.focus(); }, 30);
+}
+
+function startStudent(act, cls, asg, preview){
+  var d = lsGet(draftKey(act.id, cls.id) + (preview ? '-preview' : '')) || { name:'', place:{}, conns:{}, submittedAt:null };
+  d.name = d.name || (GA.user && (GA.user.displayName || GA.user.email) || '').slice(0,60);
+  d.place = d.place || {}; d.conns = d.conns || {};
+  var H = hexMap(act);
+  Object.keys(d.place).forEach(function(n){ if (!H[n] || !onBoardLimit(d.place[n][0],d.place[n][1])) delete d.place[n]; });
+  d.view = d.view || {};
+  ST = { act:act, cls:cls, asg:asg || {}, H:H, d:d, sel:null, unlocked:null, preview:!!preview, zoom: window.innerWidth < 600 ? 1.5 : 1 };
+  renderStudentShell();
+  maybeResumeFromServer();
+}
+
+function maybeResumeFromServer(){
+  if (!ST || ST.preview || !caps.db || !caps.uid) return;
+  if (Object.keys(ST.d.place).length) return;
+  caps.db.doc('subs/' + caps.uid).get().then(function(s){
+    if (!s.exists || !ST || Object.keys(ST.d.place).length) return;
+    var p = (s.data().acts||{})[subKey()]; if (!p) return;
+    ST.d.name = ST.d.name || p.name || '';
+    ST.d.place = clone(p.placements || {}); ST.d.conns = {};
+    (p.connections||[]).forEach(function(c, i){ ST.d.conns[pkey(c.a,c.b)] = { why:c.why, at: i+1 }; });
+    ST.d.submittedAt = p.submittedAt;
+    saveDraft(); renderStudentShell(); toast('Loaded your last submission.');
+  }).catch(function(){});
+}
+
+var refs = {};
+function renderStudentShell(){
+  var a = ST.act;
+  refs = {};
+  refs.name = el('input',{type:'text',id:'st-name',placeholder:'Your name','aria-label':'Your name',value:ST.d.name,maxlength:60,oninput:function(e){ ST.d.name = e.target.value; saveDraft(); }});
+  var due = ST.asg.due;
+  refs.status = el('div',{class:'status'});
+  refs.banner = el('div');
+  refs.board = el('div',{class:'board'});
+  refs.detail = el('div',{class:'panel detail'});
+  refs.tray = el('div',{class:'tray',id:'tray','aria-label':'Unplaced hexagons'});
+  var nHex = hexList(a).length;
+  fill(root, 
+    topBar(),
+    ST.preview ? null : el('button',{class:'btn ghost sm',style:'margin:-6px 0 8px -8px',onclick:function(){ location.hash=''; },text:'← Your assignments'}),
+    el('div',{class:'act-head'},
+      el('div',{style:'min-width:0'}, el('div',{class:'eyebrow',text:'Hexagonal thinking · ' + nHex + ' hexagons'}), el('h2',{text:a.title || 'Hexagon activity'}), el('p',{class:'ins',text:a.instructions || DEFAULT_INS})),
+      el('div',{class:'stack',style:'gap:6px;align-items:flex-end'},
+        el('div',{class:'row',style:'gap:6px;justify-content:flex-end'}, el('span',{class:'chip',text:ST.cls.name}), due ? el('span',{class:'chip due',text:'Due ' + fmtDue(due)}) : null),
+        el('div',{class:'who'}, refs.name))
+    ),
+    refs.banner,
+    refs.status,
+    el('div',{class:'play'},
+      refs.board,
+      el('div',{class:'side'},
+        refs.detail,
+        el('div',{class:'stack',style:'gap:6px'},
+          el('div',{class:'row',style:'justify-content:space-between'}, el('h3',{text:'Hexagon tray'}), el('span',{class:'muted',style:'font-size:.8rem',text:'Drag onto the board, or tap then tap a spot'})),
+          refs.tray)
+      )
+    )
+  );
+  updateStudent();
+}
+
+function viewOrient(){ var b = boardOf(ST.act); return b.rotate && ST.d.view && ST.d.view.orient ? ST.d.view.orient : b.orient; }
+var ZOOMS = [1, 1.5, 2, 3];
+function applyZoom(svg){ var z = ST.zoom || 1; svg.style.width = (z*100) + '%'; svg.classList.toggle('zoomed', z > 1); }
+function setZoom(z){
+  var sc = refs.scroll, old = ST.zoom || 1; ST.zoom = z;
+  if (!sc){ updateStudent(); return; }
+  var cx = sc.scrollLeft + sc.clientWidth/2, cy = sc.scrollTop + sc.clientHeight/2;
+  applyZoom(refs.svg); updateTools();
+  var k = z/old; sc.scrollLeft = cx*k - sc.clientWidth/2; sc.scrollTop = cy*k - sc.clientHeight/2;
+}
+function updateTools(){ var t = refs.board.querySelector('.board-tools'); if (t) t.replaceWith(boardTools()); }
+function boardTools(){
+  var b = boardOf(ST.act), z = ST.zoom || 1, i = ZOOMS.indexOf(z);
+  return el('div',{class:'board-tools'},
+    el('button',{class:'btn',title:'Zoom out','aria-label':'Zoom out',disabled:i<=0,onclick:function(){ setZoom(ZOOMS[Math.max(0,i-1)]); },text:'−'}),
+    el('span',{class:'zl',text:Math.round(z*100)+'%'}),
+    el('button',{class:'btn',title:'Zoom in','aria-label':'Zoom in',disabled:i>=ZOOMS.length-1,onclick:function(){ setZoom(ZOOMS[Math.min(ZOOMS.length-1,i+1)]); },text:'+'}),
+    z > 1 ? el('button',{class:'btn',onclick:function(){ setZoom(1); },text:'Fit'}) : null,
+    b.rotate ? el('button',{class:'btn',title:'Switch between pointy-top and flat-top hexagons. Connections stay the same.',onclick:function(){
+      ST.d.view = ST.d.view || {}; ST.d.view.orient = viewOrient() === 'flat' ? 'pointy' : 'flat'; saveDraft(); updateStudent();
+      toast(ST.d.view.orient === 'flat' ? 'Flat-top view. Your connections didn’t change.' : 'Pointy-top view. Your connections didn’t change.');
+    },text:'↻ Rotate'}) : null);
+}
+function lockedSet(){ var s = {}; activeConns(ST.d.place, ST.d.conns).forEach(function(c){ s[c.a]=1; s[c.b]=1; }); return s; }
+
+function updateStudent(){
+  var a = ST.act, d = ST.d, hexes = hexList(a);
+  var conns = activeConns(d.place, d.conns);
+  var need = needTerms(a), used = termsUsedIn(conns);
+  fill(refs.status, 
+    el('div',{class:'stat'+(used>=need?' done':''),title:'A term counts once it is on the board with at least one justified connection.'}, el('b',{text:used+'/'+need}), el('span',{class:'muted',text: need === a.terms.length ? 'terms used (all required)' : 'terms used (need ' + need + ')'})),
+    el('div',{class:'stat'}, el('b',{text:String(conns.length)}), el('span',{class:'muted',text:'connection' + (conns.length===1?'':'s')})),
+    el('div',{class:'row'},
+      el('button',{class:'btn sm',onclick:exportMine,text:'Save file (CSV)'}),
+      el('button',{class:'btn sm',onclick:function(){ openImport(); },text:'Open saved file'}),
+      el('button',{class:'btn honey',onclick:submit,text: d.submittedAt ? 'Resubmit' : 'Submit'}))
+  );
+  var pastDue = ST.asg.due && isLate(ST.asg.due, new Date().toISOString());
+  fill(refs.banner, 
+    d.submittedAt ? el('div',{class:'banner',text:'Submitted ' + fmtTime(d.submittedAt) + (isLate(ST.asg.due, d.submittedAt) ? ' (late)' : '') + '. You can keep editing and submit again; your teacher sees the newest version.'}) : null,
+    pastDue && !d.submittedAt ? el('div',{class:'banner warn',text:'This was due ' + fmtDue(ST.asg.due) + '. You can still submit, but it will be marked late.'}) : null);
+
+  var o = viewOrient(), cells = boardCells(a, d.place, o);
+  ST.cells = cells;
+  var sc = refs.scroll, sl = sc ? sc.scrollLeft : 0, stp = sc ? sc.scrollTop : 0;
+  var svg = boardSVG(a, d.place, d.conns, {
+    interactive:true, selected: ST.sel, orient:o, cells:cells,
+    onHexDown:function(n,e){ beginDrag(n, e, 'board'); },
+    onHexKey:function(n){ select(n); },
+    onCell:function(q,r){ if (ST.sel != null) tryPlace(ST.sel, q, r); },
+    onBadge:function(cn){ connectionModal(cn); }
+  });
+  refs.svg = svg;
+  applyZoom(svg);
+  refs.scroll = el('div',{class:'board-scroll'}, svg);
+  fill(refs.board, refs.scroll, boardTools(), el('div',{class:'board-legend'}, el('span',{text:'Teal edge = justified connection'}), el('span',{text:'Build at an edge and the board grows'})));
+  if (sc){ refs.scroll.scrollLeft = sl; refs.scroll.scrollTop = stp; }
+  else { var nsc = refs.scroll; requestAnimationFrame(function(){ nsc.scrollLeft = (nsc.scrollWidth - nsc.clientWidth)/2; nsc.scrollTop = (nsc.scrollHeight - nsc.clientHeight)/2; }); }
+
+  var unplaced = hexes.filter(function(h){ return !d.place[h.id]; });
+  fill(refs.tray, unplaced.length ? unplaced.map(function(h){
+    var tile = el('button',{class:'tile'+(h.kind==='dc'?' dc':' c'+h.ci)+(ST.sel===h.id?' sel':''),'data-n':h.id,'aria-label':h.label+' '+h.name,title:h.def||h.name},
+      h.kind==='dc' ? glyphSVG(h.key, 18) : el('span',{class:'n',text:h.label}),
+      el('span',{class:h.kind==='dc' ? 't' : fitCls(h.name),lang:'en',text:h.name}));
+    tile.addEventListener('pointerdown', function(e){ beginDrag(h.id, e, 'tray'); });
+    tile.addEventListener('keydown', function(e){ if (e.key==='Enter'||e.key===' '){ e.preventDefault(); select(h.id); } });
+    return el('div',{class:'tile-w'}, tile);
+  }) : [el('div',{class:'tray-empty',text:'Every hexagon is on the board. Drag one back here to remove it.'})]);
+
+  renderDetail();
+}
+
+function connRow(c){
+  var H = ST.H;
+  return el('li',{class:'btnrow'}, el('button',{class:'cbtn',onclick:function(){ connectionModal(c); },'aria-label':'Edit or cancel connection C'+c.num},
+    el('span',{class:'cnum',text:'C'+c.num}),
+    el('span',{style:'min-width:0'}, el('b',{style:'display:block',text:H[c.a].label+' '+H[c.a].name+' – '+H[c.b].label+' '+H[c.b].name}), el('span',{class:'why',text:c.why}))));
+}
+
+function renderDetail(){
+  var n = ST.sel, d = ST.d, H = ST.H;
+  if (n == null || !H[n]){
+    var conns = activeConns(d.place, d.conns);
+    fill(refs.detail, 
+      el('div',{class:'row',style:'justify-content:space-between'}, el('h3',{text:'Your connections'}), conns.length ? el('span',{class:'muted',style:'font-size:.78rem',text:'Tap one to edit or cancel'}) : null),
+      conns.length ? el('ol',{class:'clist'}, conns.map(connRow)) : el('p',{class:'muted',style:'margin:0',text:'Place two hexagons side by side. A box opens so you can explain the connection, and the pair locks together.'})
+    );
+    return;
+  }
+  var h = H[n], onBoard = !!d.place[n], locked = lockedSet()[n];
+  var mine = activeConns(d.place, d.conns).filter(function(c){ return c.a===n || c.b===n; });
+  fill(refs.detail, 
+    el('div',{class:'row',style:'justify-content:space-between'}, el('span',{class:'eyebrow mono',text:h.label}), el('button',{class:'btn ghost sm',onclick:function(){ select(null); },text:'Close'})),
+    h.kind === 'dc' ? el('div',{class:'lens'}, glyphSVG(h.key, 28), el('div',null, el('h3',{text:h.name}), el('p',{style:'margin:2px 0 0;font-size:.88rem',text:h.def}))) : el('h3',{text:h.name}),
+    h.kind === 'dc' ? null : (h.def ? el('p',{class:'def',text:h.def}) : el('p',{class:'muted',style:'margin:0',text:'No definition provided.'})),
+    mine.length ? el('ol',{class:'clist'}, mine.map(connRow)) : null,
+    el('div',{class:'row'},
+      !onBoard ? el('button',{class:'btn primary sm',onclick:function(){ autoPlace(n); },text:'Place on board'}) : null,
+      !onBoard ? el('span',{class:'muted',style:'font-size:.8rem',text:'or tap an empty spot'}) : null,
+      onBoard && locked && ST.unlocked !== n ? el('button',{class:'btn sm',onclick:function(){ confirmUnlock(n); },text:'Unlock to move'}) : null,
+      onBoard && (!locked || ST.unlocked === n) ? el('span',{class:'muted',style:'font-size:.8rem',text:'Drag it or tap an empty spot to move it.'}) : null,
+      onBoard ? el('button',{class:'btn sm',onclick:function(){ if (locked) confirmToTray(n); else unplace(n); },text:'Back to tray'}) : null
+    )
+  );
+}
+
+function select(n){ ST.sel = (ST.sel === n) ? null : n; updateStudent(); }
+function canMove(n){ return !lockedSet()[n] || ST.unlocked === n || !ST.d.place[n]; }
+function connNames(list){ return list.map(function(c){ return 'C' + c.num; }).join(', '); }
+
+function confirmUnlock(n){
+  var H = ST.H, mine = activeConns(ST.d.place, ST.d.conns).filter(function(c){ return c.a===n || c.b===n; });
+  openModal([
+    el('h3',{style:'font-size:1.2rem',text:'Unlock ' + H[n].label + ' ' + H[n].name + '?'}),
+    el('p',{style:'margin:0',text:'Moving it will break ' + (mine.length===1?'connection ':'connections ') + connNames(mine) + '. Your reasons stay saved and come back if you put the same pair together again.'}),
+    el('div',{class:'row',style:'justify-content:flex-end'}, el('button',{class:'btn ghost','data-autofocus':true,onclick:closeModal,text:'Keep it locked'}),
+      el('button',{class:'btn primary',onclick:function(){ ST.unlocked = n; closeModal(); updateStudent(); toast('Unlocked. Drag ' + H[n].label + ' to a new spot.'); },text:'Unlock'}))
+  ]);
+}
+function confirmToTray(n){
+  var H = ST.H, mine = activeConns(ST.d.place, ST.d.conns).filter(function(c){ return c.a===n || c.b===n; });
+  openModal([
+    el('h3',{style:'font-size:1.2rem',text:'Send ' + H[n].label + ' ' + H[n].name + ' back to the tray?'}),
+    el('p',{style:'margin:0',text:'This breaks ' + connNames(mine) + '. Your reasons stay saved and come back if you put the same pair together again.'}),
+    el('div',{class:'row',style:'justify-content:flex-end'}, el('button',{class:'btn ghost','data-autofocus':true,onclick:closeModal,text:'Keep it on the board'}),
+      el('button',{class:'btn primary',onclick:function(){ closeModal(); unplace(n); },text:'Yes, back to tray'}))
+  ]);
+}
+
+function tryPlace(n, q, r){
+  if (!ST.cells || !ST.cells.set[q+','+r]) return;
+  var idx = posIndex(ST.d.place), who = idx[q+','+r];
+  if (who && who !== n){ toast('That spot is taken.'); return; }
+  if (!canMove(n)){ toast(ST.H[n].label + ' is locked. Select it and choose Unlock to move.'); return; }
+  var prev = ST.d.place[n] ? ST.d.place[n].slice() : null;
+  if (prev && prev[0]===q && prev[1]===r) return;
+  ST.d.place[n] = [q,r];
+  ST.unlocked = null; ST.sel = null;
+  afterPlace(n, prev);
+}
+function autoPlace(n){
+  var idx = posIndex(ST.d.place), best = null;
+  (ST.cells || boardCells(ST.act, ST.d.place, viewOrient())).list.forEach(function(cr){
+    if (idx[cr[0]+','+cr[1]]) return;
+    var dist = hexDist(cr[0],cr[1]);
+    if (!best || dist < best[2]) best = [cr[0],cr[1],dist];
+  });
+  if (best) tryPlace(n, best[0], best[1]);
+}
+function unplace(n){
+  delete ST.d.place[n];
+  if (ST.unlocked === n) ST.unlocked = null;
+  ST.sel = null; saveDraft(); updateStudent();
+}
+function afterPlace(n, prev){
+  var nbrs = neighborsOf(n, ST.d.place);
+  var pending = nbrs.filter(function(m){ var c = ST.d.conns[pkey(n,m)]; return !(c && c.why); });
+  var restored = nbrs.length - pending.length;
+  saveDraft(); updateStudent();
+  if (restored && !pending.length) toast('Restored your earlier reason' + (restored>1?'s':'') + ' for this pair.');
+  if (pending.length) justifyQueue({ n:n, prev:prev, queue:pending, made:[] });
+}
+
+function pairCards(x, y){
+  var H = ST.H;
+  function card(h){ return el('div',{class:'pt'+(h.kind==='dc'?' dc':'')}, el('span',{class:'mono muted',style:'font-size:.75rem',text:h.label}), el('b',{text:h.name}), h.def ? el('p',{text:h.def}) : null); }
+  return el('div',{class:'pair'}, card(H[x]), el('span',{class:'link','aria-hidden':'true',text:'↔'}), card(H[y]));
+}
+/* heading + prompt for a pair; a term touching a Depth & Complexity hex is described through that icon's lens */
+function pairPrompt(x, y){
+  var H = ST.H, A = H[x], B = H[y];
+  var dc = A.kind==='dc' && B.kind!=='dc' ? A : (B.kind==='dc' && A.kind!=='dc' ? B : null);
+  if (dc){
+    var term = dc === A ? B : A;
+    return { title:'Describe ' + term.name + ' through the lens of ' + dc.name, lens: dc, term: term, placeholder:'Through the lens of ' + dc.name + ', ' + term.name + '…', label:'Your description' };
+  }
+  return { title:'How are these connected?', placeholder:'These connect because…', label:'Your justification' };
+}
+function lensBox(pp){
+  return el('div',{class:'lens'}, glyphSVG(pp.lens.key, 28), el('div',null, el('b',{text:pp.lens.name}), el('p',{style:'margin:2px 0 0;font-size:.9rem',text:pp.lens.def}),
+    pp.term.def ? el('p',{class:'muted',style:'margin:6px 0 0;font-size:.85rem',text:pp.term.label + ' ' + pp.term.name + ': ' + pp.term.def}) : null));
+}
+
+function justifyQueue(job){
+  var a = ST.act, H = ST.H;
+  var m = job.queue[0], n = job.n, lo = Math.min(n,m), hi = Math.max(n,m);
+  var k = pkey(n,m), minW = a.minWords || 0, pp = pairPrompt(lo, hi);
+  var ta = el('textarea',{id:'why-text',rows:4,'data-autofocus':true,placeholder:pp.placeholder,maxlength:600,value:job.draft||''});
+  var cnt = el('div',{class:'count'});
+  var save = el('button',{class:'btn primary',text: job.queue.length > 1 ? 'Save & next (' + (job.queue.length-1) + ' more)' : 'Lock in connection'});
+  function upd(){ job.draft = ta.value; var w = words(ta.value); cnt.textContent = w + ' word' + (w===1?'':'s') + (minW ? ' · at least ' + minW : ''); cnt.className = 'count' + (w >= Math.max(minW,1) ? ' ok' : ''); save.disabled = w < Math.max(minW,1); }
+  ta.addEventListener('input', upd); upd();
+  /* undo the whole move: the placed hexagon goes back where it came from */
+  function undo(){
+    job.made.forEach(function(kk){ delete ST.d.conns[kk]; });
+    if (job.prev) ST.d.place[n] = job.prev; else delete ST.d.place[n];
+    closeModal(); saveDraft(); updateStudent();
+    toast('Connection cancelled. ' + H[n].label + (job.prev ? ' went back to where it was.' : ' is back in the tray.'));
+  }
+  /* send the neighbour away instead; the move stays and the remaining pairs still get their popup */
+  function dropOther(){
+    delete ST.d.place[m];
+    if (ST.unlocked === m) ST.unlocked = null;
+    job.queue = job.queue.filter(function(x){ return x !== m && ST.d.place[x]; });
+    job.draft = '';
+    saveDraft(); updateStudent();
+    toast('Connection cancelled. ' + H[m].label + ' is back in the tray.');
+    if (job.queue.length) justifyQueue(job); else closeModal();
+  }
+  save.addEventListener('click', function(){
+    if (save.disabled) return;
+    ST.d.conns[k] = { why: ta.value.trim(), at: Date.now() };
+    job.made.push(k); job.queue.shift(); job.draft = '';
+    saveDraft();
+    if (job.queue.length){ justifyQueue(job); }
+    else { closeModal(); updateStudent(); toast('Locked in.'); }
+  });
+  function confirmCancel(){
+    openModal([
+      el('h3',{style:'font-size:1.2rem',text:'Cancel this connection?'}),
+      el('p',{style:'margin:0',text:H[lo].label + ' ' + H[lo].name + ' and ' + H[hi].label + ' ' + H[hi].name + ' won’t be connected, and anything you typed for it is discarded.'}),
+      el('div',{class:'row',style:'justify-content:flex-end'},
+        el('button',{class:'btn ghost','data-autofocus':true,onclick:function(){ justifyQueue(job); },text:'Keep writing'}),
+        el('button',{class:'btn danger-solid',onclick:chooseCancel,text:'Yes, cancel it'}))
+    ], { onDismiss: function(){ justifyQueue(job); } });
+  }
+  function chooseCancel(){
+    var others = activeConns(ST.d.place, ST.d.conns).filter(function(c){ return c.a===m || c.b===m; });
+    function opt(label, sub, fn){ return el('button',{class:'btn',style:'flex-direction:column;align-items:flex-start;text-align:left;padding:12px',onclick:fn}, el('span',{text:label}), el('span',{class:'muted',style:'font-weight:400;font-size:.78rem',text:sub})); }
+    openModal([
+      el('h3',{style:'font-size:1.2rem',text:'Which hexagon should move?'}),
+      el('p',{style:'margin:0',text:'One of the two has to move so they no longer touch.'}),
+      el('div',{class:'choice'},
+        opt(H[n].label + ' ' + H[n].name, job.prev ? 'Goes back to where it was' : 'Goes back to the tray' , undo),
+        opt(H[m].label + ' ' + H[m].name, 'Goes back to the tray' + (others.length ? '; also breaks ' + connNames(others) : ''), dropOther)),
+      el('div',{class:'row',style:'justify-content:flex-end'}, el('button',{class:'btn ghost',onclick:function(){ justifyQueue(job); },text:'Keep writing'}))
+    ], { onDismiss: function(){ justifyQueue(job); } });
+  }
+  openModal([
+    el('div',{class:'eyebrow',text:'New connection · ' + H[lo].label + '–' + H[hi].label}),
+    el('h3',{style:'font-size:1.25rem',text:pp.title}),
+    pp.lens ? lensBox(pp) : pairCards(lo, hi),
+    el('label',{class:'fld',for:'why-text'}, pp.label, ta, cnt),
+    el('div',{class:'row',style:'justify-content:space-between'},
+      el('button',{class:'btn danger',onclick:confirmCancel,text:'Cancel connection'}), save),
+    el('p',{class:'hint',style:'margin:0',text:'Changed your mind? Cancel connection doesn’t need any writing.'})
+  ], { onDismiss: confirmCancel, dismiss: false });
+}
+
+/* edit or cancel an existing connection; cancelling needs a confirmation, then a choice of which hexagon leaves */
+function connectionModal(cn){
+  var a = ST.act, H = ST.H, k = pkey(cn.a, cn.b), minW = a.minWords || 0, pp = pairPrompt(cn.a, cn.b);
+  var pairText = 'C' + cn.num + ' between ' + H[cn.a].label + ' ' + H[cn.a].name + ' and ' + H[cn.b].label + ' ' + H[cn.b].name;
+  function editView(){
+    var ta = el('textarea',{id:'why-edit',rows:4,'data-autofocus':true,maxlength:600,value:ST.d.conns[k] ? ST.d.conns[k].why : cn.why});
+    var cnt = el('div',{class:'count'});
+    var save = el('button',{class:'btn primary',text:'Save changes'});
+    function upd(){ var w = words(ta.value); cnt.textContent = w + ' words' + (minW ? ' · at least ' + minW : ''); save.disabled = w < Math.max(minW,1); }
+    ta.addEventListener('input', upd); upd();
+    save.addEventListener('click', function(){ if (save.disabled) return; ST.d.conns[k].why = ta.value.trim(); saveDraft(); closeModal(); updateStudent(); toast('C' + cn.num + ' updated.'); });
+    openModal([
+      el('div',{class:'eyebrow',text:'Connection C' + cn.num + ' · ' + H[cn.a].label + '–' + H[cn.b].label}),
+      el('h3',{style:'font-size:1.2rem',text: pp.lens ? pp.title : H[cn.a].name + ' ↔ ' + H[cn.b].name}),
+      pp.lens ? lensBox(pp) : null,
+      el('label',{class:'fld',for:'why-edit'}, pp.label, ta, cnt),
+      el('div',{class:'row',style:'justify-content:space-between'},
+        el('button',{class:'btn danger',onclick:confirmView,text:'Cancel connection'}),
+        el('div',{class:'row'}, el('button',{class:'btn ghost',onclick:closeModal,text:'Close'}), save))
+    ]);
+  }
+  function confirmView(){
+    openModal([
+      el('h3',{style:'font-size:1.2rem',text:'Cancel this connection?'}),
+      el('p',{style:'margin:0',text:'Cancel connection ' + pairText + '? Your reason will be deleted.'}),
+      el('div',{class:'row',style:'justify-content:flex-end'},
+        el('button',{class:'btn ghost','data-autofocus':true,onclick:editView,text:'Keep connection'}),
+        el('button',{class:'btn danger-solid',onclick:chooseView,text:'Yes, cancel it'}))
+    ], { onDismiss: editView });
+  }
+  function chooseView(){
+    var others = function(n){ return activeConns(ST.d.place, ST.d.conns).filter(function(c){ return c.num !== cn.num && (c.a===n || c.b===n); }); };
+    function opt(n){
+      var o = others(n);
+      return el('button',{class:'btn',style:'flex-direction:column;align-items:flex-start;text-align:left;padding:12px',onclick:function(){ doCancel(n); }},
+        el('span',{class:'mono muted',style:'font-size:.75rem',text:H[n].label}), el('span',{text:H[n].name}),
+        el('span',{class:'muted',style:'font-weight:400;font-size:.78rem',text: o.length ? 'Also breaks ' + connNames(o) : 'No other connections'}));
+    }
+    openModal([
+      el('h3',{style:'font-size:1.2rem',text:'Which hexagon goes back to the tray?'}),
+      el('p',{style:'margin:0',text:'One of the two has to move so they no longer touch.'}),
+      el('div',{class:'choice'}, opt(cn.a), opt(cn.b)),
+      el('div',{class:'row',style:'justify-content:flex-end'}, el('button',{class:'btn ghost',onclick:editView,text:'Keep connection'}))
+    ], { onDismiss: editView });
+  }
+  function doCancel(n){
+    delete ST.d.conns[k];
+    delete ST.d.place[n];
+    if (ST.unlocked === n) ST.unlocked = null;
+    ST.sel = null; saveDraft(); closeModal(); updateStudent();
+    toast('Connection cancelled. ' + H[n].label + ' is back in the tray.');
+  }
+  editView();
+}
+
+/* ---------- drag & drop ---------- */
+var drag = null;
+function beginDrag(n, e, origin){
+  if (e.button !== undefined && e.button !== 0) return;
+  drag = { n:n, origin:origin, x0:e.clientX, y0:e.clientY, moved:false, ghost:null, hot:null };
+  window.addEventListener('pointermove', onDragMove);
+  window.addEventListener('pointerup', onDragUp);
+  window.addEventListener('pointercancel', onDragCancel);
+}
+function endListeners(){ window.removeEventListener('pointermove', onDragMove); window.removeEventListener('pointerup', onDragUp); window.removeEventListener('pointercancel', onDragCancel); }
+function onDragCancel(){ cleanupDrag(); updateStudent(); }
+function cleanupDrag(){ endListeners(); if (drag && drag.ghost) drag.ghost.remove(); if (drag && drag.hot) drag.hot.classList.remove('hot'); if (refs.tray) refs.tray.classList.remove('over'); drag = null; }
+function svgPoint(cx, cy){
+  var svg = refs.svg, g = svg && svg.firstChild; if (!g) return null;
+  var m = g.getScreenCTM(); if (!m) return null;
+  var p = svg.createSVGPoint(); p.x = cx; p.y = cy;
+  return p.matrixTransform(m.inverse());
+}
+function overTray(e){ var tr = refs.tray.getBoundingClientRect(); return e.clientX >= tr.left && e.clientX <= tr.right && e.clientY >= tr.top && e.clientY <= tr.bottom; }
+function onDragMove(e){
+  if (!drag) return;
+  if (!drag.moved){
+    if (Math.hypot(e.clientX-drag.x0, e.clientY-drag.y0) < 6) return;
+    if (drag.origin === 'board' && !canMove(drag.n)){ toast(ST.H[drag.n].label + ' is locked. Select it and choose Unlock to move.'); cleanupDrag(); return; }
+    drag.moved = true;
+    var h = ST.H[drag.n];
+    drag.ghost = el('div',{class:'drag-ghost tile-w'}, el('div',{class:'tile'+(h.kind==='dc'?' dc':' c'+h.ci)}, h.kind==='dc' ? glyphSVG(h.key,18) : el('span',{class:'n',text:h.label}), el('span',{class:h.kind==='dc' ? 't' : fitCls(h.name),lang:'en',text:h.name})));
+    document.body.appendChild(drag.ghost);
+    var src = refs.board.querySelector('.hexg[data-n="'+drag.n+'"]'); if (src) src.classList.add('dragging');
+  }
+  e.preventDefault();
+  drag.ghost.style.left = e.clientX + 'px'; drag.ghost.style.top = e.clientY + 'px';
+  if (drag.hot){ drag.hot.classList.remove('hot'); drag.hot = null; }
+  var ot = overTray(e);
+  refs.tray.classList.toggle('over', ot && drag.origin === 'board');
+  if (ot) return;
+  var p = svgPoint(e.clientX, e.clientY); if (!p) return;
+  var hh = pixToHex(p.x, p.y, viewOrient());
+  var cell = refs.board.querySelector('[data-cell="'+hh[0]+','+hh[1]+'"]');
+  if (cell){ cell.classList.add('hot'); drag.hot = cell; }
+}
+function onDragUp(e){
+  if (!drag) return;
+  var d = drag;
+  if (!d.moved){ cleanupDrag(); select(d.n); return; }
+  var ot = overTray(e);
+  var p = svgPoint(e.clientX, e.clientY);
+  cleanupDrag();
+  if (ot){ if (d.origin === 'board') unplace(d.n); else updateStudent(); return; }
+  if (!p){ updateStudent(); return; }
+  var h = pixToHex(p.x, p.y, viewOrient());
+  if (!ST.cells || !ST.cells.set[h[0]+','+h[1]]){ updateStudent(); return; }
+  var before = JSON.stringify(ST.d.place[d.n]||null);
+  tryPlace(d.n, h[0], h[1]);
+  if (JSON.stringify(ST.d.place[d.n]||null) === before) updateStudent();
+}
+
+/* ---------- save file, open file, submit ---------- */
+function exportMine(){
+  var a = ST.act;
+  var csv = buildSaveCSV(a, ST.d.name.trim(), ST.cls, ST.d.place, ST.d.conns, new Date().toISOString());
+  saveFile(slug(a.title) + '-' + slug(ST.d.name || 'student') + '.csv', csv, 'Your save file');
+}
+
+/* students: resume from a save file */
+function openImport(){
+  var file = el('input',{type:'file',id:'imp-file',accept:'.csv,text/csv,text/plain'});
+  var paste = el('textarea',{id:'imp-paste',rows:4,placeholder:'Or paste the text of your save file here'});
+  var err = el('p',{style:'margin:0;color:var(--danger)'});
+  function handle(text){
+    var res = readSaveCSV(text, function(id){ if (ST && ST.act.id === id) return ST.act; return findAct(id); });
+    if (!res.ok){ err.textContent = res.error; return; }
+    if (ST && ST.preview && ST.act.id !== res.act.id){ err.textContent = 'This file is for a different assignment than the one you’re previewing.'; return; }
+    var target = null;
+    if (!ST || ST.act.id !== res.act.id){
+      var g = res.classId && (res.act.assign||{})[res.classId], c = res.classId && classOf(DATA, res.classId);
+      if (!g || !c){ err.textContent = 'Enter your class code first, then open this file.'; return; }
+      if (g.open === false){ err.textContent = 'That assignment is closed for your class.'; return; }
+      target = { cls:c, asg:g };
+    }
+    var go = function(){
+      if (target){ location.hash = 'c-' + target.asg.code; startStudent(res.act, target.cls, target.asg); }
+      ST.d.name = res.name || ST.d.name;
+      ST.d.place = res.place; ST.d.conns = {};
+      res.conns.forEach(function(c, i){ ST.d.conns[pkey(c.a,c.b)] = { why:c.why, at:i+1 }; });
+      ST.sel = null; ST.unlocked = null;
+      saveDraft(); closeModal(); renderStudentShell();
+      if (previewing) addPreviewBanner();
+      toast('Board restored' + (res.saved ? ' from ' + fmtTime(res.saved) : '') + '.' + (res.skipped ? ' ' + res.skipped + ' item' + (res.skipped===1?'':'s') + ' no longer match this activity and were skipped.' : ''));
+    };
+    if (ST && ST.act.id === res.act.id && Object.keys(ST.d.place).length){
+      openModal([
+        el('h3',{style:'font-size:1.2rem',text:'Replace your current board?'}),
+        el('p',{style:'margin:0',text:'Opening this file replaces what’s on your board now with the saved version.'}),
+        el('div',{class:'row',style:'justify-content:flex-end'}, el('button',{class:'btn ghost','data-autofocus':true,onclick:closeModal,text:'Keep current board'}), el('button',{class:'btn primary',onclick:go,text:'Replace with saved file'}))
+      ]);
+    } else go();
+  }
+  file.addEventListener('change', function(){ var f = file.files && file.files[0]; if (f) readFile(f).then(handle, function(){ err.textContent = 'That file couldn’t be read.'; }); });
+  openModal([
+    el('h3',{style:'font-size:1.2rem',text:'Open a saved file'}),
+    el('p',{style:'margin:0',text:'Choose the CSV you saved earlier to put your board back exactly how you left it.'}),
+    el('label',{class:'fld',for:'imp-file'}, 'Save file', file),
+    el('label',{class:'fld',for:'imp-paste'}, 'Or paste it', paste),
+    err,
+    el('div',{class:'row',style:'justify-content:flex-end'}, el('button',{class:'btn ghost',onclick:closeModal,text:'Close'}), el('button',{class:'btn primary',onclick:function(){ if (paste.value.trim()) handle(paste.value); else err.textContent = 'Choose a file or paste its text first.'; },text:'Open pasted text'}))
+  ]);
+}
+
+function payload(){
+  var a = ST.act, H = ST.H, now = new Date().toISOString();
+  return {
+    late: isLate(ST.asg.due, now),
+    activityId: a.id, activityTitle: a.title,
+    name: ST.d.name.trim(), classId: ST.cls.id, className: ST.cls.name, period: ST.cls.name, due: ST.asg.due || '',
+    submittedAt: now,
+    placements: clone(ST.d.place),
+    termsUsed: termsUsedIn(activeConns(ST.d.place, ST.d.conns)),
+    connections: activeConns(ST.d.place, ST.d.conns).map(function(c){ return { num:c.num, a:c.a, b:c.b, labelA:H[c.a].label, nameA:H[c.a].name, labelB:H[c.b].label, nameB:H[c.b].name, icon:iconOf(H,c.a,c.b), why:c.why }; })
+  };
+}
+function checkReady(){
+  if (!ST.d.name.trim()){ toast('Add your name before submitting.'); refs.name.focus(); return false; }
+  var need = needTerms(ST.act), have = termsUsedIn(activeConns(ST.d.place, ST.d.conns));
+  if (have < need){ toast('You’ve used ' + have + ' term' + (have===1?'':'s') + '. This assignment needs at least ' + need + ', each on the board with a justified connection.'); return false; }
+  return true;
+}
+function offlineTurnIn(){
+  openModal([
+    el('h3',{style:'font-size:1.2rem',text:'Turn it in with your save file'}),
+    el('p',{style:'margin:0',text: caps.standalone ? 'Save your file, then turn it in where your teacher collects work, such as the Google Classroom assignment.' : 'This page can’t send work to your teacher from your account. Save your file, then turn it in where your teacher collects work, such as the Google Classroom assignment.'}),
+    el('div',{class:'row',style:'justify-content:flex-end'}, el('button',{class:'btn ghost',onclick:closeModal,text:'Close'}), el('button',{class:'btn primary','data-autofocus':true,onclick:function(){ closeModal(); exportMine(); },text:'Save file (CSV)'}))
+  ]);
+}
+function submit(){
+  if (ST.preview){ toast('This is a preview, so nothing is submitted.'); return; }
+  if (!checkReady()) return;
+  var p = payload();
+  if (!caps.db || !caps.uid){ offlineTurnIn(); return; }
+  var ref = caps.db.doc('subs/' + caps.uid);
+  ref.get().then(function(s){
+    var body = s.exists ? clone(s.data()) : {};
+    body.acts = body.acts || {};
+    body.acts[subKey()] = p;
+    body.updatedAt = p.submittedAt;
+    return ref.set(body);
+  }).then(function(){
+    ST.d.submittedAt = p.submittedAt; saveDraft(); updateStudent();
+    openModal([el('h3',{style:'font-size:1.25rem',text:'Submitted'}), el('p',{style:'margin:0',text:'Your teacher can now see your board and all ' + p.connections.length + ' connections. You can keep editing and resubmit any time.'}),
+      el('div',{class:'row',style:'justify-content:flex-end'}, el('button',{class:'btn',onclick:function(){ closeModal(); exportMine(); },text:'Also save a copy'}), el('button',{class:'btn primary',onclick:closeModal,text:'Done','data-autofocus':true}))]);
+  }).catch(function(){ offlineTurnIn(); });
+}
+
+/* =====================================================================
+   TEACHER
+   ===================================================================== */
+var TW = null; // working copy
+var TS = { sel:null, tab:'setup', period:'all', cls:'all', subs:[], imports:[], localImports:[], confirmDel:false, busy:false, subsReady:false, importDraft:'' };
+var previewing = false;
+/* an untouched blank activity isn't a change worth publishing */
+function isUntouched(a){ return !DATA.activities.some(function(x){ return x.id === a.id; }) && !(a.title||'').trim() && !(a.instructions||'').trim() && !a.terms.length; }
+function publishable(){ var c = clone(TW); c.activities = c.activities.filter(function(a){ return !isUntouched(a); }); return c; }
+function dirty(){ return JSON.stringify(publishable()) !== JSON.stringify(DATA); }
+function curAct(){ return TW.activities.filter(function(a){ return a.id === TS.sel; })[0] || null; }
+function twAct(id){ return TW.activities.filter(function(x){ return x.id === id; })[0] || null; }
+
+function saveWork(){ if (caps.standalone && TW){ lsSet('hx-teacher-work', TW); lsSet('hx-imports', TS.localImports); } }
+function startTeacher(){
+  TW = clone(DATA);
+  if (caps.standalone){ var w = lsGet('hx-teacher-work'); if (w && Array.isArray(w.activities)) TW = w; TS.localImports = lsGet('hx-imports') || []; }
+  TW.classes = TW.classes || [];
+  var remembered = lsGet('hx-teacher-sel');
+  TS.sel = (remembered && TW.activities.some(function(a){ return a.id === remembered.sel; })) ? remembered.sel : (TW.activities[0] ? TW.activities[0].id : null);
+  TS.tab = remembered && remembered.tab || 'setup';
+  TS.rows = {};
+  if (!TW.activities.length){ TW.activities.push(blankActivity()); TS.sel = TW.activities[0].id; TS.tab = 'setup'; }
+  if (caps.db){
+    caps.db.collection('subs').onSnapshot(function(s){ TS.subs = s.docs.map(function(d){ return { id:d.id, data:d.data() }; }); TS.subsReady = true; if (TS.tab === 'subs' && !previewing) renderTeacher(); }, function(){});
+    caps.db.collection('imports').onSnapshot(function(s){ TS.imports = s.docs.map(function(d){ return { id:d.id, data:d.data() }; }); if (TS.tab === 'subs' && !previewing) renderTeacher(); }, function(){});
+  }
+  renderTeacher();
+}
+function remember(){ lsSet('hx-teacher-sel', { sel:TS.sel, tab:TS.tab }); }
+
+function rowClass(p){ return p.className || p.period || ''; }
+function rowsFor(actId){
+  var rows = [];
+  TS.subs.forEach(function(s){ var acts = s.data.acts||{}; Object.keys(acts).forEach(function(k){ var p = acts[k]; if (p && p.activityId === actId) rows.push({ key:'db:'+s.id+':'+k, source:'Online', p:p }); }); });
+  TS.imports.forEach(function(s){ if (s.data.activityId === actId) rows.push({ key:'im:'+s.id, source:'Uploaded file', p:s.data, importId:s.id }); });
+  TS.localImports.forEach(function(p, i){ if (p.activityId === actId) rows.push({ key:'lo:'+i, source: caps.standalone ? 'Uploaded file' : 'Uploaded (this visit)', p:p }); });
+  rows.sort(function(x,y){ return rowClass(x.p).localeCompare(rowClass(y.p), undefined, {numeric:true}) || (x.p.name||'').localeCompare(y.p.name||''); });
+  return rows;
+}
+
+function renderTeacher(){
+  var a = curAct();
+  var list = el('div',{class:'alist'},
+    el('div',{class:'eyebrow',text:'Assignments'}),
+    TW.activities.map(function(x){
+      var n = rowsFor(x.id).length, nc = Object.keys(x.assign||{}).length;
+      return el('button',{class:'aitem'+(x.id===TS.sel?' on':''),onclick:function(){ TS.sel = x.id; TS.confirmDel=false; remember(); renderTeacher(); }},
+        el('b',{text:x.title || 'Untitled assignment'}),
+        el('span',{text: hexList(x).length + ' hexagons · ' + nc + ' class' + (nc===1?'':'es') + ' · ' + n + ' submission' + (n===1?'':'s')}));
+    }),
+    el('button',{class:'btn sm',style:'align-self:flex-start;margin-top:6px',onclick:newActivity,text:'+ New assignment'}),
+    el('div',{class:'side-h'}, el('span',{class:'eyebrow',text:'Classes'}), TW.classes.length ? el('button',{class:'btn sm',onclick:manageClasses,text:'Manage classes'}) : null),
+    TW.classes.length ? el('div',{class:'row',style:'gap:6px'}, TW.classes.map(function(c){ return el('span',{class:'chip',text:c.name}); })) : el('button',{class:'btn sm',style:'align-self:flex-start',onclick:manageClasses,text:'+ Add your classes'})
+  );
+  function tab(k, label){ return el('button',{class:'tab'+(TS.tab===k?' on':''),role:'tab','aria-selected':String(TS.tab===k),onclick:function(){ TS.tab=k; remember(); renderTeacher(); },text:label}); }
+  var main = a ? el('div',{style:'min-width:0'},
+    el('div',{class:'eyebrow',text:'Assignment'}),
+    el('h2',{text:a.title || 'Untitled assignment'}),
+    el('div',{class:'tabs',role:'tablist'}, tab('setup','Setup'), tab('codes','Classes & codes (' + Object.keys(a.assign||{}).length + ')'), tab('subs','Submissions (' + rowsFor(a.id).length + ')')),
+    TS.tab === 'setup' ? setupPane(a) : TS.tab === 'codes' ? codesPane(a) : subsPane(a)
+  ) : el('div',{class:'panel'}, el('h3',{text:'No activities yet'}), el('p',{class:'muted',text:'Create one to paste in your unit vocabulary.'}), el('button',{class:'btn primary',onclick:newActivity,text:'New activity'}));
+
+  saveWork();
+  fill(root, topBar(), el('div',{class:'teach'}, list, main), dirty() ? saveBar() : null);
+}
+
+function saveBar(){
+  return el('div',{class:'savebar'},
+    el('span',{style:'margin-right:auto;font-weight:700',text: caps.standalone ? 'Unpublished changes (saved in this browser). Students see your site’s current file until you upload a new one.' : 'Unpublished changes. Students still see the last published version.'}),
+    el('button',{class:'btn ghost sm',onclick:function(){ TW = clone(DATA); TW.classes = TW.classes || []; TS.rows = {}; if (!TW.activities.length) TW.activities.push(blankActivity()); if (!curAct()) TS.sel = TW.activities[0].id; renderTeacher(); },text:'Discard'}),
+    el('button',{class:'btn',disabled:TS.busy,onclick:publishNow,text:TS.busy?'Publishing…':(caps.standalone ? 'Download site file' : 'Publish to students')}));
+}
+function ensureBar(){
+  saveWork();
+  var bar = root.querySelector('.savebar');
+  if (dirty() && !bar) root.appendChild(saveBar());
+  else if (!dirty() && bar) bar.remove();
+}
+
+function blankActivity(){
+  return { id:uid(), title:'', instructions:'', minTerms:null, minWords:5, assign:{}, dcOn:false, dc:[], board:{shape:'hexagon',size:'roomy',orient:'pointy',rotate:true}, createdAt:new Date().toISOString(), terms:[] };
+}
+function newActivity(){
+  var x = blankActivity();
+  TW.activities.push(x);
+  TS.sel = x.id; TS.tab = 'setup'; remember(); renderTeacher();
+  setTimeout(function(){ var t = document.getElementById('f-title'); if (t) t.focus(); }, 30);
+}
+
+function setupPane(a){
+  var hasSubs = rowsFor(a.id).length > 0;
+  var preview = el('div');
+  function refreshPreview(){
+    var hx = hexList(a), spots = boardCells(a, {}, boardOf(a).orient).list.length;
+    var nT = a.terms.length, icons = hx.filter(function(x){ return x.kind === 'dc'; });
+    refreshBoardPrev();
+    fill(preview, el('div',{class:'row',style:'gap:8px'},
+      el('span',{class:'chip',text: nT + ' term' + (nT===1?'':'s')}),
+      icons.length ? el('span',{class:'chip',text: icons.length + ' Depth & Complexity icon' + (icons.length===1?'':'s')}) : null,
+      el('span',{class:'chip',text: hx.length + ' hexagons · board starts with ' + spots + ' spots'}),
+      icons.length ? el('span',{class:'hint',text: icons.map(function(x){ return x.label + ' ' + x.name; }).join(' · ')}) : null));
+  }
+
+  /* vocabulary table: one row per term, blank rows are ignored */
+  if (!TS.rows[a.id]) TS.rows[a.id] = a.terms.map(function(t){ return { id:t.id || t.n, term:t.term, def:t.def||'' }; });
+  var rows = TS.rows[a.id];
+  function padRows(){ while (rows.length < 5 || (rows.length < 60 && rows[rows.length-1].term.trim())) rows.push({ term:'', def:'' }); }
+  padRows();
+  var vt = el('div',{class:'vt'});
+  function sync(){
+    var taken = {}; rows.forEach(function(r){ if (r.id) taken[r.id] = 1; }); (DATA.activities.filter(function(x){ return x.id === a.id; })[0] || {terms:[]}).terms.forEach(function(t){ taken[t.id || t.n] = 1; });
+    a.idSeq = Math.max(a.idSeq || 0, Object.keys(taken).reduce(function(m, k){ return Math.max(m, +k); }, 0));
+    a.terms = rows.filter(function(r){ return r.term.trim(); }).slice(0,60).map(function(r, i){
+      if (!r.id){ var nid = a.idSeq + 1; while (taken[nid] || nid >= 1000) nid = nid >= 1000 ? 1 : nid + 1; r.id = nid; taken[nid] = 1; a.idSeq = Math.max(a.idSeq, nid); }
+      return { n:i+1, id:r.id, term:r.term.trim().slice(0,60), def:r.def.trim().slice(0,400) };
+    });
+    if (!a.idSeq) delete a.idSeq;
+    var n = 0;
+    Array.prototype.forEach.call(vt.querySelectorAll('.vt-num'), function(sp, i){
+      var r = rows[i]; if (!r) return;
+      if (r.term.trim()){ n++; sp.textContent = 'T' + n; sp.className = 'vt-num c' + ((n-1)%6+1); } else { sp.textContent = '—'; sp.className = 'vt-num'; }
+    });
+    refreshPreview(); ensureBar();
+    var tb = root.querySelector('.aitem.on span'); if (tb) tb.textContent = hexList(a).length + ' hexagons';
+    var tryBtn = document.getElementById('f-try'); if (tryBtn) tryBtn.disabled = !a.terms.length;
+  }
+  function focusCell(i, which){ var r = vt.querySelectorAll('.vt-row')[i]; if (r){ var f = r.querySelector(which === 'def' ? '.vt-def' : '.vt-term'); if (f) f.focus(); } }
+  function splitLine(line){
+    var cols = line.split('\t');
+    if (cols.length > 1) return { term: cols[0].trim(), def: cols.slice(1).join(' ').trim() };
+    var p = parseTerms(line)[0]; return p ? { term:p.term, def:p.def } : null;
+  }
+  function insertLines(i, text){
+    var items = text.split(/\r?\n/).map(function(l){ return l.trim(); }).filter(Boolean).map(splitLine).filter(Boolean);
+    if (!items.length) return;
+    var removeHere = !rows[i].term.trim() && !rows[i].def.trim() ? 1 : 0;
+    Array.prototype.splice.apply(rows, [i + (removeHere ? 0 : 1), removeHere].concat(items));
+    while (rows.length > 60) rows.pop();
+    renderRows(); sync();
+    toast(items.length + ' term' + (items.length===1?'':'s') + ' added.');
+  }
+  function rowEl(r, i){
+    var term = el('input',{type:'text',class:'vt-term',id:'vt-t-'+i,value:r.term,maxlength:60,placeholder:i===0?'e.g. Mitochondria':'Term','aria-label':'Term ' + (i+1)});
+    var def = el('input',{type:'text',class:'vt-def',id:'vt-d-'+i,value:r.def,maxlength:400,placeholder:i===0?'e.g. Organelle that releases energy from food':'Definition','aria-label':'Definition ' + (i+1)});
+    term.addEventListener('input', function(){
+      r.term = term.value;
+      if (i === rows.length - 1 && r.term.trim() && rows.length < 60){ rows.push({ term:'', def:'' }); vt.appendChild(rowEl(rows[rows.length-1], rows.length-1)); }
+      sync();
+    });
+    def.addEventListener('input', function(){ r.def = def.value; sync(); });
+    [term, def].forEach(function(inp){
+      inp.addEventListener('paste', function(e){
+        var t = (e.clipboardData || window.clipboardData); t = t && t.getData('text');
+        if (t && (/\n/.test(t.trim()) || (inp === term && /\t/.test(t)))){ e.preventDefault(); insertLines(i, t); }
+      });
+    });
+    term.addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); def.focus(); } });
+    def.addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); if (i === rows.length - 1 && rows.length < 60){ rows.push({term:'',def:''}); vt.appendChild(rowEl(rows[rows.length-1], rows.length-1)); sync(); } focusCell(i+1, 'term'); } });
+    var del = el('button',{class:'btn vt-del',title:'Delete this term','aria-label':'Delete ' + (r.term.trim() || 'row ' + (i+1)),disabled:!(r.term.trim() || r.def.trim()),onclick:function(){
+      if (!(r.term.trim() || r.def.trim())) return;
+      var removed = rows.splice(i,1)[0];
+      padRows(); renderRows(); sync();
+      toast('Deleted “' + (removed.term.trim() || 'blank row') + '”. Publish to update students.', { label:'Undo', fn:function(){
+        var keep = rows.filter(function(x){ return x.term.trim() || x.def.trim(); });
+        keep.splice(Math.min(i, keep.length), 0, removed);
+        rows.length = 0; keep.forEach(function(x){ rows.push(x); });
+        renderTeacher(); toast('Restored “' + removed.term.trim() + '”.');
+      }});
+    }});
+    del.appendChild(el('span',{class:'ic','aria-hidden':'true',text:'🗑'}));
+    del.appendChild(el('span',{text:'Delete'}));
+    function showDel(){ var on = !!(r.term.trim() || r.def.trim()); del.disabled = !on; del.title = on ? 'Delete this term' : 'Type a term first'; }
+    showDel();
+    term.addEventListener('input', showDel); def.addEventListener('input', showDel);
+    return el('div',{class:'vt-row'}, el('span',{class:'vt-num',text:'—'}), term, def, del);
+  }
+  function renderRows(){
+    padRows();
+    fill(vt, el('div',{class:'vt-head','aria-hidden':'true'}, el('span',{style:'text-align:center',text:'#'}), el('span',{text:'Term'}), el('span',{text:'Definition'}), el('span',{style:'text-align:center',text:'Delete'})));
+    rows.forEach(function(r, i){ vt.appendChild(rowEl(r, i)); });
+  }
+  renderRows();
+  sync();
+
+  var file = el('input',{type:'file',id:'f-csv',accept:'.csv,.txt,text/csv,text/plain'});
+  file.addEventListener('change', function(){
+    var f = file.files && file.files[0]; if (!f) return;
+    readFile(f).then(function(text){
+      var items;
+      if (/\.csv$/i.test(f.name) || (text.indexOf(',') > -1 && text.indexOf('|') === -1)){
+        var cr = parseCSV(text);
+        if (cr.length && /^\s*(term|word|vocab)/i.test(cr[0][0]||'')) cr.shift();
+        items = cr.map(function(rw){ return { term:(rw[0]||'').trim(), def:rw.slice(1).join(', ').trim() }; }).filter(function(x){ return x.term; });
+      } else items = parseTerms(text).map(function(t){ return { term:t.term, def:t.def }; });
+      var kept = rows.filter(function(r){ return r.term.trim() || r.def.trim(); });
+      rows.length = 0; kept.concat(items).slice(0,60).forEach(function(r){ rows.push(r); });
+      renderRows(); sync(); file.value = '';
+      toast(items.length + ' terms added from ' + f.name + '.');
+    });
+  });
+  function clearAll(){
+    openModal([el('h3',{style:'font-size:1.2rem',text:'Clear every term?'}), el('p',{style:'margin:0',text:'This empties the vocabulary table for this activity. Nothing changes for students until you publish.'}),
+      el('div',{class:'row',style:'justify-content:flex-end'}, el('button',{class:'btn ghost','data-autofocus':true,onclick:closeModal,text:'Keep terms'}),
+        el('button',{class:'btn danger-solid',onclick:function(){ rows.length = 0; renderRows(); sync(); closeModal(); },text:'Clear all'}))]);
+  }
+  var vocabPanel = el('div',{class:'panel stack',style:'gap:10px'},
+    el('div',{class:'row',style:'justify-content:space-between'}, el('h3',{text:'Vocabulary'}), el('span',{class:'hint',text:'Up to 60 terms. Blank rows are ignored.'})),
+    vt,
+    el('div',{class:'vt-tools'},
+      el('button',{class:'btn sm',onclick:function(){ if (rows.length >= 60){ toast('60 terms is the limit.'); return; } rows.push({term:'',def:''}); vt.appendChild(rowEl(rows[rows.length-1], rows.length-1)); sync(); focusCell(rows.length-1,'term'); },text:'+ Add row'}),
+      el('label',{class:'btn sm',for:'f-csv',style:'cursor:pointer;position:relative'}, 'Upload CSV', el('span',{style:'position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)'}, file)),
+      caps.sample ? el('button',{class:'btn ai sm',onclick:openGenerator,text:'✦ Generate with AI'}) : null,
+      el('button',{class:'btn danger sm',onclick:clearAll,text:'Clear all terms'})),
+    el('p',{class:'hint',style:'margin:0',text:'Tip: copy two columns from a spreadsheet and paste into any Term box to fill many rows at once.'}));
+
+  /* AI vocabulary: asks Claude on the teacher's own account, then lets the teacher pick which terms to keep */
+  function openGenerator(){
+    var G = TS.gen = TS.gen || { topic:'', grade:'6-8', subject:'', count:15, style:'student', notes:'' };
+    if (!G.topic && (a.title||'').trim()) G.topic = a.title.trim();
+    function f(id, label, input, hint){ return el('label',{class:'fld',for:id}, label, input, hint ? el('span',{class:'hint',text:hint}) : null); }
+    var topic = el('input',{type:'text',id:'g-topic',maxlength:120,value:G.topic,placeholder:'e.g. The water cycle, Causes of World War I','data-autofocus':true});
+    var subject = el('input',{type:'text',id:'g-subject',maxlength:60,value:G.subject,placeholder:'e.g. Earth science'});
+    var grade = el('select',{id:'g-grade'}, ['K-2','3-5','6-8','9-10','11-12','College'].map(function(g){ var o = el('option',{value:g,text:g==='College'?'College':'Grades ' + g}); if (g === G.grade) o.selected = true; return o; }));
+    var count = el('input',{type:'number',id:'g-count',min:5,max:40,value:G.count});
+    var style = el('select',{id:'g-style'}, [['student','Student-friendly'],['academic','Academic']].map(function(x){ var o = el('option',{value:x[0],text:x[1]}); if (x[0] === G.style) o.selected = true; return o; }));
+    var notes = el('textarea',{id:'g-notes',rows:2,maxlength:500,value:G.notes,placeholder:'Optional: chapter, standards, terms to include or avoid'});
+    var err = el('p',{class:'err',hidden:true});
+    function read(){ G.topic = topic.value.trim(); G.subject = subject.value.trim(); G.grade = grade.value; G.count = Math.min(40, Math.max(5, parseInt(count.value,10) || 15)); G.style = style.value; G.notes = notes.value.trim(); }
+    var go = el('button',{class:'btn primary',text:'Generate terms',onclick:function(){
+      read();
+      if (!G.topic){ err.textContent = 'Add a topic or unit first.'; err.hidden = false; topic.focus(); return; }
+      runGenerator(G);
+    }});
+    openModal([
+      el('h3',{style:'font-size:1.25rem',text:'Generate vocabulary with AI'}),
+      el('p',{class:'muted',style:'margin:0',text:'Claude suggests terms and definitions using your Claude account. You choose which ones to add, and you can edit everything afterwards.'}),
+      f('g-topic','Topic or unit', topic),
+      el('div',{class:'grid2'}, f('g-grade','Grade level', grade), f('g-subject','Subject', subject, 'Optional')),
+      el('div',{class:'grid2'}, f('g-count','How many terms', count, '5 to 40'), f('g-style','Definitions', style)),
+      f('g-notes','Anything else?', notes),
+      err,
+      el('div',{class:'row',style:'justify-content:flex-end'}, el('button',{class:'btn ghost',onclick:closeModal,text:'Cancel'}), go)
+    ]);
+  }
+  function genError(code){
+    return ({
+      not_granted:'Claude wasn’t allowed to run on this page. Reload the page to be asked again.',
+      rate_limited:'Too many requests right now. Wait a minute and try again.',
+      refused:'Claude couldn’t make a list for that topic. Try rewording it.',
+      invalid_json:'The answer came back in a form the page couldn’t read. Try again.',
+      empty_completion:'The answer came back empty. Try again.',
+      prompt_too_large:'That request is too long. Shorten the notes and try again.',
+      session_expired:'Your Claude session expired. Reload the page and try again.',
+      sampling_disabled:'AI suggestions are turned off for your account.'
+    })[code] || 'Something went wrong. Try again in a moment.';
+  }
+  function runGenerator(G){
+    var ctl = new AbortController();
+    var have = rows.filter(function(r){ return r.term.trim(); }).map(function(r){ return r.term.trim(); });
+    openModal([
+      el('h3',{style:'font-size:1.2rem',text:'Writing ' + G.count + ' terms for “' + G.topic + '”'}),
+      el('div',{class:'thinking'}, el('span',{class:'dots','aria-hidden':'true'}, el('i'), el('i'), el('i')), el('span',{text:'Thinking… this usually takes 10 to 40 seconds.'})),
+      el('div',{class:'row',style:'justify-content:flex-end'}, el('button',{class:'btn ghost',onclick:function(){ ctl.abort(); },text:'Stop'}))
+    ], { dismiss:false, onDismiss:function(){ ctl.abort(); } });
+    var prompt = [
+      'You are helping a teacher build a hexagonal thinking activity. Students place vocabulary terms on hexagon tiles and explain how touching terms connect, so the terms should connect to one another in many ways (concepts, processes, causes and effects, examples, people or places) rather than being near-duplicates.',
+      '',
+      'Topic or unit: ' + G.topic,
+      'Grade level: ' + (G.grade === 'College' ? 'college' : 'grades ' + G.grade),
+      G.subject ? 'Subject: ' + G.subject : '',
+      G.notes ? 'Teacher notes: ' + G.notes : '',
+      have.length ? 'Already in the list (do not repeat): ' + have.join('; ') : '',
+      '',
+      'Write exactly ' + G.count + ' key vocabulary terms. Each term is 1 to 4 words. Each definition is one sentence of at most 20 words, ' + (G.style === 'academic' ? 'precise and academic' : 'clear and student-friendly') + ', accurate, and suited to that grade level. Do not use the term itself in its definition.',
+      'Reply with only a JSON array, for example: [{"term":"Evaporation","definition":"The change of liquid water into water vapor when it is heated."}]'
+    ].filter(function(x){ return x !== ''; }).join('\n');
+    caps.sample.json(prompt, { signal: ctl.signal, modelTier:'default' }).then(function(data){
+      var list = (Array.isArray(data) ? data : (data && Array.isArray(data.terms) ? data.terms : [])).map(function(x){
+        return { term: String((x && (x.term || x.word)) || '').trim().slice(0,60), def: String((x && (x.definition || x.def)) || '').trim().slice(0,400) };
+      }).filter(function(x){ return x.term; });
+      var seen = {}; have.forEach(function(t){ seen[t.toLowerCase()] = 1; });
+      list = list.filter(function(x){ var k = x.term.toLowerCase(); if (seen[k]) return false; seen[k] = 1; return true; });
+      if (!list.length){ showGenError('empty_completion', G); return; }
+      pickTerms(list, G);
+    }, function(e){
+      if (e && e.code === 'cancelled'){ openGenerator(); return; }
+      showGenError(e && e.code, G);
+    });
+  }
+  function showGenError(code, G){
+    openModal([el('h3',{style:'font-size:1.2rem',text:'No terms this time'}), el('p',{class:'err',text:genError(code)}),
+      el('div',{class:'row',style:'justify-content:flex-end'}, el('button',{class:'btn ghost',onclick:closeModal,text:'Close'}), code === 'not_granted' || code === 'sampling_disabled' ? null : el('button',{class:'btn primary',onclick:function(){ runGenerator(G); },text:'Try again'}))]);
+  }
+  function pickTerms(list, G){
+    var filled = rows.filter(function(r){ return r.term.trim() || r.def.trim(); });
+    var room = 60 - filled.length;
+    var boxes = list.map(function(x, i){ return el('input',{type:'checkbox',id:'gi-'+i,checked:i < room}); });
+    var countTxt = el('span',{class:'muted',style:'margin-right:auto'});
+    function upd(){ var n = boxes.filter(function(b){ return b.checked; }).length; countTxt.textContent = n + ' of ' + list.length + ' selected'; addBtn.disabled = !n; }
+    var addBtn = el('button',{class:'btn primary',text:'Add to table',onclick:function(){
+      var chosen = list.filter(function(x, i){ return boxes[i].checked; });
+      if (chosen.length > room){ toast('Only ' + room + ' more terms fit (60 max). Uncheck a few.'); return; }
+      rows.length = 0; filled.forEach(function(r){ rows.push(r); }); chosen.forEach(function(r){ rows.push({ term:r.term, def:r.def }); });
+      closeModal(); renderTeacher();
+      toast(chosen.length + ' term' + (chosen.length===1?'':'s') + ' added. Edit any of them in the table.');
+    }});
+    boxes.forEach(function(b){ b.addEventListener('change', upd); });
+    var allOn = true;
+    openModal([
+      el('h3',{style:'font-size:1.2rem',text:'Pick the terms to add'}),
+      el('p',{class:'muted',style:'margin:0',text:'Check the AI’s definitions for accuracy before students see them. You can edit any term after adding it.'}),
+      el('div',{class:'row'}, el('button',{class:'btn ghost sm',onclick:function(){ allOn = !allOn; boxes.forEach(function(b){ b.checked = allOn; }); upd(); },text:'Select all / none'}),
+        el('button',{class:'btn ghost sm',onclick:function(){ runGenerator(G); },text:'Generate a different set'})),
+      el('div',{class:'gen-list'}, list.map(function(x, i){ return el('label',{class:'gen-item',for:'gi-'+i}, boxes[i], el('div',null, el('b',{text:x.term}), el('span',{text:x.def || 'No definition'}))); })),
+      el('div',{class:'row'}, countTxt, el('button',{class:'btn ghost',onclick:closeModal,text:'Cancel'}), addBtn)
+    ], { wide:false });
+    upd();
+  }
+  function field(id, label, input, hint){ return el('label',{class:'fld',for:id}, label, input, hint ? el('span',{class:'hint',text:hint}) : null); }
+  function minTermsInput(){
+    var inp = el('input',{type:'number',id:'f-mint',min:1,max:60,value:a.minTerms == null ? '' : a.minTerms,placeholder:'All terms'});
+    inp.addEventListener('input', function(){ var v = parseInt(inp.value,10); a.minTerms = isNaN(v) ? null : Math.max(1, Math.min(60, v)); ensureBar(); });
+    return inp;
+  }
+  function bind(input, key, num){ input.addEventListener('input', function(){ a[key] = num ? Math.max(0, parseInt(input.value,10)||0) : input.value; ensureBar(); if (key==='title') { var h = root.querySelector('.teach h2'); if (h) h.textContent = input.value || 'Untitled activity'; var on = root.querySelector('.aitem.on b'); if (on) on.textContent = input.value || 'Untitled assignment'; } }); return input; }
+
+  // Board layout
+  var bprev = el('div',{class:'bprev'});
+  function refreshBoardPrev(){ if (!bprev) return; var bb = boardOf(a); fill(bprev, boardSVG(a, {}, {}, { orient: bb.orient })); }
+  function setBoard(key, val){ a.board = Object.assign({}, boardOf(a)); a.board[key] = val; refreshPreview(); ensureBar(); }
+  function seg(name, opts, cur, key){
+    return el('div',{class:'seg',role:'radiogroup','aria-label':name}, opts.map(function(x){
+      var id = 'b-' + key + '-' + x.k;
+      var rb = el('input',{type:'radio',name:'b-'+key,id:id,value:x.k,checked:cur===x.k});
+      rb.addEventListener('change', function(){ if (rb.checked) setBoard(key, x.k); });
+      return el('label',{for:id,title:x.hint||''}, rb, x.name);
+    }));
+  }
+  var bcur = boardOf(a);
+  refreshBoardPrev();
+  var rotBox = el('input',{type:'checkbox',id:'b-rotate',checked:bcur.rotate});
+  rotBox.addEventListener('change', function(){ setBoard('rotate', rotBox.checked); });
+  var boardPanel = el('div',{class:'panel'},
+    el('div',{class:'grid2'},
+      el('div',{class:'stack',style:'gap:10px'},
+        el('h3',{text:'Board layout'}),
+        el('div',{class:'stack',style:'gap:4px'}, el('span',{class:'eyebrow',text:'Shape'}), seg('Board shape', SHAPES, bcur.shape, 'shape'), el('span',{class:'hint',text:'Wide suits chains and timelines, Tall suits flows, Open grows in any direction.'})),
+        el('div',{class:'stack',style:'gap:4px'}, el('span',{class:'eyebrow',text:'Room to spread out'}), seg('Room', ROOM, bcur.size, 'size')),
+        el('div',{class:'stack',style:'gap:4px'}, el('span',{class:'eyebrow',text:'Hexagon orientation'}), seg('Orientation', [{k:'pointy',name:'⬢ Pointy top'},{k:'flat',name:'⬣ Flat top'}], bcur.orient, 'orient')),
+        el('label',{class:'row',for:'b-rotate',style:'font-weight:700;font-size:.88rem'}, rotBox, 'Let students rotate the board'),
+        el('p',{class:'hint',style:'margin:0',text:'Every shape grows by a ring wherever a student places a hexagon at the edge. Rotating only changes the view; connections stay the same.'})),
+      el('div',{class:'stack',style:'gap:6px'}, el('span',{class:'eyebrow',text:'Empty board preview'}), bprev)));
+
+  var dcBox = el('input',{type:'checkbox',id:'f-dc',checked:!!a.dcOn});
+  var dcGrid = el('div',{class:'dcgrid',hidden:!a.dcOn}, DC.map(function(d){
+    var cb = el('input',{type:'checkbox',id:'dc-'+d.k,checked:(a.dc||[]).indexOf(d.k) > -1});
+    cb.addEventListener('change', function(){
+      var set = (a.dc||[]).filter(function(k){ return k !== d.k; });
+      if (cb.checked) set.push(d.k);
+      a.dc = set.sort(function(x,y){ return DCI[x]-DCI[y]; });
+      refreshPreview(); ensureBar();
+    });
+    return el('label',{class:'dcopt',for:'dc-'+d.k,title:d.hint}, cb, glyphSVG(d.k, 20), d.name);
+  }));
+  dcBox.addEventListener('change', function(){ a.dcOn = dcBox.checked; if (!a.dc) a.dc = []; dcGrid.hidden = !a.dcOn; refreshPreview(); ensureBar(); });
+
+  return el('div',{class:'stack',style:'gap:16px'},
+    hasSubs ? el('div',{class:'banner warn',text:'Students have already submitted. Removing or reordering terms changes the T numbers shown, but each submission still points to the right term.'}) : null,
+    el('div',{class:'grid2'},
+      el('div',{class:'stack'},
+        field('f-title','Title', bind(el('input',{type:'text',id:'f-title',value:a.title,maxlength:80,placeholder:'e.g. Unit 3: Cells'}),'title')),
+        el('p',{class:'hint',style:'margin:0',text:'Assign it to classes, get codes and set due dates on the Classes & codes tab.'})),
+      field('f-ins','Directions for students', bind(el('textarea',{id:'f-ins',rows:3,value:a.instructions||'',maxlength:600,placeholder:DEFAULT_INS}),'instructions'), 'Leave blank to use the standard directions shown.')
+    ),
+    vocabPanel,
+    el('div',{class:'grid2'},
+      field('f-mint','Minimum terms to use', minTermsInput(), 'Leave blank to require every term. A term counts once it’s on the board with a justified connection.'),
+      field('f-minw','Minimum words per reason', bind(el('input',{type:'number',id:'f-minw',min:0,max:60,value:a.minWords||0}),'minWords',true), 'Checked in the connection popup')),
+    boardPanel,
+    el('div',{class:'panel stack',style:'gap:10px'},
+      el('label',{class:'row',for:'f-dc',style:'font-weight:700'}, dcBox, 'Include Depth and Complexity icons'),
+      el('p',{class:'hint',style:'margin:0',text:'Each icon you pick becomes its own hexagon (DC1, DC2…). When a student connects an icon to a term, they describe the term through that icon’s lens. Icon connections count toward the minimum.'}),
+      dcGrid),
+    preview,
+    el('div',{class:'row',style:'justify-content:space-between;border-top:1px solid var(--line);padding-top:14px'},
+      el('button',{class:'btn',id:'f-try',onclick:function(){ previewAsStudent(a); },disabled:!a.terms.length,text:'Try it as a student'}),
+      TS.confirmDel ? el('div',{class:'row'}, el('span',{style:'font-weight:700',text:'Delete this activity?'}), el('button',{class:'btn ghost sm',onclick:function(){ TS.confirmDel=false; renderTeacher(); },text:'Keep'}), el('button',{class:'btn danger sm',onclick:function(){ TW.activities = TW.activities.filter(function(x){ return x.id !== a.id; }); if (!TW.activities.length) TW.activities.push(blankActivity()); TS.sel = TW.activities[0].id; TS.confirmDel=false; remember(); renderTeacher(); },text:'Delete'}))
+        : el('button',{class:'btn danger sm',onclick:function(){ TS.confirmDel=true; renderTeacher(); },text:'Delete activity'})
+    )
+  );
+}
+
+function classSubCount(a, c){ return rowsFor(a.id).filter(function(r){ return r.p.classId === c.id || rowClass(r.p) === c.name; }).length; }
+function codesPane(a){
+  a.assign = a.assign || {};
+  if (!TW.classes.length) return el('div',{class:'panel stack'}, el('h3',{text:'Add your classes first'}), el('p',{class:'muted',style:'margin:0',text:'Create a class for each section you teach, like “Period 2 Biology”. Then come back here to assign this to them. Each class gets its own code.'}), el('button',{class:'btn primary',style:'align-self:flex-start',onclick:manageClasses,text:'Add classes'}));
+  return el('div',{class:'stack',style:'gap:14px'},
+    el('p',{class:'muted',style:'margin:0;max-width:70ch',text: caps.standalone ? 'Assign this activity to your classes, then use Publish to Google Classroom below. Changes reach students after you republish to that course. Due dates use 23:59 UTC.' : 'Students open this page and type their class’s code. You can also post a direct link: share the page from the Share menu and add the link ending to it. New codes, due dates and open/closed changes reach students when you publish.'}),
+    el('div',{class:'cls-list'}, TW.classes.map(function(c){
+      var g = a.assign[c.id];
+      var box = el('input',{type:'checkbox',id:'as-'+c.id,checked:!!g});
+      box.addEventListener('change', function(){
+        if (box.checked){ a.assign[c.id] = { code:newCode(TW), open:true, due:'' }; renderTeacher(); return; }
+        var n = classSubCount(a, c);
+        box.checked = true;
+        openModal([el('h3',{style:'font-size:1.2rem',text:'Unassign ' + c.name + '?'}),
+          el('p',{style:'margin:0',text:'Its code ' + fmtCode(g.code) + ' stops working after you publish.' + (n ? ' The ' + n + ' submission' + (n===1?'':'s') + ' from this class stay in the Submissions tab.' : '')}),
+          el('div',{class:'row',style:'justify-content:flex-end'}, el('button',{class:'btn ghost','data-autofocus':true,onclick:closeModal,text:'Keep assigned'}),
+            el('button',{class:'btn danger-solid',onclick:function(){ delete a.assign[c.id]; closeModal(); renderTeacher(); },text:'Unassign'}))]);
+      });
+      var head = el('label',{class:'row',for:'as-'+c.id,style:'font-weight:700'}, box, c.name);
+      if (!g) return el('div',{class:'panel cls-card off'}, head, el('span',{class:'hint',text:'Not assigned'}));
+      var openBox = el('input',{type:'checkbox',id:'op-'+c.id,checked:g.open !== false});
+      openBox.addEventListener('change', function(){ g.open = openBox.checked; ensureBar(); stateTxt.textContent = g.open ? 'Enrolled Classroom students can work and submit after this assignment is published.' : 'Closed: the code shows a “closed” message.'; });
+      var stateTxt = el('span',{class:'hint',text: g.open !== false ? 'Enrolled Classroom students can work and submit after this assignment is published.' : 'Closed: the code shows a “closed” message.'});
+      var dueIn = el('input',{type:'date',id:'du-'+c.id,value:g.due||'',style:'max-width:200px'});
+      dueIn.addEventListener('change', function(){ g.due = dueIn.value || ''; ensureBar(); });
+      var n = classSubCount(a, c);
+      return el('div',{class:'panel cls-card'},
+        el('div',{class:'row',style:'justify-content:space-between'}, head, el('span',{class:'muted',style:'font-size:.82rem',text:n + ' submission' + (n===1?'':'s')})),
+        el('div',{class:'row'}, el('span',{class:'codebig',text:fmtCode(g.code)}),
+          el('button',{class:'btn sm',onclick:function(){ copyText(fmtCode(g.code),'Code'); },text:'Copy code'}),
+          caps.standalone ? el('button',{class:'btn sm',onclick:function(){ copyText(siteLink('#c-' + g.code),'Student link'); },title:siteLink('#c-' + g.code),text:'Copy student link'})
+            : el('button',{class:'btn sm',onclick:function(){ copyText('#c-' + g.code,'Link ending'); },title:'Add this to the end of the page’s share link',text:'Copy link ending'})),
+        el('label',{class:'row',for:'op-'+c.id,style:'font-weight:700;font-size:.9rem'}, openBox, 'Open for this class'), stateTxt,
+        el('label',{class:'fld',for:'du-'+c.id}, 'Due date', dueIn, el('span',{class:'hint',text:'Optional. Submissions after 23:59 UTC that day are marked late.'})));
+    }))
+  );
+}
+function manageClasses(){
+  var list = el('div',{class:'stack',style:'gap:8px'});
+  var addIn = el('input',{type:'text',id:'cl-new',maxlength:50,placeholder:'e.g. Period 2 Biology'});
+  function draw(){
+    fill(list, TW.classes.length ? TW.classes.map(function(c){
+      var inp = el('input',{type:'text',value:c.name,maxlength:50,'aria-label':'Class name'});
+      inp.addEventListener('input', function(){ c.name = inp.value; ensureBar(); });
+      inp.addEventListener('blur', function(){ if (!c.name.trim()){ c.name = 'Untitled class'; inp.value = c.name; } });
+      var used = TW.activities.filter(function(a){ return (a.assign||{})[c.id]; }).length;
+      var del = el('button',{class:'btn danger sm',title:'Delete class','aria-label':'Delete ' + c.name,text:'Delete',onclick:function(){
+        if (del.dataset.armed){ TW.classes = TW.classes.filter(function(x){ return x.id !== c.id; }); TW.activities.forEach(function(a){ if (a.assign) delete a.assign[c.id]; }); ensureBar(); draw(); return; }
+        del.dataset.armed = '1'; del.textContent = 'Delete?'; del.className = 'btn danger-solid sm';
+        toast(used ? 'Deleting removes it from ' + used + ' assignment' + (used===1?'':'s') + ' and their codes stop working.' : 'Tap Delete? again to remove this class.');
+      }});
+      return el('div',{class:'cls-row'}, inp, del);
+    }) : [el('p',{class:'muted',style:'margin:0',text:'No classes yet.'})]);
+  }
+  function addOne(){
+    var nm = addIn.value.trim(); if (!nm){ addIn.focus(); return; }
+    TW.classes.push({ id:uid(), name:nm.slice(0,50) }); addIn.value = ''; ensureBar(); draw(); addIn.focus();
+  }
+  addIn.addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); addOne(); } });
+  draw();
+  var done = function(){ closeModal(); renderTeacher(); };
+  openModal([
+    el('h3',{style:'font-size:1.25rem',text:'Your classes'}),
+    el('p',{class:'muted',style:'margin:0',text:'Add each section you teach. Rename them any time; codes stay the same.'}),
+    list,
+    el('div',{class:'row',style:'flex-wrap:nowrap'}, addIn, el('button',{class:'btn sm',onclick:addOne,text:'Add'})),
+    el('div',{class:'row',style:'justify-content:flex-end'}, el('button',{class:'btn primary',onclick:done,text:'Done'}))
+  ], { onDismiss: done });
+  setTimeout(function(){ addIn.focus(); }, 40);
+}
+function addPreviewBanner(){
+  var back = el('div',{class:'banner warn',style:'display:flex;gap:10px;align-items:center;flex-wrap:wrap'}, el('span',{style:'margin-right:auto',text:'Student preview. Your test board stays on this device and is never submitted.'}), el('button',{class:'btn sm',onclick:function(){ ST = null; PX.activePost=null; previewing = false; location.hash='teacher'; route(); },text:'Back to teacher view'}));
+  root.insertBefore(back, root.children[1]);
+}
+function previewAsStudent(a){
+  ST = null; PX.activePost=null; previewing = true;
+  var cid = Object.keys(a.assign||{})[0], c = cid && classOf(TW, cid);
+  startStudent(clone(a), c || { id:'preview', name:'Preview class' }, c ? a.assign[cid] : { open:true, due:'' }, true);
+  addPreviewBanner();
+}
+
+function subsPane(a){
+  var rows = rowsFor(a.id);
+  var names = {}; rows.forEach(function(r){ if (rowClass(r.p)) names[rowClass(r.p)]=1; });
+  Object.keys(a.assign||{}).forEach(function(cid){ var c = classOf(TW, cid); if (c) names[c.name] = 1; });
+  if (TS.cls !== 'all' && !names[TS.cls]) TS.cls = 'all';
+  var shown = rows.filter(function(r){ return TS.cls === 'all' || rowClass(r.p) === TS.cls; });
+  var sel = el('select',{id:'f-class','aria-label':'Filter by class'}, el('option',{value:'all',text:'All classes'}), Object.keys(names).sort(function(x,y){ return x.localeCompare(y,undefined,{numeric:true}); }).map(function(p){ var o = el('option',{value:p,text:p}); if (p===TS.cls) o.selected = true; return o; }));
+  sel.addEventListener('change', function(){ TS.cls = sel.value; renderTeacher(); });
+  var upl = el('input',{type:'file',id:'f-upload',multiple:true,accept:'.csv,text/csv,text/plain'});
+  upl.addEventListener('change', function(){
+    var fs = Array.prototype.slice.call(upl.files||[]); if (!fs.length) return;
+    Promise.all(fs.map(function(f){ return readFile(f).then(function(t){ return { name:f.name, text:t }; }, function(){ return { name:f.name, text:'' }; }); })).then(function(items){ importItems(a, items); upl.value = ''; });
+  });
+  var imp = el('textarea',{id:'f-import',rows:3,value:TS.importDraft||'',placeholder:'Paste the text of a save file (or an older HEX1 code)'});
+  imp.addEventListener('input', function(){ TS.importDraft = imp.value; });
+  var totalConns = shown.reduce(function(s,r){ return s + (r.p.connections||[]).length; }, 0);
+  var lateN = shown.filter(function(r){ return r.p.late; }).length;
+
+  return el('div',{class:'stack',style:'gap:16px'},
+    el('p',{class:'muted',style:'margin:0',text: caps.standalone ? 'Online submissions appear after students turn in their boards. Refresh to load new submissions, open a board, then grade and return it to Classroom. CSV uploads below remain local backups.' : 'Students who can contribute to this page submit straight into this table. Everyone else saves a CSV file and turns it in on Classroom; upload those files at the bottom.'}),
+    el('div',{class:'row'},
+      el('div',{style:'width:180px'}, sel),
+      el('span',{class:'muted',style:'margin-right:auto',text: shown.length + ' student' + (shown.length===1?'':'s') + ' · ' + totalConns + ' connections' + (lateN ? ' · ' + lateN + ' late' : '')}),
+      el('button',{class:'btn sm',onclick:function(){ copyText(termKeyText(a),'Key'); },text:'Copy key'}),
+      el('button',{class:'btn sm',disabled:!shown.length,onclick:function(){ copyText(exportText(a, shown),'Numbered connections list'); },text:'Copy numbered list'}),
+      el('button',{class:'btn primary sm',disabled:!shown.length,onclick:function(){ downloadCSV(a, shown); },text:'Download CSV'})),
+    shown.length ? el('div',{class:'tscroll'}, el('table',null,
+      el('thead',null, el('tr',null, ['Student','Class','Terms used','Connections','Submitted','Via',''].map(function(h){ return el('th',{text:h}); }))),
+      el('tbody',null, shown.map(function(r){
+        var cs = r.p.connections||[], need = needTerms(a), tu = termsUsedIn(cs);
+        return el('tr',null,
+          el('td',null, el('b',{text:r.p.name||'(no name)'})),
+          el('td',{text:rowClass(r.p)||'—'}),
+          el('td',{class:'n'}, tu + ' of ' + a.terms.length, tu < need ? el('span',{class:'chip late',style:'margin-left:6px',text:'Below ' + need}) : null),
+          el('td',{class:'n',text:String(cs.length)}),
+          el('td',{class:'n'}, fmtTime(r.p.submittedAt), r.p.late ? el('span',{class:'chip late',style:'margin-left:6px',text:'Late'}) : null),
+          el('td',{class:'muted',text:r.source}),
+          el('td',null, el('div',{class:'row',style:'flex-wrap:nowrap'}, el('button',{class:'btn sm',onclick:function(){ viewSubmission(a, r.p); },text:'View board'}),
+            r.key.indexOf('lo:') === 0 ? el('button',{class:'btn ghost sm','aria-label':'Remove uploaded submission',onclick:function(){ TS.localImports.splice(+r.key.slice(3), 1); saveWork(); renderTeacher(); toast('Removed.'); },text:'Remove'}) : null,
+            r.importId && caps.db ? el('button',{class:'btn ghost sm','aria-label':'Remove uploaded submission',onclick:function(){ caps.db.doc('imports/' + r.importId).delete().then(function(){ toast('Removed.'); }); },text:'Remove'}) : null)));
+      })))) : el('div',{class:'panel muted',text: !caps.db ? 'No online submissions loaded yet. Select Refresh online submissions. You can also upload CSV backups below.' : (TS.subsReady ? 'No submissions yet. They appear here live as students submit.' : 'Loading submissions…')}),
+    el('div',{class:'panel stack',style:'gap:10px'},
+      el('h3',{text:'Upload student files'}),
+      el('label',{class:'fld',for:'f-upload'}, 'Save files (CSV)', upl, el('span',{class:'hint',text:'Choose one or many files students turned in. Each becomes a submission for the assignment and class named in the file.'})),
+      el('label',{class:'fld',for:'f-import'}, 'Or paste one', imp),
+      el('div',{class:'row'}, el('button',{class:'btn sm',onclick:function(){ if (!imp.value.trim()){ toast('Paste a save file first.'); return; } importItems(a, [{ name:'Pasted text', text:imp.value }]); TS.importDraft=''; imp.value=''; },text:'Add pasted file'})))
+  );
+}
+
+/* legacy HEX1 codes from the earlier version */
+function decodeCode(code){
+  code = code.trim(); if (code.indexOf('HEX1.') !== 0) return null;
+  try {
+    var o = JSON.parse(b64d(code.slice(5)));
+    if (!o || !o.a || !Array.isArray(o.c)) return null;
+    var place = {}; Object.keys(o.pl||{}).forEach(function(k){ var v = o.pl[k]; if (Array.isArray(v) && v.length===2) place[k] = [+v[0], +v[1]]; });
+    return { activityId:String(o.a).slice(0,40), name:String(o.nm||'').slice(0,60), period:String(o.p||'').slice(0,20), submittedAt:String(o.s||''), placements:place,
+      conns:o.c.slice(0,300).map(function(c){ return { a:+c[0], b:+c[1], why:String(c[2]||'').slice(0,600) }; }) };
+  } catch(e){ return null; }
+}
+function payloadFrom(act, name, classId, clsName, when, place, connList){
+  var H = hexMap(act), conns = {}, c = classId && classOf(TW, classId), g = c && (act.assign||{})[classId];
+  var cname = c ? c.name : (clsName || ''), at = when || new Date().toISOString();
+  connList.forEach(function(c, i){ conns[pkey(c.a,c.b)] = { why:c.why, at:i+1 }; });
+  return { activityId:act.id, activityTitle:act.title, name:name, classId:c ? c.id : '', className:cname, period:cname, due:g ? (g.due||'') : '', late:g ? isLate(g.due, at) : false, submittedAt:at, importedAt:new Date().toISOString(), placements:place,
+    connections: activeConns(place, conns).filter(function(c){ return H[c.a] && H[c.b]; }).map(function(c){ return { num:c.num, a:c.a, b:c.b, labelA:H[c.a].label, nameA:H[c.a].name, labelB:H[c.b].label, nameB:H[c.b].name, icon:iconOf(H,c.a,c.b), why:c.why }; }) };
+}
+function importItems(cur, items){
+  var adds = [], problems = [];
+  items.forEach(function(it){
+    var text = (it.text||'').trim();
+    if (text.indexOf('HEX1.') === 0){
+      text.split(/\s+/).forEach(function(code){
+        var p = decodeCode(code), act = p && twAct(p.activityId);
+        if (!p || !act){ problems.push(it.name + ': unreadable code'); return; }
+        adds.push(payloadFrom(act, p.name, '', p.period, p.submittedAt, p.placements, p.conns));
+      });
+      return;
+    }
+    var res = readSaveCSV(text, twAct);
+    if (!res.ok){ problems.push(it.name + ': ' + res.error); return; }
+    adds.push(payloadFrom(res.act, res.name, res.classId, res.period, res.saved, res.place, res.conns));
+  });
+  var chain = Promise.resolve();
+  adds.forEach(function(p){ if (caps.db) chain = chain.then(function(){ return caps.db.collection('imports').add(p); }); else TS.localImports.push(p); });
+  if (!caps.db) saveWork();
+  chain.then(function(){
+    var other = adds.filter(function(p){ return p.activityId !== cur.id; }).length;
+    var msg = adds.length + ' file' + (adds.length===1?'':'s') + ' added' + (other ? ' (' + other + ' for other assignments)' : '') + '.';
+    if (problems.length){
+      openModal([el('h3',{text:msg}), el('p',{style:'margin:0',text:'These couldn’t be added:'}), el('ul',{style:'margin:0;padding-left:18px'}, problems.map(function(p){ return el('li',{text:p}); })), el('div',{class:'row',style:'justify-content:flex-end'}, el('button',{class:'btn primary',onclick:closeModal,text:'OK'}))]);
+    } else toast(msg);
+    if (!caps.db) renderTeacher();
+  }, function(){ toast('Couldn’t save the uploads. Try again in a moment.'); });
+}
+
+function termKeyText(a){ return [a.title + ' — key'].concat(hexList(a).map(function(h){ return h.label + '  ' + h.name + (h.def ? ' — ' + h.def : ''); })).join('\n'); }
+function cA(a, c){
+  var H = hexMap(a);
+  return { la: c.labelA || (H[c.a]&&H[c.a].label) || ('T'+c.a), na: c.nameA || c.termA || (H[c.a]&&H[c.a].name) || '?',
+           lb: c.labelB || (H[c.b]&&H[c.b].label) || ('T'+c.b), nb: c.nameB || c.termB || (H[c.b]&&H[c.b].name) || '?',
+           icon: c.icon != null ? c.icon : iconOf(H, c.a, c.b) };
+}
+function exportText(a, rows){
+  var out = [a.title + ' — numbered connections', 'Format: C# · Hex A #–Hex B # (Hex A ↔ Hex B): justification', ''];
+  rows.forEach(function(r){
+    out.push((r.p.name||'(no name)') + ' · ' + (rowClass(r.p)||'No class') + ' · ' + (r.p.connections||[]).length + ' connections' + (r.p.late ? ' · LATE' : ''));
+    (r.p.connections||[]).forEach(function(c){ var x = cA(a,c); out.push('  C' + c.num + ' · ' + x.la + '–' + x.lb + ' (' + x.na + ' ↔ ' + x.nb + ')' + (x.icon ? ' [' + x.icon + ']' : '') + ': ' + c.why); });
+    out.push('');
+  });
+  out.push(termKeyText(a));
+  return out.join('\n');
+}
+function downloadCSV(a, rows){
+  var data = [['Student','Class','Submitted','Late','Connection #','Pair code','Hex A #','Hex A','Hex B #','Hex B','D&C icon','Justification']];
+  rows.forEach(function(r){ (r.p.connections||[]).forEach(function(c){
+    var x = cA(a,c);
+    data.push([r.p.name, rowClass(r.p), r.p.submittedAt, r.p.late ? 'Yes' : '', 'C' + c.num, x.la + '-' + x.lb, x.la, x.na, x.lb, x.nb, x.icon, c.why]);
+  }); });
+  saveFile(slug(a.title) + '-connections.csv', toCSV(data), 'Connections CSV');
+}
+
+function viewSubmission(a, p){
+  var conns = {}; (p.connections||[]).forEach(function(c, i){ conns[pkey(c.a,c.b)] = { why:c.why, at:i+1 }; });
+  var svg = boardSVG(a, p.placements||{}, conns, { onBadge:function(cn){ var li = document.getElementById('vc-' + cn.num); if (li){ li.scrollIntoView({block:'nearest'}); li.style.background = 'var(--honey-soft)'; setTimeout(function(){ li.style.background=''; }, 1200); } } });
+  var list = activeConns(p.placements||{}, conns), H = hexMap(a);
+  openModal([
+    el('div',{class:'row',style:'justify-content:space-between'}, el('div',null, el('div',{class:'eyebrow',text:(rowClass(p)||'No class') + ' · ' + fmtTime(p.submittedAt) + (p.late ? ' · Late' : '')}), el('h3',{style:'font-size:1.3rem',text:p.name||'(no name)'})), el('button',{class:'btn',onclick:closeModal,text:'Close','data-autofocus':true})),
+    el('div',{class:'play'},
+      el('div',{class:'board'}, svg),
+      el('ol',{class:'clist',style:'max-height:60vh;overflow:auto'}, list.length ? list.map(function(c){
+        var la = H[c.a]?H[c.a].label+' '+H[c.a].name:'?', lb = H[c.b]?H[c.b].label+' '+H[c.b].name:'?', ic = iconOf(H,c.a,c.b);
+        return el('li',{id:'vc-' + c.num,style:'border-radius:6px;padding:2px'}, el('span',{class:'cnum',text:'C'+c.num}), el('div',{style:'min-width:0'}, el('b',{text:la+' – '+lb}), ic ? el('div',{class:'hint',text:'Lens: ' + ic}) : null, el('div',{class:'why',text:c.why})));
+      }) : el('li',{class:'muted',text:'No connections.'})))
+  ], { wide:true });
+}
+
+/* ---------- publish (rewrites this page with the new activity list) ---------- */
+function buildDocument(data){
+  var style = document.getElementById('hx-style').textContent;
+  var main = document.getElementById('hx-main').textContent;
+  var json = JSON.stringify(data).replace(/</g, '\\u003c');
+  var authJson = JSON.stringify(AUTH_CONFIG).replace(/</g, '\\u003c');
+  var reset = ':root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-family:system-ui,-apple-system,sans-serif;font-size:14px}img{max-width:100%}[hidden]{display:none!important}';
+  var sc = 'scr' + 'ipt';
+  return '<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>' + reset + '</style></head><body>' +
+    '<title>Hex Connections</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n<link rel="stylesheet" href="' + FONT_HREF + '">\n' +
+    '<style id="hx-style">' + style + '</style>\n<div id="root"></div>\n' +
+    '<' + sc + ' type="application/json" id="hx-data">' + json + '</' + sc + '>\n' +
+    '<' + sc + ' type="application/json" id="hx-auth-config">' + authJson + '</' + sc + '>\n' +
+    '<' + sc + ' id="hx-main">' + main + '</' + sc + '>\n</bo' + 'dy></html>';
+}
+function publishNow(){
+  var out = publishable();
+  var noTitle = out.activities.filter(function(a){ return !(a.title||'').trim(); })[0];
+  if (noTitle){ toast('Give each activity a title before publishing.'); TS.sel = noTitle.id; TS.tab='setup'; renderTeacher(); setTimeout(function(){ var t = document.getElementById('f-title'); if (t) t.focus(); }, 30); return; }
+  var empty = out.activities.filter(function(a){ return !a.terms.length; })[0];
+  if (empty){ toast('“' + (empty.title||'Untitled') + '” has no terms yet.'); TS.sel = empty.id; TS.tab='setup'; renderTeacher(); return; }
+  var noIcons = out.activities.filter(function(a){ return a.dcOn && !(a.dc||[]).length; })[0];
+  if (noIcons){ toast('“' + (noIcons.title||'Untitled') + '” has Depth and Complexity on but no icons picked.'); TS.sel = noIcons.id; TS.tab='setup'; renderTeacher(); return; }
+  if (caps.standalone){
+    var html = buildDocument(out);
+    try { downloadBlob('index.html', html, 'text/html'); } catch(e){ toast('Your browser blocked the download.'); return; }
+    DATA = clone(out); TS.busy = false; renderTeacher();
+    openModal([el('h3',{style:'font-size:1.25rem',text:'Site file downloaded'}),
+      el('p',{style:'margin:0',text:'Upload the new index.html to your website, replacing the old one. Students see your changes as soon as it’s uploaded.'}),
+      el('p',{class:'muted',style:'margin:0',text:'Your work is also saved in this browser, so you can keep editing here at ' + siteLink('#teacher') + '.'}),
+      el('div',{class:'row',style:'justify-content:flex-end'}, el('button',{class:'btn primary','data-autofocus':true,onclick:closeModal,text:'Got it'}))]);
+    return;
+  }
+  if (!caps.artifact){ toast('Publishing works only for the page owner on claude.ai.'); return; }
+  TS.busy = true; renderTeacher(); remember();
+  caps.artifact.publish(buildDocument(out)).then(function(){ toast('Published. Students now see the update.'); }, function(err){
+    TS.busy = false; renderTeacher();
+    var c = err && err.code;
+    toast(c === 'conflict' ? 'Someone published a newer version first. The page will reload to it.' : c === 'not_writer' || c === 'not_granted' ? 'Only the page owner or an editor can publish.' : 'Publishing failed. Try again.');
+  });
+}
+
+/* =====================================================================
+   shell
+   ===================================================================== */
+function topBar(){
+  var right = [];
+  if (GA.user){
+    right.push(el('span',{class:'chip',text:GA.user.displayName || GA.user.email || 'Google account',title:GA.user.email || ''}));
+    if (googleTeacher() && !isTeacherHash()) right.push(el('a',{class:'btn ghost sm',href:'#teacher',text:'Teacher view'}));
+    right.push(el('button',{class:'btn ghost sm',disabled:GA.busy,onclick:googleSignOut,text:'Sign out'}));
+  }
+  if (caps.teacher && !previewing) right.push(el('span',{class:'chip ok',text: caps.standalone ? 'Teacher workspace' : 'Teacher view'}));
+  if (caps.teacher && caps.standalone && !previewing) right.push(el('a',{class:'btn ghost sm',href:'#',text:'Student view'}));
+  if (!caps.ready) right.push(el('span',{class:'chip',text:'Connecting…'}));
+  return el('header',{class:'top'},
+    el('div',{class:'brand'},
+      sv('svg',{width:40,height:34,viewBox:'0 0 34 30','aria-hidden':'true'},
+        sv('polygon',{points:hexPts(8.5,9,7.6),fill:'var(--honey)'}),
+        sv('polygon',{points:hexPts(15.4,21,7.6),fill:'var(--teal)'}),
+        sv('polygon',{points:hexPts(22.3,9,7.6),fill:'var(--blue)'})),
+      el('div',null, el('h1',{text:'Hex Connections'}), el('small',{text:'Hexagonal thinking boards'}))),
+    right);
+}
+
+function route(){
+  if (!GA.ready || !GA.user){ renderGoogleGate(); return; }
+  caps.teacher = isTeacherHash() && googleTeacher();
+  if (isTeacherHash() && !caps.teacher){
+    fill(root, topBar(), el('div',{class:'gate'}, el('div',{class:'panel'},
+      el('h2',{text:'Teacher access required'}),
+      el('p',{text:'This Google account is not listed as a teacher. Ask the site owner to check the teacher email list, or sign in with your teacher account.'}),
+      el('a',{class:'btn',href:'#',text:'Go to student view'}))));
+    return;
+  }
+  if (previewing) return;
+  if (caps.teacher){ ST = null; startTeacher(); return; }
+  var code = routeCode();
+  if (code){
+    var f = findByCode(code);
+    if (f && f.asg.open !== false){ if (!ST || ST.act.id !== f.act.id || ST.cls.id !== f.cls.id) startStudent(f.act, f.cls, f.asg); else renderStudentShell(); return; }
+    ST = null; renderStudentHome(f ? 'closed' : 'notfound', code); return;
+  }
+  ST = null; renderStudentHome();
+}
+window.addEventListener('hashchange', function(){
+  if (ST) saveDraft();
+  previewing = false; ST = null;
+  route();
+});
+
+/* ===== Shared platform: Cloudflare API, Classroom and account onboarding ===== */
+var PX = {submitting:false,loginRole:null,profile:null,loaded:false,loading:false,error:'',revision:0,token:null,tokenUntil:0,tokenRole:null,activePost:null,postState:null,routeId:0,draftTimer:null,pendingDraft:null,draftChain:Promise.resolve(),saving:false,postsLoading:false};
+function platformApi(path,body,withClassroom){
+  var account=GA.user;
+  if(!account) return Promise.reject(new Error('Sign in with Google first.'));
+  if(withClassroom && (!PX.token || Date.now()>PX.tokenUntil)){
+    var missing=new Error('Connect Google Classroom and try again.');missing.code='classroom-reconnect';return Promise.reject(missing);
+  }
+  var accessToken=PX.token;
+  return account.getIdToken().then(function(idToken){
+    if(!GA.user || GA.user.uid!==account.uid) throw new Error('Your account changed. Try again.');
+    var headers={'Authorization':'Bearer '+idToken};
+    if(body!==undefined) headers['Content-Type']='application/json';
+    if(withClassroom) headers['X-Classroom-Token']=accessToken;
+    return fetch('/api/'+path,{method:body===undefined?'GET':'POST',headers:headers,body:body===undefined?undefined:JSON.stringify(body),cache:'no-store'});
+  }).then(function(res){return res.text().then(function(raw){
+    var data;try{data=JSON.parse(raw)}catch(e){throw new Error('The Cloudflare backend is not deployed yet. Follow DEPLOYMENT.txt to enable accounts and saved work.');}
+    if(!res.ok){var e=new Error(data.error||'Request failed.');e.code=data.code;if(e.code==='classroom-reconnect'){PX.token=null;PX.tokenUntil=0;}throw e;}
+    if(!GA.user || GA.user.uid!==account.uid) throw new Error('Your account changed. Try again.');
+    return data;
+  });});
+}
+function platformError(err){toast(err.message||String(err));}
+function loadPlatform(){
+  if(PX.loading || !GA.user) return;
+  PX.loading=true;PX.error='';
+  var loadingUid=GA.user.uid;
+  platformApi('me').then(function(r){
+    if(PX.loginRole){var selected=PX.loginRole;PX.loginRole=null;return platformApi('profile',{role:selected})}
+    return r;
+  }).then(function(r){
+    if(!GA.user||GA.user.uid!==loadingUid)throw new Error('Account changed.');
+    PX.profile=r.profile;
+    if(r.profile.role==='teacher') return platformApi('workspace').then(function(w){
+      DATA=w.workspace;PX.revision=w.revision;
+      var local=lsGet('hx-teacher-work');
+      var localBase=lsGet('hx-workspace-base');
+      if(local && localBase!==null && localBase!==w.revision){lsSet('hx-workspace-conflict-backup',local);lsSet('hx-teacher-work',w.workspace);}
+      lsSet('hx-workspace-base',w.revision);
+    });
+    DATA={version:4,classes:[],activities:[]};
+  }).then(function(){if(!GA.user||GA.user.uid!==loadingUid)return;PX.loaded=true;PX.loading=false;if(PX.profile.role==='teacher'&&!location.hash)location.hash='teacher';route();}).catch(function(e){if(!GA.user||GA.user.uid!==loadingUid)return;PX.loading=false;PX.error=e.message;route();});
+}
+function platformGate(){
+  fill(root,topBar(),el('div',{class:'gate'},el('div',{class:'panel'},
+    el('h2',{text:PX.error?'Account setup is not ready':'Loading your workspace…'}),
+    el('p',{class:PX.error?'err':'muted',role:PX.error?'alert':'status',text:PX.error||'Opening your account and saved work.'}),
+    PX.error?el('button',{class:'btn primary',onclick:function(){PX.error='';loadPlatform();route();},text:'Retry'}):null)));
+}
+function chooseAccountRole(){
+  function setRole(role){
+    platformApi('profile',{role:role}).then(function(r){PX.profile=r.profile;PX.loaded=false;TW=null;ST=null;location.hash=role==='teacher'?'teacher':'';loadPlatform();route();}).catch(platformError);
+  }
+  fill(root,topBar(),el('div',{class:'gate'},el('div',{class:'panel'},
+    el('div',{class:'eyebrow',text:'Create your account'}),el('h2',{text:'How will you use Hex Connections?'}),
+    el('p',{class:'muted',text:'Your Google account is ready. Choose a workspace; you can switch views later. Classroom confirms which courses you teach or attend.'}),
+    el('div',{class:'choice'},el('button',{class:'btn primary',onclick:function(){setRole('teacher')},text:'I’m a teacher'}),el('button',{class:'btn honey',onclick:function(){setRole('student')},text:'I’m a student'})))));
+}
+function switchAccountRole(){
+  if(TW) saveWork();
+  var role=PX.profile.role==='teacher'?'student':'teacher';
+  platformApi('profile',{role:role}).then(function(r){PX.profile=r.profile;PX.loaded=false;TW=null;ST=null;DATA={version:4,classes:[],activities:[]};PX.activePost=null;location.hash=role==='teacher'?'teacher':'';loadPlatform();route();}).catch(platformError);
+}
+function connectClassroom(role,after){
+  if(GA.busy)return;
+  GA.busy=true;
+  var account=GA.user,provider=new GA.sdk.GoogleAuthProvider();
+  ['classroom.courses.readonly','classroom.rosters.readonly',role==='teacher'?'classroom.coursework.students':'classroom.coursework.me'].forEach(function(scope){provider.addScope('https://www.googleapis.com/auth/'+scope)});
+  provider.setCustomParameters({prompt:'consent',login_hint:GA.user.email});
+  // Reauthenticate preserves Firebase identity and prevents connecting a different account.
+  GA.sdk.reauthenticateWithPopup(account,provider).then(function(result){
+    if(!GA.user||GA.user.uid!==account.uid)return;
+    var credential=GA.sdk.GoogleAuthProvider.credentialFromResult(result);
+    if(!credential||!credential.accessToken)throw new Error('Google did not grant Classroom access.');
+    PX.token=credential.accessToken;PX.tokenUntil=Date.now()+50*60*1000;PX.tokenRole=role;
+    toast('Google Classroom connected.');
+    if(after)after();else route();
+  }).catch(function(e){platformError(e.code&&e.code.indexOf('auth/')===0?new Error(googleError(e)):e)}).finally(function(){GA.busy=false;var header=root.querySelector('.top');if(header)header.replaceWith(topBar());});
+}
+function classroomReady(role){return PX.token && Date.now()<PX.tokenUntil && PX.tokenRole===role;}
+function saveWorkspaceCloud(){
+  if(PX.saving)return Promise.reject(new Error('A workspace save is already running. Try again when it finishes.'));
+  PX.saving=true;
+  var out=clone(TW), account=GA.user.uid;
+  return platformApi('workspace',{workspace:out,revision:PX.revision}).then(function(r){
+    if(GA.user&&GA.user.uid===account){PX.revision=r.revision;DATA=clone(out);lsSet('hx-workspace-base',r.revision);}
+    return r;
+  }).finally(function(){PX.saving=false;});
+}
+function publishToClassroom(a,c){
+  if(!classroomReady('teacher')){connectClassroom('teacher',function(){publishToClassroom(a,c)});return;}
+  var account=GA.user.uid;
+  toast('Loading your Classroom courses…');
+  platformApi('classroom/courses?role=teacher',undefined,true).then(function(r){
+    if(!GA.user||GA.user.uid!==account)return;
+    if(!r.courses.length){toast('No active courses found where this Google account is a teacher.');return;}
+    var sel=el('select',{'aria-label':'Google Classroom course'},r.courses.map(function(course){return el('option',{value:course.id,text:course.name+(course.section?' · '+course.section:'')})}));
+    var points=el('input',{type:'number',min:1,max:10000,value:100,'aria-label':'Maximum points'});
+    var err=el('p',{class:'err',role:'alert'});
+    var button=el('button',{class:'btn primary',text:'Publish or update in Classroom',onclick:function(){
+      var max=Number(points.value);if(!Number.isFinite(max)||max<=0||max>10000){err.textContent='Enter points between 0 and 10,000.';return;}
+      button.disabled=true;err.textContent='';
+      saveWorkspaceCloud().then(function(){return platformApi('classroom/publish',{activityId:a.id,classId:c.id,courseId:sel.value,maxPoints:max},true)}).then(function(result){
+        closeModal();renderTeacher();
+        openModal([el('h3',{text:result.updated?'Classroom assignment updated':'Published to Google Classroom'}),
+          el('p',{text:'Students open the assignment’s Hex Connections link and sign in. Share the assignment through Classroom so course membership can be checked.'}),
+          el('a',{class:'btn primary',href:result.classroomUrl,target:'_blank',rel:'noopener',text:'Open in Classroom'}),
+          el('button',{class:'btn',onclick:function(){copyText(result.url,'Assignment link')},text:'Copy assignment link'}),
+          el('button',{class:'btn ghost',onclick:closeModal,text:'Done'})]);
+      }).catch(function(e){button.disabled=false;err.textContent=e.message;});
+    }});
+    openModal([el('h3',{text:'Publish “'+a.title+'” for '+c.name}),
+      el('p',{class:'muted',text:'Creates an assignment in the selected course. Repeating this action updates the same assignment for this activity, class and course. Due dates use 23:59 UTC.'}),
+      el('label',{class:'fld'},'Classroom course',sel),el('label',{class:'fld'},'Maximum points',points),err,
+      el('div',{class:'row'},button,el('button',{class:'btn ghost',onclick:closeModal,text:'Cancel'}))]);
+  }).catch(platformError);
+}
+function refreshSubmissions(){
+  if(PX.postsLoading)return;
+  PX.postsLoading=true;
+  platformApi('submissions').then(function(r){
+    TS.subs=r.submissions.map(function(p,i){var acts={};acts[i]=p;return {id:String(i),data:{acts:acts}}});
+    TS.subsReady=true;
+    if(caps.teacher&&!previewing&&TW)renderTeacher();
+  }).catch(platformError).finally(function(){PX.postsLoading=false;});
+}
+function gradeClassroom(p){
+  if(!classroomReady('teacher')){connectClassroom('teacher',function(){gradeClassroom(p)});return;}
+  var points=el('input',{type:'number',min:0,max:p._maxPoints,step:'any',value:p._grade==null?'':p._grade,'aria-label':'Grade'}),err=el('p',{class:'err',role:'alert'});
+  var send=el('button',{class:'btn primary',text:'Return grade to Classroom',onclick:function(){
+    if(points.value===''){err.textContent='Enter a grade.';return;}
+    var grade=Number(points.value);if(!Number.isFinite(grade)||grade<0||grade>p._maxPoints){err.textContent='Enter a grade from 0 to '+p._maxPoints+'.';return;}
+    send.disabled=true;
+    platformApi('posts/'+p._postId+'/grade',{studentUid:p._studentUid,grade:grade},true).then(function(){closeModal();toast('Grade returned to Google Classroom.');refreshSubmissions();}).catch(function(e){send.disabled=false;err.textContent=e.message;});
+  }});
+  openModal([el('h3',{text:'Grade '+p.name}),el('p',{text:'Maximum: '+p._maxPoints+'. This returns the assignment and grade to the student in Google Classroom.'}),points,err,el('div',{class:'row'},send,el('button',{class:'btn ghost',onclick:closeModal,text:'Cancel'}))]);
+}
+function studentDashboard(){
+  var panel=el('div',{class:'panel stack'},el('h2',{text:'Your assignments'}),el('p',{class:'muted',text:'Open an assignment from Google Classroom, or find your course below.'}));
+  var courseArea=el('div',{class:'stack'});
+  var input=el('input',{placeholder:'ABC-123',maxlength:9,'aria-label':'Class code'});
+  var find=el('button',{class:'btn',text:'Open code',onclick:function(){
+    function resolve(){platformApi('resolve',{code:input.value},true).then(function(r){location.hash='a-'+r.id}).catch(platformError)}
+    if(!classroomReady('student'))connectClassroom('student',resolve);else resolve();
+  }});
+  var discover=el('button',{class:'btn primary',text:'Find assignments in Classroom',onclick:function(){
+    function courses(){
+      platformApi('classroom/courses?role=student',undefined,true).then(function(r){
+        fill(courseArea,r.courses.length?r.courses.map(function(c){return el('button',{class:'btn',text:c.name,onclick:function(){
+          platformApi('classroom/find',{courseId:c.id},true).then(function(result){fill(courseArea,el('h3',{text:c.name}),result.assignments.length?result.assignments.map(assignmentLink):el('p',{class:'muted',text:'No Hex Connections assignments are visible in this course.'}));}).catch(platformError);
+        }})}):el('p',{class:'muted',text:'No active Classroom courses were found for this student account.'}));
+      }).catch(platformError);
+    }
+    if(!classroomReady('student'))connectClassroom('student',courses);else courses();
+  }});
+  fill(root,topBar(),el('div',{class:'gate'},panel));
+  add(panel,discover);add(panel,courseArea);add(panel,el('div',{class:'row'},input,find));
+  var saved=el('div',{class:'stack'},el('p',{class:'muted',text:'Loading recently opened assignments…'}));add(panel,saved);
+  var seq=PX.routeId;
+  platformApi('my-assignments').then(function(r){if(seq!==PX.routeId)return;fill(saved,el('h3',{text:'Recently opened'}),r.assignments.length?r.assignments.map(assignmentLink):el('p',{class:'muted',text:'Assignments appear here after you open them.'}));}).catch(function(e){if(seq===PX.routeId)fill(saved,el('p',{class:'err',text:e.message}))});
+}
+function assignmentLink(a){return el('a',{class:'btn',href:'#a-'+a.id,text:a.title+' · '+a.className+(a.status?' · '+a.status.replace(/_/g,' ').toLowerCase():'')});}
+function openPlatformAssignment(id){
+  if(PX.activePost===id&&ST){renderStudentShell();return;}
+  var seq=PX.routeId;
+  if(!classroomReady('student')){
+    fill(root,topBar(),el('div',{class:'gate'},el('div',{class:'panel'},el('h2',{text:'Connect Google Classroom'}),
+      el('p',{text:'Connect the same Google account you use for this course. Classroom will confirm that this assignment belongs to you.'}),
+      el('button',{class:'btn primary',onclick:function(){connectClassroom('student',function(){route()})},text:'Connect Google Classroom'}))));return;
+  }
+  fill(root,topBar(),el('div',{class:'gate'},el('p',{role:'status',text:'Opening your assignment…'})));
+  platformApi('posts/'+id,undefined,true).then(function(r){
+    if(seq!==PX.routeId)return;
+    var a=r.assignment;
+    PX.activePost=id;PX.postState=r;
+    DATA={version:4,classes:[a.cls],activities:[a.act]};
+    var key=draftKey(a.act.id,a.cls.id),local=lsGet(key);
+    if(r.draft&&(!local||!local._savedAt||new Date(r.draft._savedAt)>=new Date(local._savedAt)))lsSet(key,r.draft);
+    startStudent(a.act,a.cls,a.asg,a.ownerUid===GA.user.uid);
+    // Owner preview does not enroll the teacher as a student.
+    if(a.ownerUid===GA.user.uid){ST.preview=true;addPreviewBanner();}
+  }).catch(function(e){if(seq!==PX.routeId)return;fill(root,topBar(),el('div',{class:'gate'},el('div',{class:'panel'},el('h2',{text:'Could not open assignment'}),el('p',{class:'err',text:e.message}),el('button',{class:'btn',onclick:function(){PX.activePost=null;route()},text:'Retry'}),el('a',{class:'btn',href:'#',text:'Your assignments'}))));});
+}
+function queueCloudDraft(){
+  if(!ST||ST.preview||!PX.activePost||!GA.user)return;
+  PX.pendingDraft={post:PX.activePost,draft:clone(ST.d),uid:GA.user.uid};
+  clearTimeout(PX.draftTimer);PX.draftTimer=setTimeout(flushCloudDraft,700);
+}
+function flushCloudDraft(){
+  clearTimeout(PX.draftTimer);
+  var item=PX.pendingDraft;PX.pendingDraft=null;
+  if(!item||!GA.user||item.uid!==GA.user.uid)return PX.draftChain;
+  PX.draftChain=PX.draftChain.catch(function(){}).then(function(){
+    if(!GA.user||item.uid!==GA.user.uid)return;
+    return platformApi('posts/'+item.post+'/draft',{draft:item.draft}).then(function(){
+      var status=document.getElementById('hx-cloud-status');if(status)status.textContent='Saved online';
+    }).catch(function(e){
+      var status=document.getElementById('hx-cloud-status');if(status)status.textContent='Saved in this browser; online save failed';
+      // Keep the newest unsaved board for an explicit retry or the next edit.
+      if(!PX.pendingDraft)PX.pendingDraft=item;
+      throw e;
+    });
+  });
+  PX.draftChain.catch(function(){});return PX.draftChain;
+}
+var localSaveDraft=saveDraft;
+saveDraft=function(){
+  if(ST){ST.d._savedAt=new Date().toISOString();localSaveDraft();queueCloudDraft();var status=document.getElementById('hx-cloud-status');if(status)status.textContent=ST.preview?'Preview saved in this browser':'Saving…';}
+};
+var oldDraftKey=draftKey;
+draftKey=function(a,c){return oldDraftKey(a,c)+(PX.activePost?'-'+PX.activePost:'')};
+// startStudent calls draftKey; do not append the post ID twice when priming it above.
+var renderBoard=renderStudentShell;
+renderStudentShell=function(){
+  renderBoard();
+  if(ST&&!ST.preview&&PX.activePost){
+    var cloud=el('span',{class:'chip',id:'hx-cloud-status',role:'status',text:'Saved work loads from your account'});
+    var row=el('div',{class:'row'},cloud,el('button',{class:'btn sm',onclick:function(){queueCloudDraft();flushCloudDraft().then(function(){toast('Board saved online.')}).catch(platformError)},text:'Save online'}),
+      el('button',{class:'btn sm',onclick:function(){
+        function reclaim(){platformApi('posts/'+PX.activePost+'/reclaim',{},true).then(function(){PX.postState.status='DRAFT';toast('Assignment reclaimed. You can edit and submit again.');}).catch(platformError)}
+        if(!classroomReady('student'))connectClassroom('student',reclaim);else reclaim();
+      },text:'Reclaim from Classroom'}));
+    root.insertBefore(row,root.children[2]||null);
+  }
+};
+submit=function(){
+  if(!ST||ST.preview){toast('Preview boards cannot be submitted.');return;}
+  if(PX.submitting){toast('Your submission is already being sent.');return;}
+  if(!checkReady())return;
+  function send(){
+    if(PX.submitting)return;
+    var id=PX.activePost,board=ST,account=GA.user.uid;
+    if(!id){toast('Open this assignment from Google Classroom first.');return;}
+    PX.submitting=true;
+    clearTimeout(PX.draftTimer);PX.pendingDraft=null;
+    toast('Saving your board and turning it in to Classroom…');
+    platformApi('posts/'+id+'/submit',{draft:clone(board.d)},true).then(function(r){
+      if(!GA.user||GA.user.uid!==account||ST!==board)return;
+      board.d.submittedAt=r.submittedAt;localSaveDraft();updateStudent();
+      toast('Turned in to Google Classroom. Your teacher can now review your board.');
+    }).catch(function(e){if(GA.user&&GA.user.uid===account)platformError(e)}).finally(function(){PX.submitting=false;});
+  }
+  if(!classroomReady('student'))connectClassroom('student',send);else send();
+};
+// All workspace state is account-specific. Classroom tokens remain in memory only.
+var clearView=clearAccountView;
+clearAccountView=function(){
+  clearView();PX.submitting=false;clearTimeout(PX.draftTimer);PX.pendingDraft=null;PX.token=null;PX.tokenUntil=0;PX.tokenRole=null;PX.loaded=false;PX.loading=false;PX.profile=null;PX.error='';PX.activePost=null;PX.routeId++;DATA={version:4,classes:[],activities:[]};
+};
+googleSignOut=function(){
+  if(!GA.auth||GA.busy)return;
+  if(ST)saveDraft();if(TW)saveWork();GA.busy=true;
+  flushCloudDraft().catch(function(){toast('Your latest board is saved in this browser. Online saving failed.');}).then(function(){return GA.sdk.signOut(GA.auth)}).catch(platformError).finally(function(){GA.busy=false;route()});
+};
+var oldTeacher=startTeacher;
+startTeacher=function(){oldTeacher();refreshSubmissions()};
+var oldCodes=codesPane;
+codesPane=function(a){
+  var pane=oldCodes(a);
+  add(pane,el('div',{class:'panel stack'},el('h3',{text:'Publish to Google Classroom'}),
+    el('p',{class:'muted',text:'Save an activity, assign it to a class above, then publish a link in your Classroom course. Republish here to update a live assignment. Codes work after Classroom publishing; links are preferred.'}),
+    TW.classes.filter(function(c){return (a.assign||{})[c.id]}).map(function(c){return el('button',{class:'btn primary',onclick:function(){publishToClassroom(a,c)},text:'Publish for '+c.name})})));
+  return pane;
+};
+var oldSubs=subsPane;
+subsPane=function(a){var pane=oldSubs(a);pane.prepend(el('button',{class:'btn',onclick:refreshSubmissions,text:'Refresh online submissions'}));return pane};
+var oldView=viewSubmission;
+viewSubmission=function(a,p){oldView(p.activitySnapshot||a,p);if(p._postId){var box=document.querySelector('.modal');if(box)add(box,el('div',{class:'row'},el('span',{class:'chip',text:p._grade==null?'Not graded':p._grade+' / '+p._maxPoints}),el('button',{class:'btn primary',onclick:function(){gradeClassroom(p)},text:'Grade and return in Classroom'})));}};
+saveBar=function(){return el('div',{class:'savebar'},el('span',{style:'margin-right:auto;font-weight:700',text:'Workspace changes are saved in this browser. Save online to use another device. Republish in Classes & codes to update Classroom assignments.'}),el('button',{class:'btn',disabled:PX.saving,onclick:publishNow,text:PX.saving?'Saving…':'Save workspace online'}))};
+publishNow=function(){saveWorkspaceCloud().then(function(){renderTeacher();toast('Workspace saved online. Use Classes & codes to publish assignments to Classroom.');}).catch(platformError)};
+var baseTopBar=topBar;
+topBar=function(){
+  var header=baseTopBar();
+  if(GA.user&&PX.profile&&PX.profile.role){
+    add(header,el('span',{class:'chip',text:PX.profile.role==='teacher'?'Teacher account':'Student account'}));
+    add(header,el('button',{class:'btn ghost sm',onclick:function(){connectClassroom(PX.profile.role)},text:classroomReady(PX.profile.role)?'Reconnect Classroom':'Connect Classroom'}));
+    add(header,el('button',{class:'btn ghost sm',onclick:switchAccountRole,text:PX.profile.role==='teacher'?'Switch to student':'Switch to teacher'}));
+    if(PX.profile.role==='teacher'&&TW)add(header,el('button',{class:'btn ghost sm',onclick:function(){downloadBlob('hex-workspace-backup.json',JSON.stringify(lsGet('hx-workspace-conflict-backup')||TW,null,2),'application/json')},text:'Download workspace backup'}));
+    if(PX.profile.role==='teacher'&&!isTeacherHash())add(header,el('a',{class:'btn ghost sm',href:'#teacher',text:'Teacher workspace'}));
+  }
+  return header;
+};
+route=function(){
+  PX.routeId++;
+  if(!GA.ready||!GA.user){renderGoogleGate();return;}
+  if(!PX.loaded){if(!PX.loading&&!PX.error)loadPlatform();platformGate();return;}
+  if(!PX.profile.role){chooseAccountRole();return;}
+  caps.teacher=isTeacherHash()&&googleTeacher();
+  if(previewing)return;
+  if(caps.teacher){PX.activePost=null;ST=null;startTeacher();return;}
+  if(isTeacherHash()){chooseAccountRole();return;}
+  var review=location.hash.match(/^#review-([a-zA-Z0-9-]+)~(.+)$/);
+  if(review){
+    platformApi('submissions').then(function(r){var p=r.submissions.filter(function(s){return s._postId===review[1]&&s._studentUid===decodeURIComponent(review[2])})[0];if(!p){toast('This board is visible only to the assignment owner after submission.');return;}platformApi('workspace').then(function(w){var a=w.workspace.activities.filter(function(x){return x.id===p.activityId})[0];if(a)viewSubmission(a,p);else toast('The original activity is no longer in your workspace.');}).catch(platformError)}).catch(platformError);
+    studentDashboard();return;
+  }
+  var match=location.hash.match(/^#a-([a-zA-Z0-9-]+)$/);
+  if(match){openPlatformAssignment(match[1]);return;}
+  var code=routeCode();
+  PX.activePost=null;ST=null;
+  studentDashboard();
+  if(code){var codeInput=root.querySelector('[aria-label="Class code"]');if(codeInput)codeInput.value=fmtCode(code);toast('Select Open code to verify your Classroom assignment.');}
+};
+
+route();
+bootGoogle();
+})();
+</script>
+
+</body>
+</html>

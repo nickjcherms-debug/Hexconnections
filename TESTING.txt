@@ -1,0 +1,36 @@
+VERIFICATION
+============
+19 automated tests pass with actual in-memory SQLite tables and simulated
+Firebase/Google Classroom responses. No real Classroom course was modified.
+
+Backend: Firebase authentication errors; wrong-project identity; external-origin
+requests; teacher/student profile persistence; teacher workspace isolation;
+workspace revision conflicts; consent token/account matching; actual teacher
+membership before publishing; update rather than duplicate publication;
+ambiguous publication retries; targeted student membership before access;
+isolated cloud drafts; malformed boards; authoritative submission identity;
+protected board attachments; immutable turned-in snapshots; saved work retained
+when Classroom turn-in fails; teacher-only grade return; grade bounds; both grade
+fields; reclaim/resubmit flows; Classroom course discovery and code resolution.
+
+Frontend: actual Firebase configuration; separate teacher/student Google login
+choices; first-use profile registration; student/teacher workspace routing;
+role-specific consent expiration; account-change token cleanup; per-account local
+storage; backend failures keeping teacher views closed.
+
+Browser QA: the live login SDK loaded and the two sign-in choices rendered in a
+preview-only HTTP fixture. Production keeps its HTTPS/localhost requirement.
+Teacher workspace, class publication dialog, student profile and board controls
+were inspected with explicitly simulated test accounts/API responses. The preview
+fixtures are not included in the deliverable.
+
+NOT YET VERIFIED
+Live Firebase sign-in; real Classroom API consent/publishing/turn-in/grading;
+Cloudflare Worker bundling/deployment and D1 binding; real school-account policies;
+mobile browsers. These require deployment to an authorized origin, enabled Google
+APIs, real test accounts and the corresponding user approvals.
+
+Run automated checks with Node 24:
+  npm test
+No additional packages are needed for these tests. npm install supplies Wrangler
+for deployment/local Worker development.

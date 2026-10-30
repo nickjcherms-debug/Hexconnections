@@ -1,0 +1,25 @@
+{
+  "name": "hex-connections",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-10-29",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": [
+      "/api/*"
+    ]
+  },
+  "vars": {
+    "PUBLIC_ORIGIN": "https://hexconnections.com",
+    "FIREBASE_PROJECT_ID": "hex-connections-a5214",
+    "FIREBASE_API_KEY": "AIzaSyDoKGDkeoowOISA8tMBuoNgh6mPXeCxqh0"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "hex-connections",
+      "database_id": "8f010d8b-3f2d-4d14-bf32-ff64866f475d",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

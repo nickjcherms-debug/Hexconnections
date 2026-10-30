@@ -1,0 +1,131 @@
+DEPLOY TO YOUR CLOUDFLARE WORKER
+===============================
+
+The code is prepared; these account-specific setup steps are still required.
+There is no authenticated Cloudflare deployment connection available in this
+conversation. Keep a copy of your existing deployment before replacing it.
+
+1. FINISH FIREBASE GOOGLE SIGN-IN
+In Firebase project hex-connections-a5214:
+- Open Authentication and enable the Google sign-in provider.
+- Add hexconnections.com to Authentication > Settings > Authorized domains.
+- Add www.hexconnections.com only if you use that hostname.
+The Firebase configuration has already been added to public/index.html and
+wrangler.jsonc. Do not replace authDomain with hexconnections.com: retain the
+supplied hex-connections-a5214.firebaseapp.com handler domain.
+
+2. ENABLE THE GOOGLE CLASSROOM API IN THE SAME PROJECT
+In https://console.cloud.google.com/ select hex-connections-a5214.
+Open APIs & Services > Library, find Google Classroom API, and enable it.
+Configure Google Auth Platform/OAuth consent:
+- App name: Hex Connections.
+- Set your real support and developer contact email addresses.
+- For registration outside your organization, choose an External audience.
+- Add the test teacher/student Google accounts while the app is in testing.
+- Configure the scopes the app requests:
+  https://www.googleapis.com/auth/classroom.courses.readonly
+  https://www.googleapis.com/auth/classroom.rosters.readonly
+  https://www.googleapis.com/auth/classroom.coursework.students
+  https://www.googleapis.com/auth/classroom.coursework.me
+The Firebase Google provider also uses Google sign-in identity scopes.
+
+Use the Google Web OAuth client associated with Firebase Google Authentication
+in THIS project for both teacher and student flows. The app requests Classroom
+permission through Firebase reauthentication. No separate secret is pasted into
+the site. Check the provider's Web SDK configuration if you customized its client.
+
+Public access with these Classroom permissions requires the applicable Google
+OAuth verification. Prepare verified domain ownership, app branding, support
+contact and a privacy policy describing the actual Firebase/Cloudflare/Classroom
+data flows. A school may also require its administrator to allow the app.
+This project setup is a prerequisite, not something the code can auto-approve.
+
+3. CREATE THE CLOUDFLARE DATABASE
+The supplied D1 database ID has been added. In Cloudflare, open Storage &
+databases > D1 and select your existing database named hex-connections.
+Open its Console and run migrations/0001_initial.sql. If the console runs only
+one statement at a time, execute the statements individually in file order.
+Do this once on an empty database; do not rerun CREATE TABLE against live tables.
+Your Database ID is already configured in wrangler.jsonc:
+  8f010d8b-3f2d-4d14-bf32-ff64866f475d
+Confirm this is the hex-connections database in your account. The runtime binding
+name must be DB. If the database already exists, skip creating another one.
+
+4. DEPLOY AS A WORKER
+Install Node.js and npm on your computer if necessary. Open a terminal in this
+extracted project's folder and run:
+
+  npm install
+  npx wrangler login
+  npm test
+
+The tests use Node's built-in SQLite module; use Node 24 or a version supporting
+node:sqlite. The Worker runtime itself uses standard Fetch APIs and D1, with no
+Node runtime dependency.
+
+Set the name field in wrangler.jsonc to your EXISTING Cloudflare Worker's name
+if replacing that Worker. Keep the current custom-domain configuration. To
+stage first, use a separate Worker name and its workers.dev address, set
+PUBLIC_ORIGIN to that staging origin and authorize the hostname in Firebase.
+Do not bind hexconnections.com to a staging Worker until you have tested it.
+
+If you did NOT already run the schema in the D1 console, run:
+  npm run db:migrate
+Use either the manual schema route OR the migration route on an empty database,
+not both. Wrangler migrations track successful application separately.
+
+Then deploy:
+  npm run deploy
+
+The supplied assets configuration uploads public/ and routes /api/* to
+src/worker.js. D1 is bound as DB; Firebase configuration and PUBLIC_ORIGIN are
+runtime variables. Preserve the same database binding across future deploys.
+
+If you manage the existing Worker through its dashboard instead of Wrangler:
+- Upload public/ as static assets AND use src/worker.js as its server entry.
+- Add the D1 binding DB to the database you created.
+- Set FIREBASE_PROJECT_ID=hex-connections-a5214, FIREBASE_API_KEY to your public
+  Firebase web API key, and PUBLIC_ORIGIN=https://hexconnections.com.
+- Ensure /api/* invokes the Worker before static asset routing.
+A static-only ZIP upload cannot replace these server and database settings.
+Wrangler is the supported reproducible route for this package.
+
+5. VERIFY BEFORE OPEN REGISTRATION
+Use a test Classroom course with separate teacher and student accounts:
+- Both login choices create and remember the appropriate profile.
+- Another teacher gets an empty, separate workspace.
+- Teachers can save, reload and reopen their workspace on another device.
+- Publishing creates one Classroom assignment with the right course/link.
+- Publishing the same activity/class/course again updates that same assignment.
+- The enrolled student opens the link; an unrelated Google account is denied.
+- Drafts survive reloading and can be opened on another device after sign-in.
+- Submit attaches the protected board link and turns in the Classroom assignment.
+- The teacher sees the board, returns a grade, and the student sees it in Classroom.
+- Reclaim, edit and resubmit work through the expected Classroom states.
+- Sign out clears the visible board and account; another user cannot load it.
+Complete OAuth verification before claiming availability for all Google accounts.
+
+WORKSPACE CONFLICTS
+Saving a workspace uses a revision check so one tab cannot silently overwrite
+another device. On a conflict, download a workspace backup, then reload. A local
+backup displaced by a newer server revision is preserved in browser storage and
+is available through Download workspace backup. Reapply edits intentionally.
+
+INTERRUPTED PUBLICATION
+A newly published assignment first gets a posts row with status CREATING.
+If Google or the network fails after creation, the app refuses automatic retries.
+Check the target Classroom course for the new assignment:
+- If it exists, identify its courseWork ID using the Classroom API and update the
+  row with that coursework_id, classroom_url and status PUBLISHED.
+- If you verify that no Classroom assignment was created, delete only that
+  unresolved CREATING row and retry publication.
+Do not delete PUBLISHED rows or other teachers' data when reconciling a failure.
+
+REFERENCES
+https://firebase.google.com/docs/reference/rest/auth
+https://firebase.google.com/docs/auth/web/google-signin
+https://developers.google.com/workspace/classroom/guides/auth
+https://developers.google.com/workspace/classroom/guides/manage-coursework
+https://developers.google.com/workspace/classroom/guides/classroom-api/manage-grades
+https://developers.cloudflare.com/workers/static-assets/binding/
+https://developers.cloudflare.com/workers/wrangler/configuration/
