@@ -33,7 +33,7 @@ function make(){
  getData(){return DATA},setData(w){DATA=w},setView(fn){viewSubmission=fn},
  setWork(w){TW=w;TS.rows={};TS.sel=w.activities[0].id},setRenderTeacher(fn){renderTeacher=fn},
  setApi(fn){platformApi=fn},setTeacher(fn){startTeacher=fn;teacherDashboard=fn},
- v4:{keyToPath,pathToKey,navItems:()=>navItems(),startPage,renderHome,hexSpaceSidebar,newFolder,deleteFolder,moveActivity,folderById,childFolders,folderActs,canMoveFolder,syncClassroomClasses,importClassroomClasses,sharePreview,copyShared,postManual,codesPane,TS,getTW(){return TW},startTeacher(){startTeacher()},renderTeacher(){renderTeacher()},setSave(fn){saveWorkspaceCloud=fn},setTS(o){Object.assign(TS,o)}}};`;
+ v4:{openPostDialog,studentCard:a=>studentAssignmentCard(a),setPosts(v){PX.posts=v},keyToPath,pathToKey,navItems:()=>navItems(),startPage,renderHome,hexSpaceSidebar,newFolder,deleteFolder,moveActivity,folderById,childFolders,folderActs,canMoveFolder,syncClassroomClasses,importClassroomClasses,sharePreview,copyShared,postManual,codesPane,TS,getTW(){return TW},startTeacher(){startTeacher()},renderTeacher(){renderTeacher()},setSave(fn){saveWorkspaceCloud=fn},setTS(o){Object.assign(TS,o)}}};`;
  vm.runInContext(script.replace(/startPage\(\);\nroute\(\);\nbootGoogle\(\);\n\}\)\(\);\s*$/,hooks+'})();'),context);
  const h=context.hx;
  function flatten(n=root){return [n,...(n.children||[]).flatMap(flatten)]}
@@ -393,4 +393,37 @@ test('saving online refreshes the browser copy so imported classes survive reope
  h.v4.importClassroomClasses();await settle();boxFor(t,'imp-g1').checked=true;clickText(t,'Import selected');await settle();
  assert.equal(saved.classes.length,1);
  const local=[...store.entries()].find(([k])=>k.includes('hx-teacher-work'));assert.ok(local,'browser copy written');assert.equal(JSON.parse(local[1]).classes[0].classroomId,'g1');
+});
+
+const dayOff=n=>{const d=new Date(Date.now()+n*86400000);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+test('posting asks for start and due dates and the same Hex Space can be posted to a class again',async()=>{
+ const t=make();const {h,text}=t;teacherWork(h);const v=h.v4,TW=v.getTW();
+ const sent=[];let saves=0;v.setSave(async()=>{saves++;return {revision:2}});
+ let posts=[];h.setApi(async(path,body)=>{
+  if(path==='posts/new'){sent.push(body);const p={id:'p'+sent.length,activityId:body.activityId,classId:body.classId,className:'Science club',title:body.title,code:'ABC23'+sent.length,manual:true,start:body.start,due:body.due,startAt:'',dueAt:'',open:true,status:'PUBLISHED',submissions:0,turnedIn:0};posts.push(p);return {...p,url:'x'}}
+  if(path==='teacher/dashboard')return {assignments:posts};throw new Error(path)});
+ v.setPosts([]);
+ const pane=v.codesPane(TW.activities[0]);const all=n=>[n,...(n.children||[]).flatMap(all)];
+ all(pane).find(n=>n.textContent==='Post to a class').listeners.click();
+ assert.match(text(),/Start date/);assert.match(text(),/Due date \(optional\)/);assert.match(text(),/time zone/);
+ const byId=id=>[...t.flatten(t.body)].find(n=>n.attrs?.id===id);
+ assert.equal(byId('pd-start').value,dayOff(0));
+ byId('pd-due').value=dayOff(7);t.flatten(t.body).find(n=>n.textContent==='Post').listeners.click();await settle();
+ assert.equal(sent.length,1);assert.equal(saves,1);assert.equal(sent[0].classId,'club');assert.equal(sent[0].start,dayOff(0));assert.equal(sent[0].due,dayOff(7));assert.ok(sent[0].tz);
+ assert.match(text(),/ABC-231/);
+ v.openPostDialog(TW.activities[0]);byId('pd-name').value='Cells — round 2';byId('pd-start').value=dayOff(10);byId('pd-due').value=dayOff(3);
+ t.flatten(t.body).filter(n=>n.textContent==='Post').at(-1).listeners.click();await settle();
+ assert.match(text(),/on or after the start date/);assert.equal(sent.length,1);
+ byId('pd-due').value=dayOff(14);t.flatten(t.body).filter(n=>n.textContent==='Post').at(-1).listeners.click();await settle();
+ assert.equal(sent.length,2);assert.equal(sent[1].classId,'club');assert.equal(sent[1].title,'Cells — round 2');
+ const pane2=v.codesPane(TW.activities[0]);const words=all(pane2).map(n=>n.textContent).join(' ');
+ assert.match(words,/Cells — round 2/);assert.match(words,/ABC-232/);assert.match(words,/Edit dates & details/);
+});
+test('students see a scheduled assignment as "Opens …" instead of an open button',()=>{
+ const {h}=make();const all=n=>[n,...(n.children||[]).flatMap(all)];
+ const future=new Date(Date.now()+3*86400000).toISOString();
+ const card=h.v4.studentCard({id:'p1',title:'Cells',className:'Science club',start:dayOff(3),startAt:future,due:dayOff(9),dueAt:''});
+ const words=all(card).map(n=>n.textContent).join(' ');assert.match(words,/Opens /);assert.doesNotMatch(words,/Open assignment/);
+ const open=h.v4.studentCard({id:'p2',title:'Cells',className:'Science club',start:dayOff(-1),startAt:new Date(Date.now()-86400000).toISOString(),due:dayOff(9)});
+ assert.match(all(open).map(n=>n.textContent).join(' '),/Open assignment/);
 });

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Hexagonal thinking boards for classrooms: students arrange vocabulary hexagons and explain every connection, with optional Depth and Complexity icons.">
-<meta name="hex-connections-build" content="4.1.0">
+<meta name="hex-connections-build" content="4.2.0">
 <title>Hex Connections</title>
 
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=JetBrains+Mono:wght@500;700&display=swap">
@@ -349,6 +349,13 @@ td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:now
 .chip-link{text-decoration:none}
 .chip-link:hover{text-decoration:underline}
 .cls-row.manage{grid-template-columns:minmax(0,1fr) auto auto}
+.post-card{display:flex;flex-direction:column;gap:10px}
+.date-pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:520px){.date-pair{grid-template-columns:1fr}}
+.chip.sched{background:var(--t1);color:var(--ink)}
+.chip.late{background:var(--honey-soft);color:var(--honey-ink)}
+.chip.off{opacity:.75}
+input[type=date]{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:8px 10px;font-size:.95rem}
 .hero-login{margin:14px 0 0;color:var(--muted);font-size:.95rem}
 .hero-login a{font-weight:700}
 .benefits{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
@@ -1485,7 +1492,7 @@ function renderTeacher(){
   var main = a ? el('div',{style:'min-width:0'},
     el('div',{class:'eyebrow',text:'Hex Space'}),
     el('div',{class:'row',style:'justify-content:space-between;align-items:flex-start'}, el('h2',{text:a.title || 'Untitled Hex Space'}), el('div',{class:'row'}, folderPicker(a), el('button',{class:'btn sm',onclick:function(){ openShare(a); },text:'Share'}))),
-    el('div',{class:'tabs',role:'tablist'}, tab('setup','Setup'), tab('codes','Classes & codes (' + Object.keys(a.assign||{}).length + ')'), tab('subs','Submissions (' + rowsFor(a.id).length + ')')),
+    el('div',{class:'tabs',role:'tablist'}, tab('setup','Setup'), tab('codes','Post (' + postsFor(a.id).length + ')'), tab('subs','Submissions (' + rowsFor(a.id).length + ')')),
     TS.tab === 'setup' ? setupPane(a) : TS.tab === 'codes' ? codesPane(a) : subsPane(a)
   ) : el('div',{class:'panel'}, el('h3',{text:'No activities yet'}), el('p',{class:'muted',text:'Create one to paste in your unit vocabulary.'}), el('button',{class:'btn primary',onclick:newActivity,text:'New activity'}));
 
@@ -1784,7 +1791,7 @@ function setupPane(a){
     el('div',{class:'grid2'},
       el('div',{class:'stack'},
         field('f-title','Title', bind(el('input',{type:'text',id:'f-title',value:a.title,maxlength:80,placeholder:'e.g. Unit 3: Cells'}),'title')),
-        el('p',{class:'hint',style:'margin:0',text:'Assign it to classes, get codes and set due dates on the Classes & codes tab.'})),
+        el('p',{class:'hint',style:'margin:0',text:'When it’s ready, post it to a class from the Post tab. You choose the start and due dates when you post.'})),
       field('f-ins','Directions for students', bind(el('textarea',{id:'f-ins',rows:3,value:a.instructions||'',maxlength:600,placeholder:DEFAULT_INS}),'instructions'), 'Leave blank to use the standard directions shown.')
     ),
     vocabPanel,
@@ -2353,8 +2360,8 @@ var oldSubs=subsPane;
 subsPane=function(a){var pane=oldSubs(a);pane.prepend(el('button',{class:'btn',onclick:refreshSubmissions,text:'Refresh online submissions'}));return pane};
 var oldView=viewSubmission;
 viewSubmission=function(a,p){oldView(p.activitySnapshot||a,p);if(p._postId){var box=document.querySelector('.modal');if(box)add(box,el('div',{class:'row'},el('span',{class:'chip',text:p._grade==null?'Not graded':p._grade+' / '+p._maxPoints}),el('button',{class:'btn primary',onclick:function(){gradeClassroom(p)},text:'Grade and return in Classroom'})));}};
-saveBar=function(){return el('div',{class:'savebar'},el('span',{style:'margin-right:auto;font-weight:700',text:'Workspace changes are saved in this browser. Save online to use another device. Republish in Classes & codes to update Classroom assignments.'}),el('button',{class:'btn',disabled:PX.saving,onclick:publishNow,text:PX.saving?'Saving…':'Save workspace online'}))};
-publishNow=function(){saveWorkspaceCloud().then(function(){renderTeacher();toast('Workspace saved online. Use Classes & codes to publish assignments to Classroom.');}).catch(platformError)};
+saveBar=function(){return el('div',{class:'savebar'},el('span',{style:'margin-right:auto;font-weight:700',text:'Workspace changes are saved in this browser. Save online to use another device. Use the Post tab to post or update assignments.'}),el('button',{class:'btn',disabled:PX.saving,onclick:publishNow,text:PX.saving?'Saving…':'Save workspace online'}))};
+publishNow=function(){saveWorkspaceCloud().then(function(){renderTeacher();toast('Workspace saved online. Use the Post tab to post it to a class.');}).catch(platformError)};
 var baseTopBar=topBar;
 topBar=function(){
   var header=baseTopBar();
@@ -2435,7 +2442,7 @@ function teacherDashboard(courseId){
    var course=courses.get(courseId)||{id:courseId,name:'Classroom'};
    dashboardAdd(body,el('div',{class:'row',style:'justify-content:space-between'},el('h3',{text:course.name}),course.link?el('a',{class:'btn sm',href:course.link,target:'_blank',rel:'noopener',text:'Open in Google Classroom ↗'}):null),el('button',{class:'btn primary',onclick:function(){newCourseAssignment(course)},text:'New Hex Space for this class'}));
    var issued=assignments.filter(function(a){return a.courseId===courseId});
-   if(!issued.length)dashboardMessage(body,course.manual?'Nothing posted for this class yet. Create a Hex Space, tick this class on Classes & codes, then choose Post.':'No assignments have been issued here through Hex Connections yet.');
+   if(!issued.length)dashboardMessage(body,course.manual?'Nothing posted for this class yet. Open a Hex Space, go to its Post tab and post it to this class.':'No assignments have been issued here through Hex Connections yet.');
    issued.forEach(function(a){dashboardAdd(body,teacherAssignmentCard(a))});
   }else{
    if(!courses.size)dashboardMessage(body,'No classes yet. Import your Google Classroom classes, or add a code-only class for students without Classroom.');
@@ -3567,6 +3574,170 @@ route=function(){
     if(role==='teacher'&&h==='#teacher/shared'){PX.routeId++;caps.teacher=false;ST=null;renderSharedLinks();return;}
   }
   v40Route();
+};
+
+
+/* ===================== 4.2: each posting is its own assignment with start and due dates =====================
+   Dates are chosen when posting (never on the class). Posting the same Hex Space to the
+   same class again creates another assignment with its own code and dates. */
+var TEACHER_TZ=(function(){try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC'}catch(e){return 'UTC'}})();
+function todayLocal(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function fmtDay(v){if(!v)return '';try{return new Date(v+'T12:00:00').toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'})}catch(e){return v}}
+function postState(p){
+  if(p.status&&p.status!=='PUBLISHED')return {label:'Publication pending',cls:''};
+  if(p.open===false)return {label:'Closed',cls:'off'};
+  if(p.startAt&&Date.now()<Date.parse(p.startAt))return {label:'Scheduled · opens '+fmtDay(p.start),cls:'sched'};
+  if(p.dueAt&&Date.now()>Date.parse(p.dueAt))return {label:'Past due · late work accepted',cls:'late'};
+  return {label:'Open',cls:'gc'};
+}
+function postDatesText(p){
+  var bits=[];
+  if(p.start)bits.push('Opens '+fmtDay(p.start));
+  bits.push(p.due?'Due '+fmtDay(p.due)+' (end of day)':'No due date');
+  return bits.join(' · ');
+}
+PX.posts=PX.posts||null;
+function postsFor(id){return (PX.posts||[]).filter(function(p){return p.activityId===id});}
+function loadPosts(){
+  if(!GA.user||profileRole()!=='teacher')return Promise.resolve([]);
+  return platformApi('teacher/dashboard').then(function(r){PX.posts=r.assignments||[];return PX.posts});
+}
+var v41Refresh=refreshSubmissions;
+refreshSubmissions=function(){
+  v41Refresh();
+  loadPosts().then(function(){if(caps.teacher&&!previewing&&TW&&/^#teacher\/(editor|edit-)/.test(NAV.hash||''))renderTeacher();}).catch(function(){});
+};
+actRow=function(x,showPath){
+  var n=rowsFor(x.id).length,np=postsFor(x.id).length;
+  var b=el('button',{class:'aitem'+(x.id===TS.sel?' on':''),onclick:function(){TS.sel=x.id;TS.folder=x.folder||null;TS.confirmDel=false;remember();renderTeacher()}},
+    el('b',{text:x.title||'Untitled Hex Space'}),
+    el('span',{text:(showPath&&x.folder?folderPath(x.folder).join(' › ')+' · ':'')+hexList(x).length+' hexagons · '+(np?np+' posted':'not posted')+' · '+n+' submission'+(n===1?'':'s')}));
+  return dragSource(b,'act',x.id);
+};
+
+function openPostDialog(a,post){
+  var editing=!!post;
+  var cls=editing?TW.classes.find(function(c){return c.id===post.classId})||{id:post.classId,name:post.className,classroomId:post.manual?null:post.courseId}:null;
+  var classSel=editing?null:el('select',{id:'pd-class','aria-label':'Class'},TW.classes.map(function(c){return el('option',{value:c.id,selected:c.id===TS.postClass||null,text:c.name+(c.classroomId?' (Google Classroom)':' (code only)')})}));
+  if(classSel)classSel.value=(TW.classes.some(function(c){return c.id===TS.postClass})?TS.postClass:TW.classes[0].id);
+  var name=el('input',{type:'text',id:'pd-name',maxlength:200,value:editing?post.title:(a.title||'')});
+  var start=el('input',{type:'date',id:'pd-start',value:editing?(post.start||''):todayLocal()});
+  var due=el('input',{type:'date',id:'pd-due',value:editing?(post.due||''):''});
+  var pts=el('input',{type:'number',id:'pd-points',min:1,max:10000,value:editing?(post.maxPoints||100):100});
+  var openBox=editing?el('input',{type:'checkbox',id:'pd-open',checked:post.open!==false}):null;
+  var refresh=editing?el('input',{type:'checkbox',id:'pd-refresh',checked:true}):null;
+  var err=el('p',{class:'err',role:'alert'});
+  var ptsRow=el('label',{class:'fld',for:'pd-points'},'Points',pts,el('span',{class:'hint',text:'Used for grades returned to Google Classroom.'}));
+  function current(){return editing?cls:TW.classes.find(function(c){return c.id===classSel.value});}
+  function sync(){var c=current();ptsRow.style.display=c&&c.classroomId?'':'none';}
+  if(classSel)classSel.addEventListener('change',sync);
+  var go=el('button',{class:'btn primary',text:editing?'Save changes':'Post',onclick:function(){
+    var c=current();err.textContent='';
+    if(!c){err.textContent='Choose a class.';return;}
+    if(!String(name.value||'').trim()){err.textContent='Give the assignment a name.';name.focus();return;}
+    if(start.value&&due.value&&due.value<start.value){err.textContent='The due date must be on or after the start date.';return;}
+    if(!editing&&due.value&&due.value<todayLocal()){err.textContent='Choose a due date that hasn’t passed.';return;}
+    var max=Number(pts.value);if(c.classroomId&&(!Number.isFinite(max)||max<=0||max>10000)){err.textContent='Enter points between 1 and 10,000.';return;}
+    var body={title:String(name.value).trim(),start:start.value||'',due:due.value||'',tz:TEACHER_TZ};
+    if(c.classroomId)body.maxPoints=max;
+    if(editing){body.open=openBox.checked;body.refresh=refresh.checked;}else{body.activityId=a.id;body.classId=c.id;}
+    var classroom=!!c.classroomId;
+    function send(){
+      go.disabled=true;go.textContent=editing?'Saving…':'Posting…';
+      var save=(!editing||body.refresh)?saveWorkspaceCloud():Promise.resolve();
+      save.then(function(){return platformApi(editing?'posts/'+post.id+'/edit':'posts/new',body,classroom)}).then(function(r){
+        closeModal();TS.postClass=c.id;
+        return loadPosts().then(function(){renderTeacher();if(editing)toast('Assignment updated.');else postedDialog(r,c);});
+      }).catch(function(e){go.disabled=false;go.textContent=editing?'Save changes':'Post';
+        if(e.code==='classroom-reconnect'){closeModal();connectClassroom('teacher',function(){openPostDialog(a,post)},true);return;}
+        err.textContent=e.message;});
+    }
+    if(classroom&&!classroomReady('teacher')){closeModal();connectClassroom('teacher',function(){openPostDialog(a,post);toast('Classroom connected. Choose Post again.')},true);return;}
+    send();
+  }});
+  openModal([el('div',{class:'eyebrow',text:editing?'Edit assignment':'Post to a class'}),
+    el('h3',{style:'font-size:1.25rem',text:editing?post.title+' · '+post.className:'Post “'+(a.title||'Untitled')+'”'}),
+    editing?null:el('label',{class:'fld',for:'pd-class'},'Class',classSel,el('span',{class:'hint',text:'You can post this Hex Space to the same class again later; each posting gets its own code and dates.'})),
+    el('label',{class:'fld',for:'pd-name'},'Assignment name',name),
+    el('div',{class:'date-pair'},
+      el('label',{class:'fld',for:'pd-start'},'Start date',start,el('span',{class:'hint',text:'Students can open it from this day.'})),
+      el('label',{class:'fld',for:'pd-due'},'Due date (optional)',due,el('span',{class:'hint',text:'Due at the end of the day. Late work is accepted and marked Late.'}))),
+    ptsRow,
+    editing?el('label',{class:'row',for:'pd-open',style:'font-weight:700'},openBox,'Open for students'):null,
+    editing?el('label',{class:'row',for:'pd-refresh',style:'font-weight:400'},refresh,'Also update hexagons and settings from this Hex Space'):null,
+    el('p',{class:'hint',style:'margin:0',text:'Dates use your time zone ('+TEACHER_TZ.replace(/_/g,' ')+').'}),
+    err,
+    el('div',{class:'row',style:'justify-content:flex-end'},el('button',{class:'btn ghost',onclick:closeModal,text:'Cancel'}),go)]);
+  sync();
+}
+function postedDialog(r,c){
+  var link=siteLink('#c-'+r.code);
+  openModal([el('div',{class:'eyebrow',text:r.scheduled?'Scheduled':'Posted'}),el('h3',{style:'font-size:1.25rem',text:r.title+' · '+c.name}),
+    el('p',{style:'margin:0',text:postDatesText(r)+'.'}),
+    c.classroomId?el('p',{class:'muted',style:'margin:0',text:r.scheduled?'It’s scheduled in Google Classroom and appears there on the start date.':'It’s in Google Classroom now with a link students open to start.'}):el('p',{style:'margin:0',text:'Students go to '+location.host+', choose Enter a class code and type:'}),
+    el('div',{class:'row'},el('span',{class:'codebig',text:fmtCode(r.code)}),el('button',{class:'btn sm',onclick:function(){copyText(fmtCode(r.code),'Code')},text:'Copy code'}),
+      c.classroomId?null:el('button',{class:'btn sm',onclick:function(){copyText(link,'Student link')},text:'Copy student link'})),
+    r.classroomUrl?el('a',{class:'btn',href:r.classroomUrl,target:'_blank',rel:'noopener',text:'Open in Google Classroom ↗'}):null,
+    el('div',{class:'row',style:'justify-content:flex-end'},el('button',{class:'btn primary','data-autofocus':true,onclick:closeModal,text:'Done'}))]);
+}
+function postCard(a,p){
+  var st=postState(p);
+  function toggle(e){
+    var b=e.currentTarget||e.target;b.disabled=true;
+    platformApi('posts/'+p.id+'/edit',{open:p.open===false}).then(function(){return loadPosts()}).then(function(){renderTeacher();toast(p.open===false?'Reopened for students.':'Closed. Students can no longer open or turn it in.')}).catch(function(err){b.disabled=false;platformError(err)});
+  }
+  return el('div',{class:'panel post-card'},
+    el('div',{class:'row',style:'justify-content:space-between;align-items:flex-start;gap:8px'},
+      el('div',{class:'stack',style:'gap:2px;min-width:0'},el('h3',{text:p.title}),el('span',{class:'muted',style:'font-size:.88rem',text:p.className+' · '+(p.manual?'code only':'Google Classroom')})),
+      el('span',{class:'chip '+st.cls,text:st.label})),
+    el('div',{class:'row'},p.code?el('span',{class:'codebig',text:fmtCode(p.code)}):null,p.code?el('button',{class:'btn sm',onclick:function(){copyText(fmtCode(p.code),'Code')},text:'Copy code'}):null,
+      p.manual?el('button',{class:'btn sm',onclick:function(){copyText(siteLink('#c-'+p.code),'Student link')},text:'Copy student link'}):(p.classroomUrl?el('a',{class:'btn sm',href:p.classroomUrl,target:'_blank',rel:'noopener',text:'Open in Google Classroom ↗'}):null)),
+    el('p',{style:'margin:0',text:postDatesText(p)}),
+    el('p',{class:'muted',style:'margin:0;font-size:.88rem',text:p.turnedIn+' turned in · '+p.submissions+' saved'}),
+    el('div',{class:'row'},
+      el('button',{class:'btn sm',onclick:function(){openPostDialog(a,p)},text:'Edit dates & details'}),
+      el('button',{class:'btn ghost sm',onclick:toggle,text:p.open===false?'Reopen':'Close'}),
+      el('a',{class:'btn ghost sm',href:'#teacher/post-'+p.id,text:'Submissions & groups'})));
+}
+codesPane=function(a){
+  if(!TW.classes.length)return el('div',{class:'panel stack'},el('h3',{text:'Add your classes'}),
+    el('p',{class:'muted',style:'margin:0',text:'Import your Google Classroom classes, or add a class that isn’t in Classroom. Then post this Hex Space to it.'}),
+    el('div',{class:'row'},el('button',{class:'btn primary',onclick:importClassroomClasses,text:'Import from Google Classroom'}),el('button',{class:'btn',onclick:addManualClass,text:'Add a class'})));
+  var list=postsFor(a.id);
+  var ready=String(a.title||'').trim()&&(a.terms||[]).some(function(t){return String(t.term||'').trim()});
+  var pane=el('div',{class:'stack',style:'gap:14px'},
+    el('div',{class:'panel stack'},
+      el('div',{class:'row',style:'justify-content:space-between'},el('h3',{text:'Post this Hex Space'}),
+        el('button',{class:'btn primary',disabled:!ready,onclick:function(){openPostDialog(a)},text:'Post to a class'})),
+      el('p',{class:'muted',style:'margin:0',text:ready?'Each posting is its own assignment with its own code, start date and due date. Post it again to give a class another round.':'Give this Hex Space a title and at least one term first.'})));
+  if(PX.posts===null){add(pane,el('p',{class:'muted',text:'Loading postings…'}));loadPosts().then(function(){if(TS.tab==='codes')renderTeacher()}).catch(function(){});return pane;}
+  if(!list.length)add(pane,el('p',{class:'muted',style:'margin:0',text:'Not posted yet.'}));
+  list.forEach(function(p){add(pane,postCard(a,p))});
+  return pane;
+};
+teacherAssignmentCard=function(a){
+  var st=postState(a);
+  return el('div',{class:'panel stack'},
+    el('div',{class:'row',style:'justify-content:space-between'},el('h3',{text:a.title}),el('span',{class:'chip '+st.cls,text:st.label})),
+    el('p',{style:'margin:0',text:postDatesText(a)+(a.code?' · code '+fmtCode(a.code):'')}),
+    el('p',{class:'muted',style:'margin:0',text:a.turnedIn+' turned in · '+a.submissions+' saved submissions'}),
+    el('div',{class:'row'},el('a',{class:'btn primary',href:'#teacher/post-'+a.id,text:'View submissions & groups'}),el('a',{class:'btn',href:'#teacher/edit-'+encodeURIComponent(a.activityId),text:'Open Hex Space'}),a.classroomUrl?el('a',{class:'btn ghost',href:a.classroomUrl,target:'_blank',rel:'noopener',text:'Open in Google Classroom ↗'}):null));
+};
+studentAssignmentCard=function(a){
+  var early=a.startAt&&Date.now()<Date.parse(a.startAt);
+  var late=!early&&a.dueAt&&Date.now()>Date.parse(a.dueAt);
+  return el('div',{class:'panel row',style:'justify-content:space-between'},
+    el('div',null,el('h3',{text:a.title}),el('p',{class:'muted',style:'margin:0',text:a.className+(a.due?' · Due '+fmtDay(a.due):'')+(late?' · late work accepted':'')+(a.classroomStatus&&!early?' · '+a.classroomStatus.replace(/_/g,' ').toLowerCase():'')})),
+    early?el('span',{class:'chip sched',text:'Opens '+fmtDay(a.start)}):el('a',{class:'btn primary',href:'#a-'+a.id,text:'Open assignment'}));
+};
+newCourseAssignment=function(course){
+  if(PX.teacherData)DATA=clone(PX.teacherData);startTeacher();
+  var cls=course.manual?TW.classes.find(function(c){return c.id===course.classId}):TW.classes.find(function(c){return c.classroomId===course.id});
+  if(!cls){cls=course.manual?{id:course.classId||uid(),name:course.name}:{id:uid(),name:course.name,classroomId:course.id};TW.classes.push(cls)}
+  var act=TW.activities.find(function(x){return isUntouched(x)&&!Object.keys(x.assign||{}).length})||blankActivity();
+  if(TS.folder&&!act.folder)act.folder=TS.folder;if(!TW.activities.some(function(x){return x.id===act.id}))TW.activities.push(act);
+  TS.sel=act.id;TS.tab='setup';TS.postClass=cls.id;saveWork();remember();NAV.hash='teacher/edit-'+act.id;
+  toast('Build the Hex Space, then use the Post tab to post it to '+cls.name+'.');
 };
 
 /* The homepage is the starting page: a visit to the bare site address opens it,

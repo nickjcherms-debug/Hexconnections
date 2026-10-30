@@ -10,6 +10,7 @@ function harness(){
  const sql=new DatabaseSync(':memory:');sql.exec(readFileSync(new URL('../migrations/0001_initial.sql',import.meta.url),'utf8'));sql.exec(readFileSync(new URL('../migrations/0002_ai_usage.sql',import.meta.url),'utf8'));
  sql.exec(readFileSync(new URL('../migrations/0003_group_boards.sql',import.meta.url),'utf8'));
  sql.exec(readFileSync(new URL('../migrations/0004_shares.sql',import.meta.url),'utf8'));
+ sql.exec(readFileSync(new URL('../migrations/0005_multiple_posts.sql',import.meta.url),'utf8'));
  const DB = {
   prepare(query) {
    return {
@@ -46,6 +47,7 @@ function harness(){
    state.coursework={...body,id:'cw-1',alternateLink:'https://classroom.google.com/c/test/a/test'};return Response.json(state.coursework);
   }
   if(url.pathname==='/v1/courses/course-1/courseWork' && method==='GET')return Response.json({courseWork:[{id:'cw-1'}]});
+  if(url.pathname==='/v1/courses/course-1/courseWork/cw-1' && method==='GET')return Response.json(state.coursework||{});
   if(url.pathname==='/v1/courses/course-1/courseWork/cw-1' && method==='PATCH'){
    const mask=url.searchParams.get('updateMask').split(',');
    const writable=['title','description','state','dueDate','dueTime','maxPoints','scheduledTime','submissionModificationMode','topicId','gradingPeriodId','learningGoals'];
@@ -431,4 +433,73 @@ test('imported classes may keep a link to their Google Classroom course, but onl
  assert.equal((await h.call('teacher','workspace',{workspace:ws('https://evil.example/c/1'),revision:0})).status,400);
  assert.equal((await h.call('teacher','workspace',{workspace:ws('https://classroom.google.com/c/MTIz'),revision:0})).status,200);
  const courses=await h.call('teacher','classroom/courses?role=teacher');assert.equal(courses.status,200);assert.equal(courses.body.courses[0].link,'');
+});
+
+// ---------------- 4.2: each posting is its own assignment with start and due dates ----------------
+import {zonedTime,postDates} from '../src/postings.js';
+const day=n=>new Date(Date.now()+n*86400000).toISOString().slice(0,10);
+test('dates are whole days in the teacher’s time zone, including daylight-saving changes',()=>{
+ const f=(s,m)=>{const e=new Error(m);e.status=s;throw e};
+ assert.equal(new Date(zonedTime('2026-11-03',23,59,59,'America/Los_Angeles')).toISOString(),'2026-11-04T07:59:59.000Z');
+ assert.equal(new Date(zonedTime('2026-10-30',23,59,59,'America/Los_Angeles')).toISOString(),'2026-10-31T06:59:59.000Z');
+ assert.equal(new Date(zonedTime('2026-11-02',0,0,0,'America/New_York')).toISOString(),'2026-11-02T05:00:00.000Z');
+ const d=postDates({start:'2026-11-02',due:'2026-11-06',tz:'America/Los_Angeles'},f);assert.equal(d.startAt,'2026-11-02T08:00:00.000Z');assert.equal(d.dueAt,'2026-11-07T07:59:59.000Z');
+ assert.throws(()=>postDates({start:'2026-11-06',due:'2026-11-02',tz:'UTC'},f),/on or after/);
+ assert.throws(()=>postDates({due:'2026-02-30',tz:'UTC'},f),/valid due date/);
+ assert.throws(()=>postDates({due:'2026-11-02',tz:'Mars/Base'},f),/time zone/);
+});
+test('the same Hex Space can be posted to the same class several times, each with its own code and dates',async()=>{
+ const h=harness();await h.call('teacher','profile',{role:'teacher'});
+ assert.equal((await h.call('teacher','workspace',{workspace:manualWorkspace(),revision:0})).status,200);
+ const one=await h.call('teacher','posts/new',{activityId:'act-m',classId:'club',due:day(7),tz:'America/Los_Angeles'},{access:false});
+ assert.equal(one.status,201);assert.equal(one.body.code.length,6);
+ const two=await h.call('teacher','posts/new',{activityId:'act-m',classId:'club',title:'Cells — round 2',start:day(10),due:day(14),tz:'America/Los_Angeles'},{access:false});
+ assert.equal(two.status,201);assert.notEqual(two.body.code,one.body.code);assert.notEqual(two.body.id,one.body.id);
+ const dash=(await h.call('teacher','teacher/dashboard',undefined,{access:false})).body.assignments;
+ assert.equal(dash.length,2);assert.ok(dash.some(a=>a.title==='Cells — round 2'&&a.start===day(10)&&a.due===day(14)));
+ assert.equal((await h.call('teacher','posts/new',{activityId:'act-m',classId:'club',due:day(-1),tz:'UTC'},{access:false})).status,400);
+ await h.call('kid','profile',{role:'student'},{access:false});
+ const joined=await h.call('kid','resolve',{code:one.body.code},{access:false});assert.equal(joined.status,200);assert.equal(joined.body.id,one.body.id);
+ const early=await h.call('kid','resolve',{code:two.body.code},{access:false});assert.equal(early.status,403);assert.equal(early.body.code,'not-started');assert.match(early.body.error,/opens on/);
+ assert.equal(h.state.googleCalls.length,0);
+});
+test('teachers change dates, close, reopen and refresh a posting; late work is flagged by the due date',async()=>{
+ const h=harness();await h.call('teacher','profile',{role:'teacher'});
+ await h.call('teacher','workspace',{workspace:manualWorkspace(),revision:0});
+ const p=(await h.call('teacher','posts/new',{activityId:'act-m',classId:'club',due:day(5),tz:'UTC'},{access:false})).body;
+ await h.call('kid','profile',{role:'student'},{access:false});await h.call('kid','resolve',{code:p.code},{access:false});
+ assert.equal((await h.call('kid','posts/'+p.id+'/edit',{due:day(9)},{access:false})).status,403);
+ const later=await h.call('teacher','posts/'+p.id+'/edit',{start:day(3),tz:'UTC'},{access:false});assert.equal(later.status,200);assert.equal(later.body.due,day(5));
+ const blocked=await h.call('kid','posts/'+p.id,undefined,{access:false});assert.equal(blocked.status,403);assert.equal(blocked.body.code,'not-started');
+ assert.equal((await h.call('teacher','posts/'+p.id+'/edit',{start:'',due:day(-2),tz:'UTC'},{access:false})).status,200);
+ assert.equal((await h.call('kid','posts/'+p.id,undefined,{access:false})).status,200);
+ const sub=await h.call('kid','posts/'+p.id+'/submit',{draft:h.draft},{access:false});assert.equal(sub.status,200);
+ const rows=(await h.call('teacher','submissions?postId='+p.id,undefined,{access:false})).body.submissions;assert.equal(rows[0].late,true);
+ assert.equal((await h.call('teacher','posts/'+p.id+'/edit',{open:false},{access:false})).status,200);
+ await h.call('kid2','profile',{role:'student'},{access:false});
+ assert.equal((await h.call('kid2','resolve',{code:p.code},{access:false})).status,403);
+ const ws=manualWorkspace();ws.activities[0].terms.push({id:3,term:'Ribosome',def:'Makes proteins'});
+ await h.call('teacher','workspace',{workspace:ws,revision:1});
+ const fresh=await h.call('teacher','posts/'+p.id+'/edit',{open:true,refresh:true,title:'Cells quiz'},{access:false});assert.equal(fresh.status,200);
+ const post=h.sql.prepare('SELECT body FROM posts WHERE id=?').get(p.id);const info=JSON.parse(post.body);
+ assert.equal(info.act.terms.length,3);assert.equal(info.act.title,'Cells quiz');assert.equal(info.asg.open,true);assert.equal(info.asg.code,p.code);
+});
+test('Classroom postings are scheduled in Classroom until the start date and carry the due date',async()=>{
+ const h=harness();await h.call('teacher','profile',{role:'teacher'});
+ await h.call('teacher','workspace',{workspace:manualWorkspace(),revision:0});
+ const r=await h.call('teacher','posts/new',{activityId:'act-m',classId:'p2',start:day(4),due:day(8),tz:'America/Los_Angeles',maxPoints:20});
+ assert.equal(r.status,201);assert.equal(r.body.scheduled,true);
+ const cw=h.state.coursework;assert.equal(cw.state,'DRAFT');assert.equal(cw.scheduledTime,r.body.startAt);assert.equal(cw.maxPoints,20);
+ const due=new Date(r.body.dueAt);assert.deepEqual(cw.dueDate,{year:due.getUTCFullYear(),month:due.getUTCMonth()+1,day:due.getUTCDate()});assert.equal(cw.dueTime.hours,due.getUTCHours());
+ assert.ok(cw.materials[0].link.url.endsWith('/#a-'+r.body.id));
+ const now=await h.call('teacher','posts/'+r.body.id+'/edit',{start:'',due:'',tz:'America/Los_Angeles'});assert.equal(now.status,200);
+ assert.equal(h.state.coursework.state,'PUBLISHED');assert.equal(h.state.coursework.dueDate,undefined);
+ const edits=h.state.googleCalls.filter(c=>c.method==='PATCH');assert.match(edits.at(-1).query,/state/);
+});
+test('a Classroom posting Google refuses leaves no stuck pending assignment',async()=>{
+ const h=harness();await h.call('teacher','profile',{role:'teacher'});
+ await h.call('teacher','workspace',{workspace:manualWorkspace(),revision:0});
+ h.state.classroomError={error:{status:'PERMISSION_DENIED',details:[{reason:'insufficientPermissions'}]}};
+ const realTeacher=await h.call('teacher','posts/new',{activityId:'act-m',classId:'p2',tz:'UTC'});assert.equal(realTeacher.status,403);
+ assert.equal(h.sql.prepare('SELECT count(*) n FROM posts').get().n,0);
 });
