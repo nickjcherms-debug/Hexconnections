@@ -346,6 +346,8 @@ td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:now
 .pick-note{padding:6px 8px;font-size:.92rem}
 .sync-body{gap:14px}
 .danger-text{color:var(--danger)}
+.chip-link{text-decoration:none}
+.chip-link:hover{text-decoration:underline}
 .cls-row.manage{grid-template-columns:minmax(0,1fr) auto auto}
 .hero-login{margin:14px 0 0;color:var(--muted);font-size:.95rem}
 .hero-login a{font-weight:700}
@@ -2153,7 +2155,10 @@ function saveWorkspaceCloud(ws){
   PX.saving=true;
   var out=clone(ws||TW), account=GA.user.uid;
   return platformApi('workspace',{workspace:out,revision:PX.revision}).then(function(r){
-    if(GA.user&&GA.user.uid===account){PX.revision=r.revision;PX.teacherData=clone(out);DATA=clone(out);lsSet('hx-workspace-base',r.revision);}
+    if(GA.user&&GA.user.uid===account){PX.revision=r.revision;PX.teacherData=clone(out);DATA=clone(out);lsSet('hx-workspace-base',r.revision);
+      /* Keep the browser working copy in step with what was saved online; otherwise the
+         editor can reopen an older copy (e.g. without newly imported classes) and save it back. */
+      if(!TW||ws===TW||!ws)lsSet('hx-teacher-work',clone(out));}
     return r;
   }).finally(function(){PX.saving=false;});
 }
@@ -2412,7 +2417,7 @@ function teacherDashboard(courseId){
   var live=results[1].courses||[];if(live.length)PX.lastCourses=live;
   /* The class list is the teacher's own: imported or added classes, never every Classroom course. */
   hexSpaceClasses().forEach(function(c){
-   if(c.classroomId)courses.set(c.classroomId,{id:c.classroomId,name:c.name,classId:c.id});
+   if(c.classroomId)courses.set(c.classroomId,{id:c.classroomId,name:c.name,classId:c.id,link:classroomLinkFor(c)});
    else courses.set('manual:'+c.id,{id:'manual:'+c.id,name:c.name,manual:true,classId:c.id});
   });
   var known={};hexSpaceClasses().forEach(function(c){known[c.id]=c});
@@ -2428,14 +2433,14 @@ function teacherDashboard(courseId){
   if(courseId){
    dashboardAdd(body,el('a',{class:'btn ghost',href:'#teacher',text:'← All classes'}));
    var course=courses.get(courseId)||{id:courseId,name:'Classroom'};
-   dashboardAdd(body,el('h3',{text:course.name}),el('button',{class:'btn primary',onclick:function(){newCourseAssignment(course)},text:'New Hex Space for this class'}));
+   dashboardAdd(body,el('div',{class:'row',style:'justify-content:space-between'},el('h3',{text:course.name}),course.link?el('a',{class:'btn sm',href:course.link,target:'_blank',rel:'noopener',text:'Open in Google Classroom ↗'}):null),el('button',{class:'btn primary',onclick:function(){newCourseAssignment(course)},text:'New Hex Space for this class'}));
    var issued=assignments.filter(function(a){return a.courseId===courseId});
    if(!issued.length)dashboardMessage(body,course.manual?'Nothing posted for this class yet. Create a Hex Space, tick this class on Classes & codes, then choose Post.':'No assignments have been issued here through Hex Connections yet.');
    issued.forEach(function(a){dashboardAdd(body,teacherAssignmentCard(a))});
   }else{
    if(!courses.size)dashboardMessage(body,'No classes yet. Import your Google Classroom classes, or add a code-only class for students without Classroom.');
    var grid=el('div',{class:'grid2'});
-   Array.from(courses.values()).sort(function(x,y){return String(x.name).localeCompare(String(y.name))}).forEach(function(c){var issued=assignments.filter(function(a){return a.courseId===c.id});dashboardAdd(grid,el('div',{class:'panel stack class-card'},el('div',{class:'row',style:'justify-content:space-between;align-items:flex-start;gap:8px'},el('h3',{text:c.name}),el('span',{class:'chip '+(c.manual?'code':'gc'),text:c.manual?'Code only':'Google Classroom'})),el('p',{class:'muted',style:'margin:0',text:issued.length+' issued assignment'+(issued.length===1?'':'s')+' · '+issued.reduce(function(n,a){return n+a.submissions},0)+' submission'+(issued.reduce(function(n,a){return n+a.submissions},0)===1?'':'s')}),el('div',{class:'row'},el('a',{class:'btn primary',href:'#teacher/class-'+encodeURIComponent(c.id),text:'Open class'}),c.classId?el('button',{class:'btn ghost sm danger-text','aria-label':'Remove class '+c.name,onclick:function(){removeClass(c.classId)},text:'Remove'}):null)))});dashboardAdd(body,grid);
+   Array.from(courses.values()).sort(function(x,y){return String(x.name).localeCompare(String(y.name))}).forEach(function(c){var issued=assignments.filter(function(a){return a.courseId===c.id});dashboardAdd(grid,el('div',{class:'panel stack class-card'},el('div',{class:'row',style:'justify-content:space-between;align-items:flex-start;gap:8px'},el('h3',{text:c.name}),el('span',{class:'chip '+(c.manual?'code':'gc'),text:c.manual?'Code only':'Google Classroom'})),el('p',{class:'muted',style:'margin:0',text:issued.length+' issued assignment'+(issued.length===1?'':'s')+' · '+issued.reduce(function(n,a){return n+a.submissions},0)+' submission'+(issued.reduce(function(n,a){return n+a.submissions},0)===1?'':'s')}),el('div',{class:'row'},el('a',{class:'btn primary',href:'#teacher/class-'+encodeURIComponent(c.id),text:'Open class'}),c.link?el('a',{class:'btn sm',href:c.link,target:'_blank',rel:'noopener',text:'Open in Google Classroom ↗'}):null,c.classId?el('button',{class:'btn ghost sm danger-text','aria-label':'Remove class '+c.name,onclick:function(){removeClass(c.classId)},text:'Remove'}):null)))});dashboardAdd(body,grid);
   }
  }).catch(function(e){if(seq===PX.routeId){body.replaceChildren();dashboardError(body,e)}});
 }
@@ -2650,7 +2655,9 @@ topBar=function(){
     if(it.href!=null)return el('a',{class:'nav-link'+(it.cta?' cta':'')+(it.login?' login':'')+(on?' on':''),href:it.href,'aria-current':on?'page':null,title:it.hint||null,text:it.label});
     return el('button',{class:'nav-link',onclick:it.onclick,text:it.label});
   }));
-  var mobile=menuButton('Menu',items.map(function(it){return {label:it.label+(it.hint?' ('+it.hint.toLowerCase()+')':''),href:it.href,onclick:it.onclick}}),{cls:'nav-mobile',btnCls:'sm',aria:'Open menu'});
+  var mobileItems=items.map(function(it){return {label:it.label+(it.hint?' ('+it.hint.toLowerCase()+')':''),href:it.href,onclick:it.onclick}});
+  if(GA.user&&profileRole())mobileItems.push({sep:true},{label:'Sign out',onclick:googleSignOut});
+  var mobile=menuButton('Menu',mobileItems,{cls:'nav-mobile',btnCls:'sm',aria:'Open menu'});
   var right=[nav,mobile];
   if(GA.user){
     var role=profileRole(),ready=role&&classroomReady(role);
@@ -2823,6 +2830,8 @@ function prefillCode(code){
    other devices, without needing Classroom to be connected again. */
 var CLASS_LIMIT=100;
 function hexSpaceClasses(){return ((TW||PX.teacherData||{}).classes)||[];}
+function courseLink(course){var u=String(course&&course.link||'');return /^https:\/\/classroom\.google\.com\//.test(u)?u:'';}
+function classroomLinkFor(c){return c&&c.classroomId?(c.classroomUrl||'https://classroom.google.com/'):'';}
 function courseClassName(course){return (String(course.name||'Classroom class')+(course.section?' · '+course.section:'')).slice(0,100);}
 function syncClassroomClasses(courses,ws){
   ws=ws||TW;
@@ -2833,7 +2842,7 @@ function syncClassroomClasses(courses,ws){
     if(ws.classes.length>=CLASS_LIMIT){PX.classLimitHit=true;return;}
     var id='gc-'+course.id;
     while(ws.classes.some(function(c){return c.id===id}))id='gc-'+uid();
-    ws.classes.push({id:id,name:courseClassName(course),classroomId:course.id});added++;
+    ws.classes.push({id:id,name:courseClassName(course),classroomId:course.id,classroomUrl:courseLink(course)});added++;
   });
   return added;
 }
@@ -3053,7 +3062,7 @@ function hexSpaceSidebar(){
     el('button',{class:'btn primary new',onclick:newActivity,text:'+ New Hex Space'+(TS.folder&&folderById(TS.folder)?' in “'+folderById(TS.folder).name+'”':'')}),
     filter,treeBody(),
     el('div',{class:'side-h'},el('span',{class:'eyebrow',text:'Classes'}),el('button',{class:'btn ghost sm',onclick:manageClasses,text:'Manage'})),
-    classes.length?el('div',{class:'class-list'},classes.map(function(c){return el('div',{class:'class-li'},el('span',{text:c.name}),el('span',{class:'chip '+(c.classroomId?'gc':'code'),text:c.classroomId?'Classroom':'Code only'}))})):el('p',{class:'muted',style:'margin:0;font-size:.85rem',text:'No classes yet.'}),
+    classes.length?el('div',{class:'class-list'},classes.map(function(c){return el('div',{class:'class-li'},el('span',{text:c.name}),c.classroomId?el('a',{class:'chip gc chip-link',href:classroomLinkFor(c),target:'_blank',rel:'noopener',title:'Open '+c.name+' in Google Classroom','aria-label':'Open '+c.name+' in Google Classroom',text:'Classroom ↗'}):el('span',{class:'chip code',text:'Code only'}))})):el('p',{class:'muted',style:'margin:0;font-size:.85rem',text:'No classes yet.'}),
     el('div',{class:'row',style:'gap:6px'},el('button',{class:'btn sm',onclick:importClassroomClasses,text:classes.some(function(c){return c.classroomId})?'Import or resync':'Import from Classroom'}),el('button',{class:'btn ghost sm',onclick:addManualClass,text:'Add a class'})));
 }
 var v3NewActivity=newActivity;
@@ -3141,6 +3150,8 @@ function copyShared(code,folderId,btn){
 /* ---------- editor start: new Hex Space requests and Classroom classes ---------- */
 var v3StartTeacher=startTeacher;
 startTeacher=function(){
+  /* Use the browser working copy only if it was based on the latest online version. */
+  if(PX.teacherData&&lsGet('hx-workspace-base')!==PX.revision){lsSet('hx-teacher-work',clone(PX.teacherData));lsSet('hx-workspace-base',PX.revision);}
   v3StartTeacher();
   if(!TW)return;
   TW.folders=TW.folders||[];
@@ -3431,7 +3442,8 @@ function openClassroomSync(){
     if(gone.length)sections.push(el('div',{class:'stack',style:'gap:6px'},el('b',{text:'No longer active in Google Classroom'}),
       el('p',{class:'hint',style:'margin:0',text:'These were archived or removed in Classroom, or you no longer teach them. Tick any to remove from your class list. Student work stays saved.'}),
       el('div',{class:'pick-list'},drops.map(function(d){return checkRow(d.box,'Remove '+d.c.name)}))));
-    if(imported.length&&!fresh.length&&!renamed.length&&!gone.length)sections.push(el('p',{style:'margin:0',text:'Your class list already matches Google Classroom.'}));
+    var needLinks=imported.some(function(c){var live=byId[c.classroomId];return live&&courseLink(live)&&c.classroomUrl!==courseLink(live)});
+    if(imported.length&&!fresh.length&&!renamed.length&&!gone.length)sections.push(el('p',{style:'margin:0',text:needLinks?'Your class list matches Google Classroom. Save to refresh the links to each class in Classroom.':'Your class list already matches Google Classroom.'}));
     if(!courses.length&&!imported.length)sections.push(el('p',{style:'margin:0',text:'Google Classroom shows no active classes where this account is a teacher.'}));
     var inList=imported.filter(function(c){return byId[c.classroomId]});
     if(inList.length)sections.push(el('p',{class:'hint',style:'margin:0',text:'Already in your class list: '+inList.map(function(c){return c.name}).join(', ')+'.'}));
@@ -3440,9 +3452,10 @@ function openClassroomSync(){
       var drop=drops.filter(function(d){return d.box.checked}).map(function(d){return d.c.id});
       var doRename=renamed.length&&renameBox.checked;
       if(add.length>room+drop.length){err.textContent='Your class list holds '+CLASS_LIMIT+' classes. Choose '+(room+drop.length)+' or fewer.';return;}
-      if(!add.length&&!drop.length&&!doRename){closeModal();return;}
+      if(!add.length&&!drop.length&&!doRename&&!relinked){closeModal();return;}
       if(drop.length){ws.classes=ws.classes.filter(function(c){return drop.indexOf(c.id)<0});(ws.activities||[]).forEach(function(a){drop.forEach(function(id){if(a.assign)delete a.assign[id]})});}
       if(doRename)renamed.forEach(function(c){c.name=courseClassName(byId[c.classroomId])});
+      var relinked=0;imported.forEach(function(c){var live=byId[c.classroomId],u=live&&courseLink(live);if(u&&c.classroomUrl!==u){c.classroomUrl=u;relinked++}});
       var n=syncClassroomClasses(add,ws);
       var parts=[];if(n)parts.push(n+' class'+(n===1?'':'es')+' imported');if(doRename)parts.push(renamed.length+' renamed');if(drop.length)parts.push(drop.length+' removed');
       save.disabled=true;closeModal();
@@ -3451,7 +3464,7 @@ function openClassroomSync(){
     openModal([el('div',{class:'eyebrow',text:'Google Classroom'}),el('h3',{style:'font-size:1.25rem',text:imported.length?'Import or resync classes':'Import classes'}),
       el('p',{class:'muted',style:'margin:0',text:'Only the classes you choose are added to your class list.'}),
       el('div',{class:'stack sync-body'},sections),err,
-      el('div',{class:'row',style:'justify-content:flex-end'},el('button',{class:'btn ghost',onclick:closeModal,text:'Cancel'}),(fresh.length||renamed.length||gone.length)?save:null)]);
+      el('div',{class:'row',style:'justify-content:flex-end'},el('button',{class:'btn ghost',onclick:closeModal,text:'Cancel'}),(fresh.length||renamed.length||gone.length||needLinks)?save:null)]);
   }).catch(platformError);
 }
 function removeClass(classId){

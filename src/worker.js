@@ -104,6 +104,7 @@ function validateWorkspace(body) {
   for (const c of body.classes) {
     if (!c || typeof c.id !== 'string' || !c.id || c.id.length > 80 || classes.has(c.id) || typeof c.name !== 'string' || c.name.length > 100) fail(400, 'Invalid or duplicate class.');
     if (c.classroomId != null && (typeof c.classroomId !== 'string' || !c.classroomId || c.classroomId.length > 200)) fail(400, 'Invalid Classroom course link.');
+    if (c.classroomUrl != null && (typeof c.classroomUrl !== 'string' || c.classroomUrl.length > 500 || (c.classroomUrl && !/^https:\/\/classroom\.google\.com\//.test(c.classroomUrl)))) fail(400, 'Invalid Classroom course address.');
     classes.add(c.id);
   }
   // Folders: a tree of teacher-made folders. Each activity sits in at most one folder.
@@ -267,7 +268,8 @@ export async function handle(request, env, net = fetch) {
     if (path==='/api/classroom/courses' && request.method==='GET') {
       const g=await classroomContext(request,user,net), teaching=url.searchParams.get('role')==='teacher';
       const courses=await allPages(g,'/courses?courseStates=ACTIVE&'+(teaching?'teacherId=me':'studentId=me')+'&pageSize=100','courses');
-      return json({courses:courses.map(c=>({id:c.id,name:c.name,section:c.section||''}))});
+      const link=c=>/^https:\/\/classroom\.google\.com\//.test(c.alternateLink||'')?c.alternateLink:'';
+      return json({courses:courses.map(c=>({id:c.id,name:c.name,section:c.section||'',link:link(c)}))});
     }
     if (path==='/api/classroom/find' && request.method==='POST') {
       const {courseId}=await input(request); if (typeof courseId!=='string' || courseId.length>200) fail(400,'Choose a course.');

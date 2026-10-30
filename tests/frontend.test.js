@@ -313,7 +313,7 @@ const clickText=(t,label)=>[...t.flatten(),...t.flatten(t.body)].find(n=>n.textC
 test('teachers choose which Google Classroom classes to import; nothing is imported automatically',async()=>{
  const t=teacherAt(make,{version:4,folders:[],classes:[{id:'club',name:'Science club'}],activities:[]});const {h,text,location}=t;
  const saves=[];h.setApi(async(path,body)=>{
-  if(path==='classroom/courses?role=teacher')return {courses:[{id:'g1',name:'Biology',section:'P2'},{id:'g2',name:'Chemistry'},{id:'g3',name:'Physics'}]};
+  if(path==='classroom/courses?role=teacher')return {courses:[{id:'g1',name:'Biology',section:'P2',link:'https://classroom.google.com/c/g1'},{id:'g2',name:'Chemistry',link:'https://classroom.google.com/c/g2'},{id:'g3',name:'Physics',link:'https://evil.example/x'}]};
   if(path==='teacher/dashboard')return {assignments:[]};
   if(path==='workspace'&&body){saves.push(body);return {revision:body.revision+1}}
   throw new Error(path)});
@@ -324,6 +324,8 @@ test('teachers choose which Google Classroom classes to import; nothing is impor
  boxFor(t,'imp-g2').checked=true;clickText(t,'Import selected');await settle();
  assert.equal(saves.length,1);assert.equal(saves[0].revision,4);
  assert.equal(JSON.stringify(saves[0].workspace.classes.map(c=>[c.name,c.classroomId||null])),JSON.stringify([['Science club',null],['Chemistry','g2']]));
+ assert.equal(saves[0].workspace.classes[1].classroomUrl,'https://classroom.google.com/c/g2');
+ assert.ok(t.flatten().some(n=>n.attrs?.href==='https://classroom.google.com/c/g2'&&n.textContent==='Open in Google Classroom ↗'));
  assert.match(text(),/1 class imported/);assert.match(text(),/Chemistry/);assert.doesNotMatch(text(),/Physics/);
 });
 test('resync updates renamed Classroom classes and offers to remove ones no longer in Classroom',async()=>{
@@ -381,4 +383,14 @@ test('clean page addresses map both ways and old # links still resolve',()=>{
  for(const [key,path] of pairs){assert.equal(v.keyToPath(key),path,key);assert.equal(v.pathToKey(path),key,path)}
  assert.equal(v.pathToKey('/teacher'),'#teacher');assert.equal(v.pathToKey('/nope/x'),'#home');assert.equal(v.keyToPath('#how'),null);
  assert.equal(v.pathToKey('/teacher/classes/manual%3Aclub'),'#teacher/class-manual%3Aclub');
+});
+
+test('saving online refreshes the browser copy so imported classes survive reopening the editor',async()=>{
+ const t=teacherAt(make,{version:4,folders:[],classes:[],activities:[{id:'a1',title:'Cells',terms:[{n:1,id:1,term:'Nucleus',def:''}],assign:{}}]});const {h,store}=t;
+ h.v4.setSave;let saved=null;
+ h.setApi(async(path,body)=>{if(path==='classroom/courses?role=teacher')return {courses:[{id:'g1',name:'Biology',link:'https://classroom.google.com/c/g1'}]};if(path==='teacher/dashboard')return {assignments:[]};if(path==='workspace'&&body){saved=body.workspace;return {revision:body.revision+1}}if(path==='submissions')return {submissions:[]};if(path==='shares')return {shares:[]};throw new Error(path)});
+ const key=[...store.keys()].find(k=>k.includes('hx-teacher-work'));
+ h.v4.importClassroomClasses();await settle();boxFor(t,'imp-g1').checked=true;clickText(t,'Import selected');await settle();
+ assert.equal(saved.classes.length,1);
+ const local=[...store.entries()].find(([k])=>k.includes('hx-teacher-work'));assert.ok(local,'browser copy written');assert.equal(JSON.parse(local[1]).classes[0].classroomId,'g1');
 });

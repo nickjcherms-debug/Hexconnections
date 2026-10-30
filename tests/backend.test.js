@@ -425,3 +425,10 @@ test('removing a code-only class turns off its code but keeps student work',asyn
  assert.equal((await h.call('kid2','resolve',{code:'CLUB23'},{access:false})).status,403);
  const subs=await h.call('teacher','submissions?postId='+id,undefined,{access:false});assert.equal(subs.body.submissions.length,1);
 });
+test('imported classes may keep a link to their Google Classroom course, but only a classroom.google.com address',async()=>{
+ const h=harness();await h.call('teacher','profile',{role:'teacher'});
+ const ws=link=>({version:4,classes:[{id:'gc-1',name:'Psychology',classroomId:'course-1',classroomUrl:link}],activities:[]});
+ assert.equal((await h.call('teacher','workspace',{workspace:ws('https://evil.example/c/1'),revision:0})).status,400);
+ assert.equal((await h.call('teacher','workspace',{workspace:ws('https://classroom.google.com/c/MTIz'),revision:0})).status,200);
+ const courses=await h.call('teacher','classroom/courses?role=teacher');assert.equal(courses.status,200);assert.equal(courses.body.courses[0].link,'');
+});
