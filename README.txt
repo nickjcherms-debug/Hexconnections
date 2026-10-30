@@ -18,7 +18,10 @@ WHAT IS INCLUDED
 - Teacher board review and explicit grade return to Classroom.
 - Server-side ownership checks and validation of student boards.
 
-No automatic AI grading was added. Teachers decide each grade before returning it.
+Vocabulary generation is available to teachers through Cloudflare Workers AI
+using the open-weight Llama 3.2 3B model. No ChatGPT, Claude or other personal AI
+account is required. Teachers review suggestions before adding them. No automatic
+AI grading was added. Teachers decide each grade before returning it.
 All Google Classroom actions run interactively after the user connects Classroom.
 There is no background polling, refresh-token storage, or unattended grade sync.
 
@@ -30,6 +33,8 @@ PROJECT CONTENTS
 public/index.html          Website and Firebase login/board editor
 src/worker.js              Authenticated API and Classroom integration
 migrations/0001_initial.sql Database tables and indexes
+migrations/0002_ai_usage.sql Daily vocabulary generation request counters
+src/vocabulary.js          Teacher-only vocabulary generator and output validation
 wrangler.jsonc             Worker configuration; add your D1 database ID
 package.json               Development/deployment commands
 tests/                     Backend and frontend automated checks
@@ -87,3 +92,37 @@ teacher backups; authenticated online submissions are the cloud record.
 An interrupted first Classroom publication stays marked CREATING and will not
 be blindly retried. Check Classroom to avoid duplicate assignments, then reconcile
 the corresponding posts row in D1 before retrying (details in DEPLOYMENT.txt).
+
+LARGER BOARDS
+The starting honeycomb now has at least 61 placement cells, up from 19.
+Roomy allocates about four cells per vocabulary tile; Spacious allocates six;
+the new Expansive setting allocates nine. A 30-term Roomy honeycomb starts with
+127 cells. The maximum radius is 20, allowing 1,261 possible positions; backend
+validation accepts those same positions. Existing boards remain compatible.
+Tiles and text retain their original size, and zoom/scroll remain available.
+A hexagon still has six sides: extra space supports more arrangements, not more
+than six simultaneous neighboring tiles per hexagon.
+
+FREE-ALLOWANCE VOCABULARY GENERATION
+Enable the AI binding and apply migration 0002 as described in DEPLOYMENT.txt.
+The generator accepts a topic, grade, subject, 5-40 terms and optional notes.
+It sends only these fields and the existing vocabulary to Cloudflare Workers AI.
+Review the proposed terms and definitions, select which to keep, then add them.
+Generated output is validated and duplicates are removed. Existing terms are
+unchanged until you confirm. Student accounts cannot call the generator.
+
+Default daily limits: 10 attempts per teacher and 50 site-wide. Limits reset at
+00:00 UTC. You can lower them through AI_DAILY_TEACHER_LIMIT and
+AI_DAILY_SITE_LIMIT. The code caps them at 10 and 50; raising them requires an
+intentional code change. Provider errors still consume an attempt. There are
+no automatic retries or paid-model fallbacks. Canceling stops waiting in the
+browser; an already-started provider request may still use an allowance.
+
+Cloudflare currently includes 10,000 Neurons per day across your Cloudflare
+account. This is a finite free allowance, not unlimited free AI. On Workers Free,
+exhaustion stops requests; on Workers Paid, account usage above the included
+allowance may incur Cloudflare charges, including usage by your other apps.
+The app's request limits are not an exact account-wide billing cap.
+
+https://developers.cloudflare.com/workers-ai/platform/pricing/
+https://developers.cloudflare.com/workers-ai/models/llama-3.2-3b-instruct/

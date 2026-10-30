@@ -1,3 +1,41 @@
+UPDATE: LARGER BOARDS, VOCABULARY AI AND CLASSROOM DIAGNOSTICS
+==========================================================
+Live-domain check on 2026-10-30: hexconnections.com's homepage served the older
+standalone HTML without the Firebase profile config or Classroom connection code;
+/api/me returned HTTP 404. The repository backend should return HTTP 401 when
+signed out. This points to the older/static deployment being served at the domain.
+In Cloudflare, find the Worker attached to hexconnections.com under Domains &
+Routes. Deploy this complete project to that Worker (matching its exact Worker
+name in wrangler.jsonc). Uploading only HTML will not install the API routes.
+
+For an EXISTING database that already has the app's original tables, run:
+  npx wrangler d1 execute hex-connections --remote --file migrations/0002_ai_usage.sql
+
+Then deploy the complete Worker project:
+  npm install
+  npm test
+  npm run deploy
+
+wrangler.jsonc now includes an AI binding named AI. When configuring manually,
+add a Workers AI binding with that exact name. Deploy through Wrangler to bundle
+both src/worker.js and src/vocabulary.js; copying only one JavaScript file into
+a dashboard editor will not include the imported generator module.
+
+If you originally created tables manually in the D1 Console, do not blindly run
+all migrations over those tables. Apply just the new idempotent 0002 file above.
+New EMPTY databases can use npm run db:migrate to install both migrations.
+
+No external AI API key is required. The selected model uses Cloudflare's free
+AI allowance. This allowance is shared across the account and is finite; Workers
+Paid can bill overages. Keep the Workers Free plan if you require Cloudflare's
+free-plan hard stop. Per-teacher and per-site request limits also apply.
+
+Classroom connection now makes a real course-list request before reporting
+verified access. Errors distinguish a disabled Classroom API, missing OAuth
+permissions, a school policy block and ordinary membership/access failures.
+A passing local test still does not configure Google's console or prove a live
+Classroom connection. Complete the existing Google setup below and reconnect.
+
 DEPLOY TO YOUR CLOUDFLARE WORKER
 ===============================
 

@@ -1,6 +1,6 @@
 VERIFICATION
 ============
-19 automated tests pass with actual in-memory SQLite tables and simulated
+32 automated tests pass with actual in-memory SQLite tables and simulated
 Firebase/Google Classroom responses. No real Classroom course was modified.
 
 Backend: Firebase authentication errors; wrong-project identity; external-origin
@@ -34,3 +34,23 @@ Run automated checks with Node 24:
   npm test
 No additional packages are needed for these tests. npm install supplies Wrangler
 for deployment/local Worker development.
+
+ADDITIONAL COVERAGE
+Teacher-only AI generation; missing binding/migration; input/output validation;
+duplicate removal; atomic concurrent per-user quotas; site quota and reservation
+refunds; provider quota errors without paid fallback; suggestions requiring teacher
+review and persisting after selection; expanded-board rendering and backend radius
+20 validation; Classroom connection verification before readiness; error categories
+for disabled API, missing permission scopes and school policy restrictions.
+
+Live model inference is not part of the automated test suite: AI responses are
+simulated to avoid charges and dependence on account credentials. Enable the AI
+binding and migration, deploy, then test one topic with a real teacher account.
+
+CURRENT CHANGE VERIFICATION
+The current GitHub main source was retrieved successfully and used as the base.
+32 tests pass. Wrangler 4.156.0 successfully bundled the Worker in deploy --dry-run
+mode with DB, AI and ASSETS bindings. Browser QA with simulated API responses
+verified the 127-cell, 30-term board, the AI request/review modal, and the selected
+suggestions appearing as saved vocabulary rows. No real model inference or
+Classroom authorization was performed in that browser QA.

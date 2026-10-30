@@ -1,3 +1,4 @@
+import { generateVocabulary } from './vocabulary.js';
 // Cloudflare Worker. Firebase verifies accounts; every SQL query enforces ownership.
 // Google access tokens are used only for the current request and never persisted.
 const NOW = () => new Date().toISOString();
@@ -31,7 +32,13 @@ async function googleResponse(response) {
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     if (response.status === 401) fail(401, 'Reconnect Google Classroom and try again.', 'classroom-reconnect');
-    if (response.status === 403) fail(403, 'Google Classroom denied this action. Check course membership, consent permissions, and school administrator settings.', 'classroom-permission');
+    if (response.status === 403) {
+      const reasons=[...(data.error?.details||[]).map(d=>d.reason),...(data.error?.errors||[]).map(d=>d.reason)].filter(Boolean);
+      if(reasons.some(r=>['SERVICE_DISABLED','accessNotConfigured'].includes(r))) fail(503,'Enable the Google Classroom API in the Firebase-linked Google Cloud project, then reconnect Classroom.','classroom-api-disabled');
+      if(reasons.includes('ACCESS_TOKEN_SCOPE_INSUFFICIENT') || reasons.includes('insufficientPermissions')) fail(403,'Reconnect Classroom and allow all the requested course, roster and assignment permissions.','classroom-scope');
+      if(reasons.some(r=>/domainPolicy|orgPolicy/i.test(r))) fail(403,'Your school has blocked this integration. Ask its Google Workspace administrator to allow Hex Connections.','classroom-school-policy');
+      fail(403,'Google Classroom denied this action. Check course membership, consent permissions, and school administrator settings.','classroom-permission');
+    }
     if (response.status === 404) fail(404, 'The Classroom course, assignment, or submission was not found.');
     fail(502, 'Google Classroom could not complete the request. Check its assignment status before retrying.', 'classroom-error');
   }
@@ -110,7 +117,7 @@ function boardDraft(value, act) {
   if (Object.keys(value.place).length > 71 || Object.keys(value.conns).length > 450) fail(400, 'Board is too large.');
   const place = {};
   for (const [id,p] of Object.entries(value.place)) {
-    if (!allowed.has(id) || !Array.isArray(p) || p.length !== 2 || !p.every(Number.isInteger) || Math.max(Math.abs(p[0]),Math.abs(p[1]),Math.abs(p[0]+p[1])) > 14 || occupied.has(p.join(','))) fail(400, 'Invalid board position.');
+    if (!allowed.has(id) || !Array.isArray(p) || p.length !== 2 || !p.every(Number.isInteger) || Math.max(Math.abs(p[0]),Math.abs(p[1]),Math.abs(p[0]+p[1])) > 20 || occupied.has(p.join(','))) fail(400, 'Invalid board position.');
     occupied.add(p.join(',')); place[id] = p;
   }
   const conns = {};
@@ -165,6 +172,10 @@ export async function handle(request, env, net = fetch) {
     const profile = await one(db,'SELECT uid,email,name,role FROM users WHERE uid=?',user.uid);
     const path=url.pathname;
     if (path==='/api/me' && request.method==='GET') return json({profile});
+    if(path==='/api/vocabulary/generate' && request.method==='POST'){
+      if(profile.role!=='teacher') fail(403,'Only teacher accounts can generate vocabulary.','teacher-required');
+      return json(await generateVocabulary({env,db,user,body:await input(request),fail}));
+    }
     if (path==='/api/profile' && request.method==='POST') {
       const {role}=await input(request); if (!['teacher','student'].includes(role)) fail(400,'Choose teacher or student.');
       await run(db,'UPDATE users SET role=? WHERE uid=?',role,user.uid); return json({profile:{...profile,role}});

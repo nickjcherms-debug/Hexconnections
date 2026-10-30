@@ -12,7 +12,9 @@
   "vars": {
     "PUBLIC_ORIGIN": "https://hexconnections.com",
     "FIREBASE_PROJECT_ID": "hex-connections-a5214",
-    "FIREBASE_API_KEY": "AIzaSyDoKGDkeoowOISA8tMBuoNgh6mPXeCxqh0"
+    "FIREBASE_API_KEY": "AIzaSyDoKGDkeoowOISA8tMBuoNgh6mPXeCxqh0",
+    "AI_DAILY_TEACHER_LIMIT": "10",
+    "AI_DAILY_SITE_LIMIT": "50"
   },
   "d1_databases": [
     {
@@ -21,5 +23,8 @@
       "database_id": "8f010d8b-3f2d-4d14-bf32-ff64866f475d",
       "migrations_dir": "migrations"
     }
-  ]
+  ],
+  "ai": {
+    "binding": "AI"
+  }
 }

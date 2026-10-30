@@ -4,8 +4,10 @@ import {DatabaseSync} from 'node:sqlite';
 import {readFileSync} from 'node:fs';
 import {handle} from '../src/worker.js';
 const project='hex-connections-a5214';
+const aiTerms=Array.from({length:5},(_,i)=>({term:'Concept '+(i+1),definition:'A clear definition for this concept.'}));
+const aiRequest={topic:'Memory',subject:'Psychology',grade:'11-12',count:5,style:'student',notes:'',existing:[]};
 function harness(){
- const sql=new DatabaseSync(':memory:');sql.exec(readFileSync(new URL('../migrations/0001_initial.sql',import.meta.url),'utf8'));
+ const sql=new DatabaseSync(':memory:');sql.exec(readFileSync(new URL('../migrations/0001_initial.sql',import.meta.url),'utf8'));sql.exec(readFileSync(new URL('../migrations/0002_ai_usage.sql',import.meta.url),'utf8'));
  const DB = {
   prepare(query) {
    return {
@@ -32,6 +34,7 @@ function harness(){
   const uid=(options.headers.Authorization||'').replace('Bearer access-','');
   if(url.pathname==='/oauth2/v3/userinfo')return Response.json({sub:'g-'+uid,email_verified:true});
   state.googleCalls.push({url:url.pathname,query:url.search,method,body,uid});
+  if(state.classroomError)return Response.json(state.classroomError,{status:403});
   if(url.pathname.endsWith('/teachers/me'))return Response.json(uid==='teacher'?{userId:'g-teacher'}:{error:{}},{status:uid==='teacher'?200:403});
   if(url.pathname.endsWith('/students/me'))return Response.json(uid==='student'?{userId:'g-student'}:{},{status:uid==='student'?200:403});
   if(url.pathname==='/v1/courses')return Response.json({courses:[{id:'course-1',name:'Psychology'}]});
@@ -142,4 +145,57 @@ test('student course discovery and code resolution use Classroom permissions',as
  assert.equal((await h.call('student','classroom/find',{courseId:'course-1'})).body.assignments[0].id,id);
  assert.equal((await h.call('student','resolve',{code:'ABC-123'})).body.id,id);
  assert.equal((await h.call('intruder','resolve',{code:'ABC123'})).status,404);
+});
+
+test('AI generation requires an authenticated teacher and an enabled binding',async()=>{
+ const h=harness();assert.equal((await h.call(null,'vocabulary/generate',aiRequest)).status,401);
+ await h.call('student','profile',{role:'student'});assert.equal((await h.call('student','vocabulary/generate',aiRequest)).status,403);
+ await h.call('teacher','profile',{role:'teacher'});const r=await h.call('teacher','vocabulary/generate',aiRequest);assert.equal(r.status,503);assert.equal(r.body.code,'ai-setup');
+});
+test('AI returns validated reviewable terms without changing the teacher workspace',async()=>{
+ const h=harness();await h.call('teacher','profile',{role:'teacher'});await h.call('teacher','workspace',{workspace:h.workspace,revision:0});
+ let invoked=0;h.env.AI={async run(model,settings){invoked++;assert.equal(model,'@cf/meta/llama-3.2-3b-instruct');assert.equal(settings.stream,false);return {response:JSON.stringify({terms:aiTerms})}}};
+ assert.equal((await h.call('teacher','vocabulary/generate',{...aiRequest,count:500})).status,400);assert.equal(invoked,0);
+ const r=await h.call('teacher','vocabulary/generate',aiRequest);assert.equal(r.status,200);assert.equal(r.body.terms.length,5);assert.equal(r.body.remaining.teacher,9);assert.ok(new Date(r.body.resetAt)>new Date());
+ assert.equal((await h.call('teacher','workspace')).body.workspace.activities[0].terms.length,2);
+});
+test('AI strips duplicate suggestions, including existing vocabulary',async()=>{
+ const h=harness();await h.call('teacher','profile',{role:'teacher'});
+ h.env.AI={async run(){return {response:'```json\n'+JSON.stringify({terms:[aiTerms[0],aiTerms[0],aiTerms[1]]})+'\n```'}}};
+ const r=await h.call('teacher','vocabulary/generate',{...aiRequest,existing:[aiTerms[1].term.toUpperCase()]});assert.equal(r.status,200);assert.deepEqual(r.body.terms,[aiTerms[0]]);
+});
+test('AI enforces atomic per-teacher limits even with concurrent requests',async()=>{
+ const h=harness();await h.call('teacher','profile',{role:'teacher'});let calls=0;
+ h.env.AI={async run(){calls++;return {response:JSON.stringify({terms:aiTerms})}}};
+ const results=await Promise.all(Array.from({length:12},()=>h.call('teacher','vocabulary/generate',aiRequest)));
+ assert.equal(results.filter(r=>r.status===200).length,10);assert.equal(results.filter(r=>r.body.code==='ai-user-limit').length,2);assert.equal(calls,10);
+});
+test('AI site limit prevents additional provider calls and refunds rejected user reservations',async()=>{
+ const h=harness();h.env.AI_DAILY_SITE_LIMIT='1';let calls=0;h.env.AI={async run(){calls++;return {response:JSON.stringify({terms:aiTerms})}}};
+ await h.call('teacher','profile',{role:'teacher'});await h.call('teacher2','profile',{role:'teacher'});
+ assert.equal((await h.call('teacher','vocabulary/generate',aiRequest)).status,200);
+ const r=await h.call('teacher2','vocabulary/generate',aiRequest);assert.equal(r.status,429);assert.equal(r.body.code,'ai-site-limit');assert.equal(calls,1);
+ assert.equal(h.sql.prepare('SELECT used FROM ai_daily_usage WHERE scope=?').get('user:teacher2').used,0);
+});
+test('malformed AI output and provider exhaustion fail safely without paid fallback',async()=>{
+ const h=harness();await h.call('teacher','profile',{role:'teacher'});let calls=0;
+ h.env.AI={async run(){calls++;return {response:'not JSON'}}};assert.equal((await h.call('teacher','vocabulary/generate',aiRequest)).body.code,'ai-output');
+ h.env.AI.run=async()=>{calls++;throw new Error('Neuron quota exceeded: private details')};const r=await h.call('teacher','vocabulary/generate',aiRequest);assert.equal(r.status,429);assert.equal(r.body.code,'ai-provider-limit');assert.doesNotMatch(r.body.error,/private details/);assert.equal(calls,2);
+});
+test('AI missing migration reports setup rather than attempting generation',async()=>{
+ const h=harness();await h.call('teacher','profile',{role:'teacher'});h.sql.exec('DROP TABLE ai_daily_usage');let calls=0;
+ h.env.AI={async run(){calls++}};assert.equal((await h.call('teacher','vocabulary/generate',aiRequest)).body.code,'ai-setup');assert.equal(calls,0);
+});
+test('expanded board coordinates survive save and submission; positions beyond radius 20 are rejected',async()=>{
+ const h=harness(),id=await h.publish();await h.call('student','posts/'+id);
+ const bigger={...h.draft,place:{1:[19,0],2:[20,0]}};assert.equal((await h.call('student','posts/'+id+'/draft',{draft:bigger})).status,200);
+ assert.equal((await h.call('student','posts/'+id+'/submit',{draft:bigger})).status,200);
+ assert.equal((await h.call('student','posts/'+id+'/draft',{draft:{...h.draft,place:{1:[20,0],2:[21,0]}}})).status,400);
+});
+test('Classroom errors distinguish disabled API, missing scopes and school policy',async()=>{
+ const h=harness();await h.call('teacher','profile',{role:'teacher'});
+ for(const [reason,code] of [['SERVICE_DISABLED','classroom-api-disabled'],['ACCESS_TOKEN_SCOPE_INSUFFICIENT','classroom-scope'],['domainPolicy','classroom-school-policy']]){
+  h.state.classroomError={error:{details:[{reason}]}};
+  const r=await h.call('teacher','classroom/courses?role=teacher');assert.equal(r.body.code,code);
+ }
 });
