@@ -31,7 +31,8 @@ function harness(){
   if(url.hostname==='identitytoolkit.googleapis.com'){
    let claims;try{claims=JSON.parse(Buffer.from(body.idToken.split('.')[1],'base64url'))}catch{return Response.json({}, {status:400})}
    if(body.idToken.endsWith('.invalid'))return Response.json({}, {status:400});
-   return Response.json({users:[{localId:claims.sub,email:claims.sub+'@example.org',displayName:'Name '+claims.sub,emailVerified:true,providerUserInfo:[{providerId:'google.com',rawId:'g-'+claims.sub}]}]});
+   const emailOnly=/^(mail|unverified)/.test(claims.sub);
+   return Response.json({users:[{localId:claims.sub,email:claims.sub+'@example.org',displayName:'Name '+claims.sub,emailVerified:!claims.sub.startsWith('unverified'),providerUserInfo:emailOnly?[{providerId:'password',rawId:claims.sub+'@example.org'}]:[{providerId:'google.com',rawId:'g-'+claims.sub}]}]});
   }
   const uid=(options.headers.Authorization||'').replace('Bearer access-','');
   if(url.pathname==='/oauth2/v3/userinfo')return Response.json({sub:'g-'+uid,email_verified:true});
@@ -386,4 +387,41 @@ test('share links copy only the activity template and only to teacher accounts',
  assert.equal((await h.call('teacher','shares',{activityId:'act-m'},{access:false})).body.share.code,code);
  assert.equal((await h.call('teacher2','shares/'+code,undefined,{access:false})).status,200);
  assert.equal((await h.call('teacher2','shares',{activityId:'missing'},{access:false})).status,404);
+});
+
+// ---------------- 4.1: email accounts, locked account types, removing classes ----------------
+test('verified email + password accounts can use the site; unverified ones are asked to confirm',async()=>{
+ const h=harness();
+ const un=await h.call('unverified1','me',undefined,{access:false});assert.equal(un.status,401);assert.equal(un.body.code,'email-unverified');
+ const reg=await h.call('mailteacher','register',{role:'teacher'},{access:false});assert.equal(reg.status,201);assert.equal(reg.body.profile.role,'teacher');
+ const id=await manualSetup({...h,call:(uid,...rest)=>h.call(uid==='teacher'?'mailteacher':uid,...rest)});
+ await h.call('mailkid','register',{role:'student'},{access:false});
+ assert.equal((await h.call('mailkid','resolve',{code:'CLUB23'},{access:false})).status,200);
+ assert.equal((await h.call('mailkid','posts/'+id,undefined,{access:false})).status,200);
+ const cls=await h.call('mailteacher','classroom/courses?role=teacher');assert.equal(cls.status,403);assert.equal(cls.body.code,'google-link-required');
+ assert.equal(h.state.googleCalls.length,0);
+});
+test('account type is chosen once and a student can never make itself a teacher',async()=>{
+ const h=harness();
+ assert.equal((await h.call('kid','register',{role:'student'},{access:false})).status,201);
+ const sw=await h.call('kid','profile',{role:'teacher'},{access:false});assert.equal(sw.status,403);assert.equal(sw.body.code,'role-locked');
+ assert.equal((await h.call('kid','register',{role:'teacher'},{access:false})).body.profile.role,'student');
+ assert.equal((await h.call('kid','me',undefined,{access:false})).body.profile.role,'student');
+ for(const [path,body] of [['workspace',undefined],['teacher/dashboard',undefined],['shares',undefined],['manual/publish',{activityId:'a',classId:'b'}],['manual/close-class',{classId:'b'}]]){
+  const r=await h.call('kid',path,body,{access:false});assert.equal(r.status,403,path);assert.equal(r.body.code,'teacher-required',path);
+ }
+ assert.equal((await h.call('kid','profile',{role:'student'},{access:false})).status,200);
+});
+test('removing a code-only class turns off its code but keeps student work',async()=>{
+ const h=harness(),id=await manualSetup(h);
+ await h.call('kid','profile',{role:'student'},{access:false});
+ assert.equal((await h.call('kid','resolve',{code:'CLUB23'},{access:false})).status,200);
+ assert.equal((await h.call('kid','posts/'+id+'/submit',{draft:h.draft},{access:false})).status,200);
+ assert.equal((await h.call('teacher2','manual/close-class',{classId:'club'},{access:false})).status,403);
+ await h.call('teacher2','profile',{role:'teacher'},{access:false});
+ assert.equal((await h.call('teacher2','manual/close-class',{classId:'club'},{access:false})).body.closed,0);
+ assert.equal((await h.call('teacher','manual/close-class',{classId:'club'},{access:false})).body.closed,1);
+ await h.call('kid2','profile',{role:'student'},{access:false});
+ assert.equal((await h.call('kid2','resolve',{code:'CLUB23'},{access:false})).status,403);
+ const subs=await h.call('teacher','submissions?postId='+id,undefined,{access:false});assert.equal(subs.body.submissions.length,1);
 });

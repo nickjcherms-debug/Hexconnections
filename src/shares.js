@@ -31,7 +31,7 @@ export async function handleShareRoutes(c){
  const path=url.pathname;
  if(path!=='/api/shares'&&!path.startsWith('/api/shares/'))return null;
  try{await one(db,'SELECT code FROM shares LIMIT 1')}catch(e){if(/no such table/i.test(String(e.message)))fail(503,'The site owner needs to apply database migration 0004_shares.sql before sharing works.','share-setup');throw e}
- if(profile.role!=='teacher')fail(403,'Shared Hex Spaces are for teacher accounts. Switch to your teacher profile to open this link.','teacher-required');
+ if(profile.role!=='teacher')fail(403,'Shared Hex Spaces are for teacher accounts.','teacher-required');
  if(path==='/api/shares'&&request.method==='GET'){
   const rows=await list(db,'SELECT * FROM shares WHERE owner_uid=? ORDER BY updated_at DESC',user.uid);
   return json({shares:rows.map(r=>shareView(r,user.name))});

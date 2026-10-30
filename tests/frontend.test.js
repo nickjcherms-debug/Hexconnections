@@ -33,7 +33,7 @@ function make(){
  getData(){return DATA},setData(w){DATA=w},setView(fn){viewSubmission=fn},
  setWork(w){TW=w;TS.rows={};TS.sel=w.activities[0].id},setRenderTeacher(fn){renderTeacher=fn},
  setApi(fn){platformApi=fn},setTeacher(fn){startTeacher=fn;teacherDashboard=fn},
- v4:{startPage,renderHome,hexSpaceSidebar,newFolder,deleteFolder,moveActivity,folderById,childFolders,folderActs,canMoveFolder,syncClassroomClasses,importClassroomClasses,sharePreview,copyShared,postManual,codesPane,TS,getTW(){return TW},startTeacher(){startTeacher()},renderTeacher(){renderTeacher()},setSave(fn){saveWorkspaceCloud=fn},setTS(o){Object.assign(TS,o)}}};`;
+ v4:{keyToPath,pathToKey,navItems:()=>navItems(),startPage,renderHome,hexSpaceSidebar,newFolder,deleteFolder,moveActivity,folderById,childFolders,folderActs,canMoveFolder,syncClassroomClasses,importClassroomClasses,sharePreview,copyShared,postManual,codesPane,TS,getTW(){return TW},startTeacher(){startTeacher()},renderTeacher(){renderTeacher()},setSave(fn){saveWorkspaceCloud=fn},setTS(o){Object.assign(TS,o)}}};`;
  vm.runInContext(script.replace(/startPage\(\);\nroute\(\);\nbootGoogle\(\);\n\}\)\(\);\s*$/,hooks+'})();'),context);
  const h=context.hx;
  function flatten(n=root){return [n,...(n.children||[]).flatMap(flatten)]}
@@ -41,12 +41,14 @@ function make(){
  return {h,root,location,text,flatten,store,body:document.body};
 }
 const tick=()=>new Promise(r=>setImmediate(r));
-test('configured public login screen offers explicit teacher and student Google choices',()=>{
+const kids=n=>[n,...(n.children||[]).flatMap(kids)];
+const btnWith=(flatten,label)=>flatten().find(n=>n.tagName==='button'&&kids(n).some(c=>c!==n&&c.textContent===label));
+test('the login page offers Google and email + password, and remembers no role for returning users',()=>{
  const {h,text,flatten,location}=make();h.GA.ready=true;h.GA.auth={};location.hash='#signin';h.renderGoogleGate();
  assert.equal(h.AUTH_CONFIG.firebase.projectId,'hex-connections-a5214');
- assert.match(text(),/Teacher · Sign in with Google/);assert.match(text(),/Student · Sign in with Google/);
+ assert.match(text(),/Log in to Hex Connections/);assert.match(text(),/Continue with Google/);assert.match(text(),/or use your email/);assert.match(text(),/Forgot password\?/);
  h.GA.sdk={GoogleAuthProvider:class {setCustomParameters(){}},signInWithPopup:()=>Promise.resolve()};
- flatten().find(n=>n.textContent==='Teacher · Sign in with Google').listeners.click();assert.equal(h.PX.loginRole,'teacher');
+ h.PX.loginRole='teacher';btnWith(flatten,'Continue with Google').listeners.click();assert.equal(h.PX.loginRole,null);assert.equal(h.PX.signupRequested,false);
 });
 test('first Google login creates the selected profile and loads its teacher workspace',async()=>{
  const {h,location}=make();h.GA.ready=true;h.GA.user={uid:'teacher'};h.PX.loginRole='teacher';const calls=[];
@@ -54,9 +56,14 @@ test('first Google login creates the selected profile and loads its teacher work
  let renders=0;h.setTeacher(()=>renders++);h.loadPlatform();await tick();
  assert.equal(h.PX.profile.role,'teacher');assert.equal(h.PX.loaded,true);assert.equal(location.hash,'#teacher');assert.equal(renders,1);assert.equal(calls.find(c=>c.path==='register').body.role,'teacher');
 });
-test('student profiles cannot open the teacher workspace without selecting a separate teacher view',()=>{
- const {h,location,text}=make();h.GA.ready=true;h.GA.user={uid:'student',displayName:'Student'};h.PX.loaded=true;h.PX.profile={role:'student'};location.hash='#teacher';
- let teacher=0;h.setTeacher(()=>teacher++);h.route();assert.equal(teacher,0);assert.equal(h.googleTeacher(),false);assert.match(text(),/How will you use Hex Connections/);
+test('student accounts are sent away from every teacher page and never see teacher menu items',async()=>{
+ for(const page of ['#teacher','#teacher/editor','#teacher/new','#teacher/shared','#teacher/class-g1','#new']){
+  const {h,location,text}=make();h.GA.ready=true;h.GA.user={uid:'student',displayName:'Student'};h.PX.loaded=true;h.PX.profile={role:'student'};location.hash=page;
+  h.setApi(async path=>{if(path==='student/dashboard')return {active:[],submitted:[],needsClassroom:false};throw new Error(path)});
+  let teacher=0;h.setTeacher(()=>teacher++);h.route();await tick();
+  assert.equal(teacher,0,page);assert.equal(h.googleTeacher(),false);assert.equal(location.hash,'',page);
+  assert.match(text(),/That page is for teacher accounts/);assert.doesNotMatch(text(),/Hex Space|Shared links|Classes /);
+ }
 });
 test('Classroom consent is tracked for the selected role and expires',()=>{
  const {h}=make();h.PX.token='token';h.PX.tokenUntil=Date.now()+10000;h.PX.tokenRole='teacher';
@@ -122,28 +129,56 @@ test('Classroom review link uses the submission snapshot after the original acti
  assert.ok(reviewed);assert.equal(reviewed.a.title,'Original assignment');assert.equal(reviewed.submission._studentUid,'student');
 });
 
-test('explicit signup screen offers teacher/student Google account creation',()=>{
- const {h,text,flatten,location}=make();h.GA.ready=true;h.GA.auth={};location.hash='#signin';h.renderGoogleGate();
- flatten().find(n=>n.textContent==='New here? Create an account').listeners.click();
- assert.match(text(),/Create your Hex Connections account/);assert.match(text(),/Create teacher account with Google/);assert.match(text(),/Create student account with Google/);
+test('create-account page requires choosing teacher or student before Google sign-up',()=>{
+ const {h,text,flatten,location}=make();h.GA.ready=true;h.GA.auth={};location.hash='#signup';h.renderGoogleGate();
+ assert.match(text(),/Create your Hex Connections account/);assert.match(text(),/can’t be changed later/);
  h.GA.sdk={GoogleAuthProvider:class {setCustomParameters(){}},signInWithPopup:()=>Promise.resolve()};
- flatten().find(n=>n.textContent==='Create student account with Google').listeners.click();
+ btnWith(flatten,'Continue with Google').listeners.click();assert.match(text(),/Choose Teacher or Student first/);assert.equal(h.PX.signupRequested,false);
+ btnWith(flatten,'Student').listeners.click();btnWith(flatten,'Continue with Google').listeners.click();
  assert.equal(h.PX.signupRequested,true);assert.equal(h.PX.loginRole,'student');
+});
+test('email sign-up creates the account, saves the chosen type and asks for email confirmation',async()=>{
+ const {h,text,flatten,location,store}=make();h.GA.ready=true;h.GA.auth={};location.hash='#signup';
+ const made=[];h.GA.sdk={GoogleAuthProvider:class {setCustomParameters(){}},
+  createUserWithEmailAndPassword:async(a,e,p)=>{made.push(['create',e,p]);const user={uid:'u9',email:e,emailVerified:false,providerData:[{providerId:'password'}]};h.GA.user=user;return {user}},
+  updateProfile:async(u,o)=>{made.push(['name',o.displayName]);u.displayName=o.displayName},sendEmailVerification:async()=>{made.push(['verify'])}};
+ h.renderGoogleGate();btnWith(flatten,'Teacher').listeners.click();
+ const byId=id=>flatten().find(n=>n.attrs?.id===id);
+ byId('lg-name').value='Ms. Rivera';byId('lg-email').value='rivera@school.org';byId('lg-pass').value='longpassword';
+ flatten().find(n=>n.tagName==='form').listeners.submit({preventDefault(){}});for(let i=0;i<4;i++)await tick();
+ assert.equal(JSON.stringify(made),JSON.stringify([['create','rivera@school.org','longpassword'],['name','Ms. Rivera'],['verify']]));
+ assert.equal(JSON.parse(store.get('hx-signup-role')).role,'teacher');assert.equal(h.PX.needsVerify,true);assert.match(text(),/Check your email/);assert.match(text(),/rivera@school\.org/);
+});
+test('short passwords and missing names are caught before creating an account',()=>{
+ const {h,text,flatten,location}=make();h.GA.ready=true;h.GA.auth={};location.hash='#signup';let created=0;
+ h.GA.sdk={createUserWithEmailAndPassword:async()=>{created++}};h.renderGoogleGate();btnWith(flatten,'Student').listeners.click();
+ const byId=id=>flatten().find(n=>n.attrs?.id===id);
+ byId('lg-name').value='Ava';byId('lg-email').value='ava@school.org';byId('lg-pass').value='short';
+ flatten().find(n=>n.tagName==='form').listeners.submit({preventDefault(){}});assert.match(text(),/at least 8 characters/);assert.equal(created,0);
 });
 test('Google signup creates a student website profile and opens its dashboard',async()=>{
  const {h,text}=make();h.GA.ready=true;h.GA.user={uid:'new-student',displayName:'New student'};h.PX.loginRole='student';h.PX.signupRequested=true;const calls=[];
  h.setApi(async(path,body)=>{calls.push(path);if(path==='me')return {profile:{role:null}};if(path==='register')return {profile:{role:body.role},created:true};if(path==='student/dashboard')return {active:[],submitted:[],needsClassroom:true};throw new Error(path)});
  h.loadPlatform();await tick();assert.equal(h.PX.profile.role,'student');assert.equal(h.PX.loaded,true);assert.equal(calls.filter(p=>p==='register').length,1);assert.match(text(),/Your assignments/);
 });
-test('signup with an existing Google account preserves its existing website profile',async()=>{
+test('signup with an existing account keeps its locked account type',async()=>{
  const {h}=make();h.GA.ready=true;h.GA.user={uid:'teacher'};h.PX.loginRole='student';h.PX.signupRequested=true;
  h.setTeacher(()=>{});const calls=[];
  h.setApi(async(path)=>{calls.push(path);if(path==='me'||path==='register')return {profile:{role:'teacher'},created:false};if(path==='workspace')return {workspace:{version:4,classes:[],activities:[]},revision:1};throw new Error(path)});
- h.loadPlatform();await tick();assert.equal(h.PX.profile.role,'teacher');assert.ok(calls.includes('register'));assert.ok(!calls.includes('profile'));
+ h.loadPlatform();await tick();await tick();assert.equal(h.PX.profile.role,'teacher');assert.ok(!calls.includes('register'));assert.ok(!calls.includes('profile'));
+});
+test('an unverified email account is shown the confirm-your-email step, and a saved sign-up type registers after',async()=>{
+ const {h,text,store}=make();h.GA.ready=true;h.GA.user={uid:'u9',email:'r@school.org',providerData:[{providerId:'password'}]};
+ h.setApi(async()=>{const e=new Error('Verify');e.code='email-unverified';throw e});h.loadPlatform();await tick();await tick();
+ assert.equal(h.PX.needsVerify,true);assert.match(text(),/Check your email/);assert.match(text(),/I’ve confirmed my email/);
+ store.set('hx-signup-role',JSON.stringify({uid:'u9',email:'r@school.org',role:'student'}));const calls=[];
+ h.setApi(async(path,body)=>{calls.push([path,body&&body.role]);if(path==='me')return {profile:{role:null}};if(path==='register')return {profile:{role:'student'},created:true};return {active:[],submitted:[]}});
+ h.PX.needsVerify=false;h.PX.loading=false;h.loadPlatform();for(let i=0;i<4;i++)await tick();
+ assert.equal(JSON.stringify(calls.slice(0,2)),JSON.stringify([['me',null],['register','student']]));assert.equal(h.PX.profile.role,'student');
 });
 
 test('teacher login lands on a classroom dashboard rather than the activity editor',async()=>{
- const {h,location,text}=make();h.GA.ready=true;h.GA.user={uid:'teacher'};h.PX.loaded=true;h.PX.profile={role:'teacher'};h.PX.token='token';h.PX.tokenRole='teacher';h.PX.tokenUntil=Date.now()+10000;
+ const {h,location,text}=make();h.GA.ready=true;h.GA.user={uid:'teacher'};h.PX.loaded=true;h.PX.profile={role:'teacher'};h.PX.token='token';h.PX.tokenRole='teacher';h.PX.tokenUntil=Date.now()+10000;h.PX.teacherData={version:4,classes:[{id:'gc-course',name:'Psychology',classroomId:'course'}],activities:[]};
  h.setApi(async path=>path==='teacher/dashboard'?{assignments:[{id:'post',courseId:'course',courseName:'Psychology',className:'Period 1',title:'Memory',status:'PUBLISHED',open:true,submissions:2,turnedIn:1}]}:{courses:[{id:'course',name:'Psychology'}]});
  location.hash='#teacher';h.route();await tick();assert.match(text(),/Your classes/);assert.match(text(),/Psychology/);assert.match(text(),/Open class/);assert.doesNotMatch(text(),/Vocabulary/);
  location.hash='#teacher/class-course';h.route();await tick();assert.match(text(),/Class assignments/);assert.match(text(),/Memory/);assert.match(text(),/View submissions & groups/);assert.match(text(),/New Hex Space for this class/);assert.match(text(),/← All classes/);
@@ -256,7 +291,7 @@ test('a shared Hex Space previews for teachers and copies into a chosen folder',
 });
 test('students see a teacher-profile message instead of a shared Hex Space',()=>{
  const {h,text,location}=make();h.GA.ready=true;h.GA.user={uid:'s'};h.PX.loaded=true;h.PX.profile={role:'student'};location.hash='#share-ABCDEFGHJK';h.route();
- assert.match(text(),/Teacher profile needed/);assert.doesNotMatch(text(),/Copy to my Hex Space/);
+ assert.match(text(),/Teacher account needed/);assert.doesNotMatch(text(),/Copy to my Hex Space/);
 });
 
 test('imported Classroom classes stay in the Your classes list without reconnecting Classroom',async()=>{
@@ -268,28 +303,82 @@ test('imported Classroom classes stay in the Your classes list without reconnect
  assert.match(text(),/Biology · P2/);assert.match(text(),/Science club/);assert.match(text(),/Google Classroom/);assert.match(text(),/Code only/);assert.match(text(),/Connect Google Classroom and import classes/);
  location.hash='#teacher/class-g1';h.route();await tick();assert.match(text(),/Biology · P2/);assert.match(text(),/New Hex Space for this class/);
 });
-test('importing Classroom classes from the class list creates them in the saved Hex Space',async()=>{
- const {h,text,location}=make();h.GA.ready=true;h.GA.user={uid:'teacher'};h.PX.loaded=true;h.PX.profile={role:'teacher'};h.PX.revision=4;
- h.PX.token='token';h.PX.tokenRole='teacher';h.PX.tokenUntil=Date.now()+10000;
- h.PX.teacherData={version:4,folders:[],classes:[{id:'club',name:'Science club'}],activities:[]};
- const saves=[];let dash=false;
- h.setApi(async(path,body)=>{
-  if(path==='classroom/courses?role=teacher')return {courses:dash?[{id:'g1',name:'Biology',section:'P2'},{id:'g2',name:'Chemistry'}]:[]};
+function teacherAt(make,data){
+ const t=make();const {h}=t;h.GA.ready=true;h.GA.user={uid:'teacher'};h.PX.loaded=true;h.PX.profile={role:'teacher'};h.PX.revision=4;
+ h.PX.token='token';h.PX.tokenRole='teacher';h.PX.tokenUntil=Date.now()+10000;h.PX.teacherData=data;return t;
+}
+const settle=async()=>{for(let i=0;i<8;i++)await tick()};
+const boxFor=(t,id)=>[...t.flatten(),...t.flatten(t.body)].find(n=>n.attrs?.id===id);
+const clickText=(t,label)=>[...t.flatten(),...t.flatten(t.body)].find(n=>n.textContent===label).listeners.click({});
+test('teachers choose which Google Classroom classes to import; nothing is imported automatically',async()=>{
+ const t=teacherAt(make,{version:4,folders:[],classes:[{id:'club',name:'Science club'}],activities:[]});const {h,text,location}=t;
+ const saves=[];h.setApi(async(path,body)=>{
+  if(path==='classroom/courses?role=teacher')return {courses:[{id:'g1',name:'Biology',section:'P2'},{id:'g2',name:'Chemistry'},{id:'g3',name:'Physics'}]};
   if(path==='teacher/dashboard')return {assignments:[]};
   if(path==='workspace'&&body){saves.push(body);return {revision:body.revision+1}}
   throw new Error(path)});
- location.hash='#teacher';h.route();await tick();await tick();
- dash=true;h.v4.importClassroomClasses();for(let i=0;i<6;i++)await tick();
+ location.hash='#teacher';h.route();await settle();
+ assert.equal(saves.length,0);assert.doesNotMatch(text(),/Chemistry/);
+ h.v4.importClassroomClasses();await settle();
+ assert.match(text(),/Choose classes to import/);assert.match(text(),/Biology · P2/);assert.match(text(),/Physics/);
+ boxFor(t,'imp-g2').checked=true;clickText(t,'Import selected');await settle();
  assert.equal(saves.length,1);assert.equal(saves[0].revision,4);
- assert.equal(JSON.stringify(saves[0].workspace.classes.map(c=>[c.name,c.classroomId||null])),JSON.stringify([['Science club',null],['Biology · P2','g1'],['Chemistry','g2']]));
- assert.equal(h.PX.teacherData.classes.length,3);assert.equal(h.PX.revision,5);
- assert.match(text(),/Biology · P2/);assert.match(text(),/Chemistry/);assert.match(text(),/2 Google Classroom classes added to your class list/);
- h.v4.importClassroomClasses();for(let i=0;i<6;i++)await tick();assert.equal(saves.length,1);assert.match(text(),/already in your class list/);
+ assert.equal(JSON.stringify(saves[0].workspace.classes.map(c=>[c.name,c.classroomId||null])),JSON.stringify([['Science club',null],['Chemistry','g2']]));
+ assert.match(text(),/1 class imported/);assert.match(text(),/Chemistry/);assert.doesNotMatch(text(),/Physics/);
 });
-
+test('resync updates renamed Classroom classes and offers to remove ones no longer in Classroom',async()=>{
+ const t=teacherAt(make,{version:4,folders:[],classes:[{id:'gc-g1',name:'Biology',classroomId:'g1'},{id:'gc-g9',name:'Old elective',classroomId:'g9'}],activities:[{id:'a1',title:'Cells',terms:[],assign:{'gc-g9':{code:'ABC234',open:true,due:''}}}]});const {h,text}=t;
+ const saves=[];h.setApi(async(path,body)=>{
+  if(path==='classroom/courses?role=teacher')return {courses:[{id:'g1',name:'Biology',section:'Period 3'}]};
+  if(path==='teacher/dashboard')return {assignments:[]};
+  if(path==='workspace'&&body){saves.push(body);return {revision:5}}
+  throw new Error(path)});
+ h.v4.importClassroomClasses();await settle();
+ assert.match(text(),/Import or resync classes/);assert.match(text(),/Biology → Biology · Period 3/);assert.match(text(),/No longer active in Google Classroom/);
+ boxFor(t,'drop-gc-g9').checked=true;clickText(t,'Save changes');await settle();
+ const ws=saves[0].workspace;assert.equal(JSON.stringify(ws.classes.map(c=>c.name)),JSON.stringify(['Biology · Period 3']));
+ assert.equal(JSON.stringify(ws.activities[0].assign),'{}');assert.match(text(),/1 renamed, 1 removed/);
+});
+test('teachers can remove imported and code-only classes; a code-only class code stops working',async()=>{
+ const t=teacherAt(make,{version:4,folders:[],classes:[{id:'gc-g1',name:'Biology',classroomId:'g1'},{id:'club',name:'Science club'}],activities:[{id:'a1',title:'Cells',terms:[],assign:{club:{code:'CLUB23',open:true,due:''},'gc-g1':{code:'ABC234',open:true,due:''}}}]});const {h,text,location}=t;
+ const calls=[];h.setApi(async(path,body)=>{calls.push(path);
+  if(path==='teacher/dashboard')return {assignments:[]};
+  if(path==='classroom/courses?role=teacher')return {courses:[]};
+  if(path==='manual/close-class')return {closed:1};
+  if(path==='workspace'&&body)return {revision:5};
+  throw new Error(path)});
+ location.hash='#teacher';h.route();await settle();
+ const removeBtn=t.flatten().find(n=>n.attrs?.['aria-label']==='Remove class Science club');assert.ok(removeBtn);removeBtn.listeners.click();
+ assert.match(text(),/Remove Science club\?/);assert.match(text(),/class code stops working/);
+ t.flatten(t.body).find(n=>n.textContent==='Remove class').listeners.click({target:{}});await settle();
+ assert.ok(calls.includes('manual/close-class'));assert.equal(JSON.stringify(h.PX.teacherData.classes.map(c=>c.id)),JSON.stringify(['gc-g1']));
+ assert.equal(Object.keys(h.PX.teacherData.activities[0].assign).join(),'gc-g1');
+ t.flatten().find(n=>n.attrs?.['aria-label']==='Remove class Biology').listeners.click();assert.match(text(),/Nothing is deleted in Google Classroom/);
+ t.flatten(t.body).find(n=>n.textContent==='Remove class').listeners.click({target:{}});await settle();
+ assert.equal(h.PX.teacherData.classes.length,0);assert.equal(calls.filter(p=>p==='manual/close-class').length,1);
+});
 test('the bare site address opens the homepage, and the menu offers Log in',()=>{
  const {h,text,location,flatten}=make();h.GA.ready=true;location.hash='';h.v4.startPage();assert.equal(location.hash,'#home');h.route();
  assert.match(text(),/The benefits of hexagonal thinking/);assert.match(text(),/Ways to use it in class/);assert.match(text(),/A shared language for thinking/);assert.match(text(),/Patterns/);
  const login=flatten().filter(n=>n.textContent==='Log in');assert.ok(login.some(n=>n.attrs?.href==='#signin'));
  location.hash='#teacher';h.v4.startPage();assert.equal(location.hash,'#teacher');
+});
+
+test('logged-out visits to private pages show the homepage and resume after login',()=>{
+ const {h,text,location}=make();h.GA.ready=true;h.GA.user=null;location.hash='#teacher/editor';h.route();
+ assert.equal(location.hash,'#home');assert.match(text(),/Log in to open that page/);assert.match(text(),/The benefits of hexagonal thinking/);
+ location.hash='#code';h.route();assert.match(text(),/Enter your class code/);
+});
+test('menus share one layout: Home first, then role-specific tabs',()=>{
+ const labels=(h)=>h.v4.navItems().map(i=>i.label).join('|');
+ let {h}=make();h.GA.ready=true;assert.equal(labels(h),'Home|How it works|Depth & Complexity|Enter a class code|Log in|New Hex Space');
+ ({h}=make());h.GA.user={uid:'t'};h.PX.profile={role:'teacher'};assert.equal(labels(h),'Home|Classes|Hex Space|Shared links|+ New Hex Space');
+ ({h}=make());h.GA.user={uid:'s'};h.PX.profile={role:'student'};assert.equal(labels(h),'Home|My assignments|Enter a class code');
+});
+test('clean page addresses map both ways and old # links still resolve',()=>{
+ const {h}=make();const v=h.v4;
+ const pairs=[['#home','/'],['#signin','/login'],['#signup','/signup'],['#code','/code'],['#c-ABC234','/code/ABC234'],['#share-K7MQ2PXRT4','/share/K7MQ2PXRT4'],['#teacher','/teacher/classes'],['#teacher/class-g1','/teacher/classes/g1'],['#teacher/post-p1','/teacher/assignments/p1'],['#teacher/editor','/teacher/hex-space'],['#teacher/edit-a1','/teacher/hex-space/a1'],['#teacher/new','/teacher/hex-space/new'],['#teacher/shared','/teacher/shared'],['','/student/assignments'],['#a-p1','/student/assignments/p1'],['#review-p1~u%201','/teacher/review/p1/u%201']];
+ for(const [key,path] of pairs){assert.equal(v.keyToPath(key),path,key);assert.equal(v.pathToKey(path),key,path)}
+ assert.equal(v.pathToKey('/teacher'),'#teacher');assert.equal(v.pathToKey('/nope/x'),'#home');assert.equal(v.keyToPath('#how'),null);
+ assert.equal(v.pathToKey('/teacher/classes/manual%3Aclub'),'#teacher/class-manual%3Aclub');
 });
