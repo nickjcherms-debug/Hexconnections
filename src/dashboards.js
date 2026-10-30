@@ -2,7 +2,7 @@ const rows=async(db,sql,...args)=>(await db.prepare(sql).bind(...args).all()).re
 const parse=s=>JSON.parse(s);
 function card(p,s={}){
  const info=parse(p.body);
- return {id:p.id,activityId:p.activity_id,classId:p.class_id,title:info.act.title,className:info.cls.name,courseId:p.course_id,courseName:info.courseName||info.cls.name,classroomUrl:p.classroom_url,status:p.status,due:info.asg.due||'',open:info.asg.open!==false,
+ return {id:p.id,activityId:p.activity_id,classId:p.class_id,title:info.act.title,className:info.cls.name,courseId:p.course_id,courseName:info.courseName||info.cls.name,manual:String(p.course_id||'').startsWith('manual:'),code:info.asg.code||'',classroomUrl:p.classroom_url,status:p.status,due:info.asg.due||'',open:info.asg.open!==false,
  submissions:Number(p.submission_count||0),turnedIn:Number(p.turned_in_count||0),...s};
 }
 export async function handleDashboardRoutes(c){
@@ -20,7 +20,7 @@ export async function handleDashboardRoutes(c){
  const connected=!!request.headers.get('X-Classroom-Token');
  if(connected){
   const g=await getGoogle(),courses=await allPages(g,'/courses?courseStates=ACTIVE&studentId=me&pageSize=100','courses');
-  posts=[];
+  posts=await rows(db,"SELECT p.* FROM posts p JOIN submissions s ON s.post_id=p.id WHERE s.uid=? AND p.status=? AND p.course_id LIKE 'manual:%'",user.uid,'PUBLISHED');
   for(const course of courses){
    const candidates=await rows(db,'SELECT * FROM posts WHERE course_id=? AND status=?',course.id,'PUBLISHED');
    for(const p of candidates){

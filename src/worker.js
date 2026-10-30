@@ -1,6 +1,7 @@
 import {handleGroupRoutes,groupForUser} from './groups.js';
 import {handleDashboardRoutes} from './dashboards.js';
 import { generateVocabulary } from './vocabulary.js';
+import {handleShareRoutes} from './shares.js';
 // Cloudflare Worker. Firebase verifies accounts; every SQL query enforces ownership.
 // Google access tokens are used only for the current request and never persisted.
 const NOW = () => new Date().toISOString();
@@ -92,14 +93,32 @@ const run = (db, sql, ...args) => db.prepare(sql).bind(...args).run();
 const rows = async (db, sql, ...args) => (await db.prepare(sql).bind(...args).all()).results;
 const emptyWorkspace = () => ({ version: 4, classes: [], activities: [] });
 function validateWorkspace(body) {
-  if (!body || !Array.isArray(body.classes) || !Array.isArray(body.activities) || body.activities.length > 100 || body.classes.length > 100) fail(400, 'Invalid workspace.');
+  if (!body || !Array.isArray(body.classes) || !Array.isArray(body.activities) || body.activities.length > 200 || body.classes.length > 100) fail(400, 'Invalid workspace.');
   const acts = new Set(), classes = new Set();
   for (const c of body.classes) {
     if (!c || typeof c.id !== 'string' || !c.id || c.id.length > 80 || classes.has(c.id) || typeof c.name !== 'string' || c.name.length > 100) fail(400, 'Invalid or duplicate class.');
+    if (c.classroomId != null && (typeof c.classroomId !== 'string' || !c.classroomId || c.classroomId.length > 200)) fail(400, 'Invalid Classroom course link.');
     classes.add(c.id);
+  }
+  // Folders: a tree of teacher-made folders. Each activity sits in at most one folder.
+  if (body.folders != null && !Array.isArray(body.folders)) fail(400, 'Invalid folders.');
+  const folders = new Map();
+  for (const f of body.folders || []) {
+    if (!f || typeof f.id !== 'string' || !f.id || f.id.length > 80 || folders.has(f.id) || typeof f.name !== 'string' || !f.name.trim() || f.name.length > 80) fail(400, 'Invalid or duplicate folder.');
+    if (f.parent != null && (typeof f.parent !== 'string' || f.parent === f.id)) fail(400, 'Invalid folder parent.');
+    folders.set(f.id, f);
+  }
+  if (folders.size > 300) fail(400, 'Too many folders.');
+  for (const f of folders.values()) {
+    let depth = 0, cur = f;
+    while (cur.parent != null) {
+      cur = folders.get(cur.parent);
+      if (!cur || ++depth > 8) fail(400, 'Folders must form a tree up to 8 levels deep.');
+    }
   }
   for (const a of body.activities) {
     if (!a || typeof a.id !== 'string' || !a.id || a.id.length > 80 || acts.has(a.id) || !Array.isArray(a.terms) || a.terms.length > 60 || typeof a.title !== 'string' || a.title.length > 250) fail(400, 'Invalid or duplicate activity.');
+    if (a.folder != null && !folders.has(a.folder)) fail(400, 'An assignment points to a missing folder.');
     const ids = new Set();
     for (const t of a.terms) {
       const id = t.id || t.n;
@@ -158,6 +177,21 @@ async function studentInPost(db, g, user, post) {
     VALUES(?,?,?,?,?,?) ON CONFLICT(post_id,uid) DO UPDATE SET classroom_submission_id=excluded.classroom_submission_id,classroom_status=excluded.classroom_status`, post.id,user.uid,user.googleSub,sub.id,NOW(),sub.state);
   return { base, sub };
 }
+// Posts for teacher-made classes (no Google Classroom course) use course_id "manual:<classId>".
+// Students join them with the class code; their membership is the submissions row.
+const isManual = post => String(post.course_id || '').startsWith('manual:');
+async function joinManual(db, user, post) {
+  if (post.status !== 'PUBLISHED') fail(404, 'This assignment is unavailable.');
+  if (parse(post.body)?.asg?.open === false) fail(403, 'This assignment is closed for your class.');
+  await run(db, `INSERT INTO submissions(post_id,uid,google_sub,classroom_submission_id,updated_at,classroom_status)
+    VALUES(?,?,?,?,?,?) ON CONFLICT(post_id,uid) DO NOTHING`, post.id, user.uid, user.googleSub, 'code', NOW(), 'NEW');
+}
+async function manualMember(db, user, post) {
+  if (post.status !== 'PUBLISHED') fail(404, 'This assignment is unavailable.');
+  const s = await one(db, 'SELECT classroom_status FROM submissions WHERE post_id=? AND uid=?', post.id, user.uid);
+  if (!s) fail(403, 'Enter your class code to open this assignment.', 'code-required');
+  return s;
+}
 function safePost(p) { const body=parse(p.body); return { id:p.id,title:body.act.title,className:body.cls.name,classroomUrl:p.classroom_url,maxPoints:p.max_points,courseId:p.course_id }; }
 
 export async function handle(request, env, net = fetch) {
@@ -173,7 +207,8 @@ export async function handle(request, env, net = fetch) {
     await run(db,'INSERT INTO users(uid,email,name,created_at) VALUES(?,?,?,?) ON CONFLICT(uid) DO UPDATE SET email=excluded.email,name=excluded.name',user.uid,user.email,user.name,NOW());
     const profile = await one(db,'SELECT uid,email,name,role FROM users WHERE uid=?',user.uid);
     const path=url.pathname;
-    const context={request,url,db,user,profile,input,fail,json,boardDraft,studentInPost,allPages,getGoogle:()=>classroomContext(request,user,net)};
+    const context={request,url,db,user,profile,input,fail,json,boardDraft,studentInPost,allPages,isManual,joinManual,manualMember,getGoogle:()=>classroomContext(request,user,net)};
+    const shareRoute=await handleShareRoutes(context);if(shareRoute)return shareRoute;
     const dashboard=await handleDashboardRoutes(context);if(dashboard)return dashboard;
     const groupRoute=await handleGroupRoutes(context);if(groupRoute)return groupRoute;
     if (path==='/api/me' && request.method==='GET') return json({profile});
@@ -212,8 +247,8 @@ export async function handle(request, env, net = fetch) {
       return json({revision:b.revision+1});
     }
     if (path==='/api/submissions' && request.method==='GET') {
-      const list=await rows(db,`SELECT s.*,p.activity_id,p.max_points FROM submissions s JOIN posts p ON p.id=s.post_id WHERE p.owner_uid=? AND s.payload IS NOT NULL`+(url.searchParams.get('postId')?' AND p.id=?':''),...(url.searchParams.get('postId')?[user.uid,url.searchParams.get('postId')]:[user.uid]));
-      return json({submissions:list.map(s=>({...parse(s.payload),_postId:s.post_id,_studentUid:s.uid,_grade:s.grade,_maxPoints:s.max_points,_status:s.status,_classroomStatus:s.classroom_status}))});
+      const list=await rows(db,`SELECT s.*,p.activity_id,p.max_points,p.course_id FROM submissions s JOIN posts p ON p.id=s.post_id WHERE p.owner_uid=? AND s.payload IS NOT NULL`+(url.searchParams.get('postId')?' AND p.id=?':''),...(url.searchParams.get('postId')?[user.uid,url.searchParams.get('postId')]:[user.uid]));
+      return json({submissions:list.map(s=>({...parse(s.payload),_postId:s.post_id,_studentUid:s.uid,_grade:s.grade,_maxPoints:s.max_points,_status:s.status,_classroomStatus:s.classroom_status,_manual:String(s.course_id||'').startsWith('manual:')}))});
     }
     if (path==='/api/my-assignments' && request.method==='GET') {
       const list=await rows(db,'SELECT p.*,s.status AS submission_status,s.grade FROM posts p JOIN submissions s ON s.post_id=p.id WHERE s.uid=? AND p.status=?',user.uid,'PUBLISHED');
@@ -264,12 +299,37 @@ export async function handle(request, env, net = fetch) {
       await run(db,'UPDATE posts SET coursework_id=?,classroom_url=?,status=?,body=?,max_points=?,code=? WHERE id=? AND owner_uid=?',result.id,result.alternateLink||'', 'PUBLISHED',snapshot,b.maxPoints,code,id,user.uid);
       return json({id,url:link,classroomUrl:result.alternateLink||'',updated:!!existing});
     }
+    if (path==='/api/manual/publish' && request.method==='POST') {
+      if (profile.role!=='teacher') fail(403,'Switch to your teacher workspace first.');
+      const b=await input(request); if (![b.activityId,b.classId].every(v=>typeof v==='string'&&v.length>0&&v.length<=200)) fail(400,'Choose an activity and class.');
+      const maxPoints=b.maxPoints==null?100:b.maxPoints;
+      if (typeof maxPoints!=='number' || !Number.isFinite(maxPoints) || maxPoints<=0 || maxPoints>10000) fail(400,'Points must be between 0 and 10,000.');
+      const w=await one(db,'SELECT body FROM workspaces WHERE owner_uid=?',user.uid), workspace=w&&parse(w.body);
+      const act=workspace?.activities.find(a=>a.id===b.activityId), cls=workspace?.classes.find(c=>c.id===b.classId), asg=act?.assign?.[b.classId];
+      if (!act?.title?.trim() || !act.terms.length || !cls || !asg) fail(400,'Save a titled activity with vocabulary and assign it to this class first.');
+      const code=String(asg.code||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+      if (code.length!==6) fail(400,'This class needs a six-character code.');
+      const courseId='manual:'+cls.id;
+      const clash=await one(db,'SELECT id FROM posts WHERE code=? AND status=? AND course_id LIKE ? AND NOT (owner_uid=? AND activity_id=? AND class_id=?)',code,'PUBLISHED','manual:%',user.uid,act.id,cls.id);
+      if (clash) fail(409,'Another posted class already uses this code. Choose New code on the Classes & codes tab, save, and post again.','code-taken');
+      const existing=await one(db,'SELECT * FROM posts WHERE owner_uid=? AND activity_id=? AND class_id=? AND course_id=?',user.uid,act.id,cls.id,courseId);
+      const id=existing?.id||crypto.randomUUID(), link=new URL('/#a-'+id,env.PUBLIC_ORIGIN||url.origin).href;
+      const snapshot=JSON.stringify({act,cls,asg,courseName:cls.name,manual:true});
+      if (existing) await run(db,'UPDATE posts SET status=?,body=?,max_points=?,code=? WHERE id=? AND owner_uid=?','PUBLISHED',snapshot,maxPoints,code,id,user.uid);
+      else await run(db,'INSERT INTO posts(id,owner_uid,activity_id,class_id,course_id,status,body,max_points,code,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)',id,user.uid,act.id,cls.id,courseId,'PUBLISHED',snapshot,maxPoints,code,NOW());
+      return json({id,url:link,code,updated:!!existing});
+    }
     if (path==='/api/resolve' && request.method==='POST') {
       const b=await input(request), code=String(b.code||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
       if(code.length!==6) fail(400,'Enter a six-character class code.');
-      const g=await classroomContext(request,user,net), list=await rows(db,'SELECT * FROM posts WHERE code=? AND status=?',code,'PUBLISHED');
-      const hits=[];
-      for(const p of list){try{await studentInPost(db,g,user,p);hits.push(p.id)}catch(e){if(e.status!==403&&e.status!==404)throw e}}
+      const list=await rows(db,'SELECT * FROM posts WHERE code=? AND status=?',code,'PUBLISHED');
+      // Teacher-made classes: the code itself grants access.
+      const manual=list.filter(isManual);
+      if(manual.length===1){ await joinManual(db,user,manual[0]); return json({id:manual[0].id}); }
+      const classroom=list.filter(p=>!isManual(p));
+      if(!classroom.length) fail(404,'That code wasn’t found. Check it with your teacher.','code-not-found');
+      const g=await classroomContext(request,user,net), hits=[];
+      for(const p of classroom){try{await studentInPost(db,g,user,p);hits.push(p.id)}catch(e){if(e.status!==403&&e.status!==404)throw e}}
       if(hits.length!==1) fail(404,'Use the assignment link in Google Classroom. This code is unavailable or matches more than one assignment.');
       return json({id:hits[0]});
     }
@@ -279,9 +339,12 @@ export async function handle(request, env, net = fetch) {
       if(!post) fail(404,'Assignment not found.');
       const info=parse(post.body);
       if(!action && request.method==='GET') {
-        const g=await classroomContext(request,user,net);
-        if(post.owner_uid!==user.uid) await studentInPost(db,g,user,post);
-        else await g('/courses/'+enc(post.course_id)+'/teachers/me');
+        if(isManual(post)){ if(post.owner_uid!==user.uid) await manualMember(db,user,post); }
+        else {
+          const g=await classroomContext(request,user,net);
+          if(post.owner_uid!==user.uid) await studentInPost(db,g,user,post);
+          else await g('/courses/'+enc(post.course_id)+'/teachers/me');
+        }
         const s=await one(db,'SELECT draft,status,grade,classroom_status FROM submissions WHERE post_id=? AND uid=?',id,user.uid);
         const group=await groupForUser(db,id,user.uid);
         const groupData=group?await (await handleGroupRoutes({...context,url:new URL('/api/posts/'+id+'/group',url.origin)})).json():null;
@@ -293,6 +356,11 @@ export async function handle(request, env, net = fetch) {
         if(typeof b.studentUid!=='string' || typeof b.grade!=='number' || !Number.isFinite(b.grade) || b.grade<0 || b.grade>post.max_points) fail(400,'Enter a valid grade within the assignment points.');
         const s=await one(db,'SELECT * FROM submissions WHERE post_id=? AND uid=?',id,b.studentUid);
         if(!s?.payload) fail(404,'No submitted work found.');
+        if(isManual(post)){
+          if(!['TURNED_IN','GRADED'].includes(s.status)) fail(409,'The student must submit before it can be graded.');
+          await run(db,'UPDATE submissions SET grade=?,status=?,classroom_status=?,updated_at=? WHERE post_id=? AND uid=?',b.grade,'GRADED','RETURNED',NOW(),id,b.studentUid);
+          return json({grade:b.grade});
+        }
         const g=await classroomContext(request,user,net);
         await g('/courses/'+enc(post.course_id)+'/teachers/me');
         const base='/courses/'+enc(post.course_id)+'/courseWork/'+enc(post.coursework_id)+'/studentSubmissions/'+enc(s.classroom_submission_id);
@@ -310,6 +378,23 @@ export async function handle(request, env, net = fetch) {
         const b=await input(request), draft=boardDraft(b.draft,info.act);
         await run(db,'UPDATE submissions SET draft=?,updated_at=? WHERE post_id=? AND uid=?',JSON.stringify(draft),NOW(),id,user.uid);
         return json({savedAt:draft._savedAt});
+      }
+      if(['submit','reclaim'].includes(action) && request.method==='POST' && isManual(post)) {
+        await manualMember(db,user,post);
+        const row=await one(db,'SELECT status,payload FROM submissions WHERE post_id=? AND uid=?',id,user.uid);
+        if(action==='reclaim') {
+          if(!['TURNED_IN','GRADED'].includes(row.status)) fail(409,'This assignment is already open for editing.');
+          await run(db,'UPDATE submissions SET status=?,classroom_status=?,grade=NULL WHERE post_id=? AND uid=?','DRAFT','RECLAIMED_BY_STUDENT',id,user.uid);
+          return json({reclaimed:true});
+        }
+        if(info.asg.open===false) fail(403,'Your teacher has closed this assignment.');
+        if(row.status==='TURNED_IN') fail(409,'Reclaim the assignment before changing submitted work.','needs-reclaim');
+        const b=await input(request),group=await groupForUser(db,id,user.uid);
+        if(group&&b.groupRevision!==group.revision)fail(409,'Save and refresh the shared board before turning it in.','group-not-saved');
+        const draft=boardDraft(group?parse(group.draft):b.draft,info.act),payload=submissionPayload(draft,post,user);
+        if(group)payload.group={id:group.id,name:group.name,revision:group.revision};
+        await run(db,'UPDATE submissions SET draft=?,payload=?,status=?,classroom_status=?,updated_at=? WHERE post_id=? AND uid=?',JSON.stringify(draft),JSON.stringify(payload),'TURNED_IN','TURNED_IN',NOW(),id,user.uid);
+        return json({submittedAt:payload.submittedAt});
       }
       if(['submit','reclaim'].includes(action) && request.method==='POST') {
         const g=await classroomContext(request,user,net), {base,sub}=await studentInPost(db,g,user,post);

@@ -9,6 +9,7 @@ const aiRequest={topic:'Memory',subject:'Psychology',grade:'11-12',count:5,style
 function harness(){
  const sql=new DatabaseSync(':memory:');sql.exec(readFileSync(new URL('../migrations/0001_initial.sql',import.meta.url),'utf8'));sql.exec(readFileSync(new URL('../migrations/0002_ai_usage.sql',import.meta.url),'utf8'));
  sql.exec(readFileSync(new URL('../migrations/0003_group_boards.sql',import.meta.url),'utf8'));
+ sql.exec(readFileSync(new URL('../migrations/0004_shares.sql',import.meta.url),'utf8'));
  const DB = {
   prepare(query) {
    return {
@@ -309,4 +310,80 @@ test('leaving a group preserves its board and lets the student join another team
  assert.equal((await h.call('student','posts/'+id+'/group/leave',{})).status,200);assert.equal((await h.call('student','posts/'+id+'/group')).status,403);
  const owner=await h.call('teacher','posts/'+id+'/groups');assert.deepEqual(owner.body.groups.find(x=>x.id===g.id).draft.place,h.draft.place);
  assert.equal((await h.call('student','groups/join',{code:other.code})).status,200);
+});
+
+// ---------------- 4.0: folders, teacher-made (code-only) classes and share links ----------------
+const manualWorkspace=(extra={})=>({version:4,folders:[{id:'f1',name:'Biology',parent:null},{id:'f2',name:'Unit 3',parent:'f1'}],
+ classes:[{id:'club',name:'Science club'},{id:'p2',name:'Period 2',classroomId:'course-1'}],
+ activities:[{id:'act-m',title:'Cells',folder:'f2',terms:[{id:1,term:'Nucleus',def:'Control center'},{id:2,term:'Membrane',def:'Boundary'}],assign:{club:{code:'CLUB23',open:true,due:''}},minWords:2,dcOn:true,dc:['patterns'],board:{shape:'wide',size:'roomy',orient:'flat',rotate:true}}],...extra});
+async function manualSetup(h,ws=manualWorkspace()){
+ await h.call('teacher','profile',{role:'teacher'});
+ assert.equal((await h.call('teacher','workspace',{workspace:ws,revision:0})).status,200);
+ const r=await h.call('teacher','manual/publish',{activityId:'act-m',classId:'club'},{access:false});
+ assert.equal(r.status,200);return r.body.id;
+}
+test('workspace folders must form a tree and activities must point to real folders',async()=>{
+ const h=harness();await h.call('teacher','profile',{role:'teacher'});
+ const bad=async ws=>(await h.call('teacher','workspace',{workspace:ws,revision:0})).status;
+ assert.equal(await bad(manualWorkspace({folders:[{id:'a',name:'A',parent:'b'},{id:'b',name:'B',parent:'a'}]})),400);
+ assert.equal(await bad(manualWorkspace({folders:[{id:'a',name:'A',parent:'missing'}]})),400);
+ assert.equal(await bad(manualWorkspace({folders:[{id:'a',name:'  ',parent:null}]})),400);
+ const ws=manualWorkspace();ws.activities[0].folder='nope';assert.equal(await bad(ws),400);
+ assert.equal(await bad(manualWorkspace()),200);
+ assert.deepEqual((await h.call('teacher','workspace')).body.workspace.folders.map(f=>f.name),['Biology','Unit 3']);
+});
+test('teacher-made classes post without Classroom and students join with the class code',async()=>{
+ const h=harness(),id=await manualSetup(h);
+ assert.equal(h.state.googleCalls.length,0);
+ await h.call('kid','profile',{role:'student'},{access:false});
+ assert.equal((await h.call('kid','posts/'+id,undefined,{access:false})).status,403);
+ const joined=await h.call('kid','resolve',{code:'club-23'},{access:false});assert.equal(joined.status,200);assert.equal(joined.body.id,id);
+ const open=await h.call('kid','posts/'+id,undefined,{access:false});assert.equal(open.status,200);assert.equal(open.body.assignment.act.title,'Cells');
+ assert.equal((await h.call('kid','posts/'+id+'/draft',{draft:h.draft},{access:false})).status,200);
+ const sub=await h.call('kid','posts/'+id+'/submit',{draft:h.draft},{access:false});assert.equal(sub.status,200);
+ assert.equal((await h.call('kid','posts/'+id+'/submit',{draft:h.draft},{access:false})).status,409);
+ assert.equal((await h.call('kid','student/dashboard',undefined,{access:false})).body.submitted.length,1);
+ assert.equal((await h.call('kid','posts/'+id+'/grade',{studentUid:'kid',grade:5},{access:false})).status,403);
+ const g=await h.call('teacher','posts/'+id+'/grade',{studentUid:'kid',grade:90},{access:false});assert.equal(g.status,200);
+ assert.equal(h.sql.prepare('SELECT grade FROM submissions WHERE post_id=? AND uid=?').get(id,'kid').grade,90);
+ assert.equal((await h.call('kid','posts/'+id+'/reclaim',{},{access:false})).status,200);
+ assert.equal((await h.call('teacher','teacher/dashboard',undefined,{access:false})).body.assignments[0].manual,true);
+ assert.equal(h.state.googleCalls.length,0);
+});
+test('closed or unknown class codes do not grant access; reposting keeps the same assignment',async()=>{
+ const h=harness(),id=await manualSetup(h);
+ assert.equal((await h.call('kid','resolve',{code:'ZZZZZZ'},{access:false})).status,404);
+ const ws=manualWorkspace();ws.activities[0].assign.club.open=false;
+ assert.equal((await h.call('teacher','workspace',{workspace:ws,revision:1})).status,200);
+ const again=await h.call('teacher','manual/publish',{activityId:'act-m',classId:'club'},{access:false});assert.equal(again.body.id,id);assert.equal(again.body.updated,true);
+ assert.equal((await h.call('kid','resolve',{code:'CLUB23'},{access:false})).status,403);
+ await h.call('teacher2','profile',{role:'teacher'});await h.call('teacher2','workspace',{workspace:manualWorkspace(),revision:0});
+ assert.equal((await h.call('teacher2','manual/publish',{activityId:'act-m',classId:'club'},{access:false})).status,409);
+});
+test('group codes for teacher-made classes work without Classroom',async()=>{
+ const h=harness(),id=await manualSetup(h);
+ const grp=await h.call('teacher','posts/'+id+'/groups',{name:'Team A',maxMembers:2},{access:false});assert.equal(grp.status,201);
+ const j=await h.call('kid','groups/join',{code:grp.body.group.code},{access:false});assert.equal(j.status,200);assert.equal(j.body.postId,id);
+ assert.equal((await h.call('kid','posts/'+id,undefined,{access:false})).body.group.name,'Team A');
+});
+test('share links copy only the activity template and only to teacher accounts',async()=>{
+ const h=harness();await manualSetup(h);
+ const created=await h.call('teacher','shares',{activityId:'act-m'},{access:false});assert.equal(created.status,201);
+ const code=created.body.share.code;assert.match(code,/^[A-Z2-9]{10}$/);
+ const again=await h.call('teacher','shares',{activityId:'act-m'},{access:false});assert.equal(again.body.share.code,code);assert.equal(again.body.updated,true);
+ await h.call('kid','profile',{role:'student'},{access:false});
+ assert.equal((await h.call('kid','shares/'+code,undefined,{access:false})).status,403);
+ await h.call('teacher2','profile',{role:'teacher'});
+ const preview=await h.call('teacher2','shares/'+code.toLowerCase(),undefined,{access:false});assert.equal(preview.status,200);
+ assert.equal(preview.body.share.sharedBy,'Name teacher');assert.equal(preview.body.share.mine,false);
+ const act=preview.body.activity;assert.equal(act.title,'Cells');assert.deepEqual(act.dc,['patterns']);assert.equal(act.board.shape,'wide');
+ for(const k of ['assign','folder','id'])assert.equal(act[k],undefined);
+ const copy=await h.call('teacher2','shares/'+code+'/copy',{},{access:false});assert.equal(copy.status,200);assert.equal(copy.body.activity.terms.length,2);
+ assert.equal((await h.call('teacher','shares',undefined,{access:false})).body.shares[0].copies,1);
+ assert.equal((await h.call('teacher2','shares/'+code+'/revoke',{},{access:false})).status,404);
+ assert.equal((await h.call('teacher','shares/'+code+'/revoke',{},{access:false})).status,200);
+ assert.equal((await h.call('teacher2','shares/'+code,undefined,{access:false})).status,404);
+ assert.equal((await h.call('teacher','shares',{activityId:'act-m'},{access:false})).body.share.code,code);
+ assert.equal((await h.call('teacher2','shares/'+code,undefined,{access:false})).status,200);
+ assert.equal((await h.call('teacher2','shares',{activityId:'missing'},{access:false})).status,404);
 });

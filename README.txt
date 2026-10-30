@@ -7,6 +7,11 @@ Your supplied D1 database ID is configured in wrangler.jsonc. The schema still
 needs to be applied and the Worker deployed; live connectivity has not been tested.
 
 WHAT IS INCLUDED
+- A homepage explaining hexagonal thinking and Depth and Complexity icons, with
+  Enter a class code and New Hex Space (teachers) as the main actions.
+- Teacher Hex Space with nested folders (drag and drop, rename, move, delete).
+- Google Classroom courses imported as classes, plus code-only manual classes.
+- Share links that let other teachers copy a Hex Space into their own.
 - Separate Teacher and Student Google sign-in choices.
 - Teacher classroom dashboard with issued assignments, submissions and grading.
 - Student active-assignment dashboard with assignment/group code entry.
@@ -37,6 +42,11 @@ public/index.html          Website and Firebase login/board editor
 src/worker.js              Authenticated API and Classroom integration
 migrations/0001_initial.sql Database tables and indexes
 migrations/0002_ai_usage.sql Daily vocabulary generation request counters
+migrations/0003_group_boards.sql Shared group boards
+migrations/0004_shares.sql  Teacher share links
+src/shares.js              Share link API (create, preview, copy, revoke)
+src/dashboards.js          Teacher/student dashboard API
+src/groups.js              Group board API
 src/vocabulary.js          Teacher-only vocabulary generator and output validation
 wrangler.jsonc             Worker configuration; add your D1 database ID
 package.json               Development/deployment commands
@@ -89,8 +99,8 @@ application's Google developer project. Existing assignments from other apps
 are not silently converted or adopted. Google approval and school policies can
 limit which accounts may connect Classroom.
 
-Due dates use 23:59 UTC, shown in the teacher interface. CSV imports remain local
-teacher backups; authenticated online submissions are the cloud record.
+Due dates use 23:59 UTC, shown in the teacher interface. Authenticated online
+submissions are the only student record; student file save/upload was removed.
 
 An interrupted first Classroom publication stays marked CREATING and will not
 be blindly retried. Check Classroom to avoid duplicate assignments, then reconcile
@@ -158,3 +168,24 @@ Students can save and leave a group without deleting its board or past work.
 
 Apply migrations/0003_group_boards.sql to existing databases, then deploy the
 complete Worker. See DEPLOYMENT.txt for exact commands and setup requirements.
+
+VERSION 4.0.0: HOMEPAGE, FOLDERS, CLASSES AND SHARING
+The site opens on a homepage that explains hexagonal thinking and the eight
+Depth and three Complexity icons, with a live sample board. Enter a class code
+and New Hex Space (teachers) are the main menu actions; both resume after
+Google sign-in.
+
+Teachers organize Hex Spaces in folders and subfolders (up to 8 levels). Each
+Hex Space lives in one folder. Deleting a folder moves its contents up a level;
+it never deletes Hex Spaces. Drag a Hex Space onto a folder or use the folder
+picker in its header.
+
+Classes come from two places: Import Classroom classes (courses you teach) and
+Add a class for code-only classes. Assign a Hex Space to any class under
+Classes & codes. Classroom classes publish to Google Classroom; code-only
+classes are posted on this site and students join with the code.
+
+Share creates a link another teacher can open to preview the Hex Space and copy
+it into their own folders. Copies carry no classes, codes or student work.
+
+Apply migrations/0004_shares.sql before using sharing (see DEPLOYMENT.txt).

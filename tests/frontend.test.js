@@ -26,13 +26,14 @@ function make(){
  const document={getElementById:id=>nodes[id]||search(root,id)||search(document.body,id)||null,createElement:t=>new Element(t),createElementNS:(ns,t)=>new Element(t),createTextNode:t=>({textContent:t}),addEventListener(){},body:new Element('body'),querySelector(){return null}};
  const location={hash:'',protocol:'https:',hostname:'hexconnections.com',origin:'https://hexconnections.com',pathname:'/'};
  let hash='';Object.defineProperty(location,'hash',{get(){return hash},set(value){hash=value?(value.startsWith('#')?value:'#'+value):''}});
- const context={document,location,window:{addEventListener(){},innerWidth:1000},setTimeout(){},clearTimeout(){},console,TextDecoder,Uint8Array,Blob,URL,AbortController,DOMException,localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v)}};
+ const context={document,location,window:{addEventListener(){},innerWidth:1000},setTimeout(){},clearTimeout(){},console,TextDecoder,Uint8Array,Blob,URL,AbortController,DOMException,sessionStorage:(()=>{const m=new Map();return {getItem:k=>m.has(k)?m.get(k):null,setItem:(k,v)=>m.set(k,String(v)),removeItem:k=>m.delete(k)}})(),localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v)}};
  vm.createContext(context);
  const hooks=`globalThis.hx={GA,PX,AUTH_CONFIG,caps,renderGoogleGate,chooseAccountRole,route,loadPlatform,lsGet,lsSet,googleTeacher,classroomReady,buildDocument,clearAccountView,boardCells,boardOf,onBoardLimit,connectClassroom,setupPane,GROUP,adoptGroup,queueCloudDraft,flushCloudDraft,submit,
  setReady(fn){checkReady=fn},setStudent(s){ST=s},setStudentRender(fn){renderStudentShell=fn},setUpdate(fn){updateStudent=fn},setOpenAssignment(fn){openPlatformAssignment=fn},
  getData(){return DATA},setData(w){DATA=w},setView(fn){viewSubmission=fn},
  setWork(w){TW=w;TS.rows={};TS.sel=w.activities[0].id},setRenderTeacher(fn){renderTeacher=fn},
- setApi(fn){platformApi=fn},setTeacher(fn){startTeacher=fn;teacherDashboard=fn}};`;
+ setApi(fn){platformApi=fn},setTeacher(fn){startTeacher=fn;teacherDashboard=fn},
+ v4:{renderHome,hexSpaceSidebar,newFolder,deleteFolder,moveActivity,folderById,childFolders,folderActs,canMoveFolder,syncClassroomClasses,sharePreview,copyShared,postManual,codesPane,TS,getTW(){return TW},startTeacher(){startTeacher()},renderTeacher(){renderTeacher()},setSave(fn){saveWorkspaceCloud=fn},setTS(o){Object.assign(TS,o)}}};`;
  vm.runInContext(script.replace(/route\(\);\nbootGoogle\(\);\n\}\)\(\);\s*$/,hooks+'})();'),context);
  const h=context.hx;
  function flatten(n=root){return [n,...(n.children||[]).flatMap(flatten)]}
@@ -41,7 +42,7 @@ function make(){
 }
 const tick=()=>new Promise(r=>setImmediate(r));
 test('configured public login screen offers explicit teacher and student Google choices',()=>{
- const {h,text,flatten}=make();h.GA.ready=true;h.GA.auth={};h.renderGoogleGate();
+ const {h,text,flatten,location}=make();h.GA.ready=true;h.GA.auth={};location.hash='#signin';h.renderGoogleGate();
  assert.equal(h.AUTH_CONFIG.firebase.projectId,'hex-connections-a5214');
  assert.match(text(),/Teacher · Sign in with Google/);assert.match(text(),/Student · Sign in with Google/);
  h.GA.sdk={GoogleAuthProvider:class {setCustomParameters(){}},signInWithPopup:()=>Promise.resolve()};
@@ -122,7 +123,7 @@ test('Classroom review link uses the submission snapshot after the original acti
 });
 
 test('explicit signup screen offers teacher/student Google account creation',()=>{
- const {h,text,flatten}=make();h.GA.ready=true;h.GA.auth={};h.renderGoogleGate();
+ const {h,text,flatten,location}=make();h.GA.ready=true;h.GA.auth={};location.hash='#signin';h.renderGoogleGate();
  flatten().find(n=>n.textContent==='New here? Create an account').listeners.click();
  assert.match(text(),/Create your Hex Connections account/);assert.match(text(),/Create teacher account with Google/);assert.match(text(),/Create student account with Google/);
  h.GA.sdk={GoogleAuthProvider:class {setCustomParameters(){}},signInWithPopup:()=>Promise.resolve()};
@@ -144,13 +145,13 @@ test('signup with an existing Google account preserves its existing website prof
 test('teacher login lands on a classroom dashboard rather than the activity editor',async()=>{
  const {h,location,text}=make();h.GA.ready=true;h.GA.user={uid:'teacher'};h.PX.loaded=true;h.PX.profile={role:'teacher'};h.PX.token='token';h.PX.tokenRole='teacher';h.PX.tokenUntil=Date.now()+10000;
  h.setApi(async path=>path==='teacher/dashboard'?{assignments:[{id:'post',courseId:'course',courseName:'Psychology',className:'Period 1',title:'Memory',status:'PUBLISHED',open:true,submissions:2,turnedIn:1}]}:{courses:[{id:'course',name:'Psychology'}]});
- location.hash='#teacher';h.route();await tick();assert.match(text(),/Your classrooms/);assert.match(text(),/Psychology/);assert.match(text(),/View classroom/);assert.doesNotMatch(text(),/Vocabulary/);
- location.hash='#teacher/class-course';h.route();await tick();assert.match(text(),/Classroom assignments/);assert.match(text(),/Memory/);assert.match(text(),/View submissions & groups/);assert.match(text(),/Create assignment for this classroom/);assert.match(text(),/← All classrooms/);
+ location.hash='#teacher';h.route();await tick();assert.match(text(),/Your classes/);assert.match(text(),/Psychology/);assert.match(text(),/Open class/);assert.doesNotMatch(text(),/Vocabulary/);
+ location.hash='#teacher/class-course';h.route();await tick();assert.match(text(),/Class assignments/);assert.match(text(),/Memory/);assert.match(text(),/View submissions & groups/);assert.match(text(),/New Hex Space for this class/);assert.match(text(),/← All classes/);
 });
 test('student dashboard lists active and completed assignments and always offers an add-code box',async()=>{
  const {h,text}=make();h.GA.ready=true;h.GA.user={uid:'student'};h.PX.loaded=true;h.PX.profile={role:'student'};
  h.setApi(async path=>{assert.equal(path,'student/dashboard');return {active:[{id:'a',title:'Memory',className:'Psychology',classroomStatus:'NEW'}],submitted:[{id:'b',title:'Learning',className:'Psychology',classroomStatus:'TURNED_IN'}],needsClassroom:false}});
- h.route();await tick();assert.match(text(),/Active assignments/);assert.match(text(),/Memory/);assert.match(text(),/Submitted and returned/);assert.match(text(),/Add an assignment or group code/);
+ h.route();await tick();assert.match(text(),/Active assignments/);assert.match(text(),/Memory/);assert.match(text(),/Submitted and returned/);assert.match(text(),/Enter a class code/);
 });
 test('a student can join a shared project from the dashboard group-code box',async()=>{
  const {h,text,flatten,location}=make();h.GA.ready=true;h.GA.user={uid:'student'};h.PX.loaded=true;h.PX.profile={role:'student'};h.PX.token='token';h.PX.tokenRole='student';h.PX.tokenUntil=Date.now()+10000;
@@ -186,4 +187,74 @@ test('group turn-in waits for the shared save and sends its acknowledged revisio
  const calls=[];let acknowledge;
  h.setApi(async(path,b)=>{calls.push(path);if(path.endsWith('/group/draft'))return new Promise(resolve=>acknowledge=()=>resolve({group:{...group,revision:2,draft:b.draft}}));assert.equal(b.groupRevision,2);return {submittedAt:'2026-10-30T00:00:00Z'}});
  h.submit();await tick();assert.equal(calls.length,1);assert.match(calls[0],/group\/draft$/);acknowledge();await tick();assert.equal(calls[1],'posts/post/submit');assert.equal(h.PX.submitting,false);
+});
+
+// ---------------- 4.0: homepage, code entry, folders, classes and sharing ----------------
+test('signed-out visitors land on a homepage that explains hexagonal thinking and Depth and Complexity',()=>{
+ const {h,text}=make();h.GA.ready=true;h.GA.auth={};h.route();
+ const t=text();
+ assert.match(t,/What is hexagonal thinking\?/);assert.match(t,/Depth and Complexity icons/);
+ for(const name of ['Language of the Discipline','Details','Patterns','Rules','Trends','Unanswered Questions','Ethics','Big Idea','Multiple Perspectives','Change Over Time','Across Disciplines'])assert.ok(t.includes(name),name);
+ assert.match(t,/Sandra Kaplan/);assert.match(t,/Enter a class code/);assert.match(t,/New Hex Space/);
+ assert.doesNotMatch(t,/Save file \(CSV\)|Open saved file|Upload student files/);
+});
+test('the class-code page remembers the code through Google sign-in as a student',()=>{
+ const {h,flatten,location}=make();h.GA.ready=true;let popups=0;
+ h.GA.auth={};h.GA.sdk={GoogleAuthProvider:class {setCustomParameters(){}},signInWithPopup:()=>{popups++;return Promise.resolve()}};
+ location.hash='#code';h.route();
+ const input=flatten().find(n=>n.attrs?.id==='hx-code');input.value='abc-234';
+ flatten().find(n=>n.textContent==='Continue with Google').listeners.click();
+ assert.equal(popups,1);assert.equal(h.PX.loginRole,'student');
+ h.GA.user={uid:'kid'};h.PX.loaded=true;h.PX.profile={role:'student'};h.setApi(async()=>({active:[],submitted:[],needsClassroom:true}));
+ h.route();assert.equal(location.hash,'#c-ABC234');
+});
+test('teacher-only New Hex Space appears for teachers but not in a student’s menu',()=>{
+ const t1=make();t1.h.GA.ready=true;t1.h.GA.user={uid:'s'};t1.h.PX.loaded=true;t1.h.PX.profile={role:'student'};t1.location.hash='#home';t1.h.route();
+ assert.doesNotMatch(t1.text(),/New Hex Space/);assert.match(t1.text(),/Enter a class code/);
+ const t2=make();t2.h.GA.ready=true;t2.h.GA.user={uid:'t'};t2.h.PX.loaded=true;t2.h.PX.profile={role:'teacher'};t2.location.hash='#home';t2.h.route();
+ assert.match(t2.text(),/\+ New Hex Space/);
+});
+function teacherWork(h){
+ h.GA.user={uid:'t'};h.PX.profile={role:'teacher'};h.PX.loaded=true;
+ h.setWork({version:4,folders:[{id:'bio',name:'Biology',parent:null},{id:'u3',name:'Unit 3',parent:'bio'}],classes:[{id:'club',name:'Science club'}],activities:[{id:'a1',title:'Cells',folder:'u3',terms:[{n:1,id:1,term:'Nucleus'}],assign:{}},{id:'a2',title:'Loose',terms:[],assign:{}}]});
+ h.setRenderTeacher(()=>{});
+}
+test('folders nest, move Hex Spaces and never delete Hex Spaces when removed',()=>{
+ const {h,text,flatten:f0,body}=make();const flatten=()=>[...f0(),...f0(body)];teacherWork(h);const v=h.v4,TW=v.getTW();
+ assert.equal(v.childFolders(null).map(f=>f.name).join(),'Biology');assert.equal(v.folderActs('u3').map(a=>a.id).join(),'a1');
+ assert.equal(v.canMoveFolder('bio','u3'),false);assert.equal(v.canMoveFolder('u3',null),true);
+ v.moveActivity(TW.activities[1],'bio');assert.equal(TW.activities[1].folder,'bio');
+ v.newFolder('u3');flatten().find(n=>n.attrs?.id==='hx-prompt').value='Labs';flatten().find(n=>n.textContent==='Create folder').listeners.click();
+ const labs=TW.folders.find(f=>f.name==='Labs');assert.equal(labs.parent,'u3');
+ v.deleteFolder(v.folderById('u3'));assert.match(text(),/move to “Biology”/);flatten().find(n=>n.textContent==='Delete folder').listeners.click();
+ assert.equal(v.folderById('u3'),null);assert.equal(TW.activities.find(a=>a.id==='a1').folder,'bio');assert.equal(labs.parent,'bio');assert.equal(TW.activities.length,2);
+ const side=v.hexSpaceSidebar();const all=[];(function walk(n){all.push(n);(n.children||[]).forEach(walk)})(side);
+ assert.ok(all.some(n=>n.textContent==='+ Folder'));assert.ok(all.some(n=>n.textContent==='Import from Classroom'));
+});
+test('imported Google Classroom courses join the class list once, beside teacher-made classes',()=>{
+ const {h}=make();teacherWork(h);const v=h.v4,TW=v.getTW();
+ assert.equal(v.syncClassroomClasses([{id:'g1',name:'Biology',section:'P2'},{id:'g2',name:'Chemistry'}]),2);
+ assert.equal(v.syncClassroomClasses([{id:'g1',name:'Biology',section:'P2'}]),0);
+ assert.equal(JSON.stringify(TW.classes.map(c=>[c.name,c.classroomId||null])),JSON.stringify([['Science club',null],['Biology · P2','g1'],['Chemistry','g2']]));
+});
+test('code-only classes are posted without Google Classroom and show the class code',async()=>{
+ const {h,text}=make();teacherWork(h);const v=h.v4,TW=v.getTW();TW.activities[0].assign={club:{code:'CLUB23',open:true,due:''}};
+ const calls=[];v.setSave(async()=>{calls.push('save');return {revision:2}});
+ h.setApi(async(path,body,withClassroom)=>{calls.push(path);assert.equal(withClassroom,undefined);assert.equal(JSON.stringify(body),JSON.stringify({activityId:'a1',classId:'club'}));return {id:'post',code:'CLUB23',updated:false}});
+ v.postManual(TW.activities[0],TW.classes[0]);await new Promise(r=>setImmediate(r));await new Promise(r=>setImmediate(r));
+ assert.deepEqual(calls,['save','manual/publish']);assert.match(text(),/Posted for Science club/);assert.match(text(),/CLU-B23/);
+});
+test('a shared Hex Space previews for teachers and copies into a chosen folder',async()=>{
+ const {h,text,flatten,location}=make();teacherWork(h);const v=h.v4,TW=v.getTW();let saved=0;v.setSave(async()=>{saved++;return {revision:3}});
+ const template={title:'Water cycle',instructions:'',minTerms:null,minWords:3,dcOn:true,dc:['patterns'],board:{shape:'wide',size:'roomy',orient:'pointy',rotate:true},terms:[{n:1,id:4,term:'Evaporation',def:'Liquid to gas'},{n:2,id:9,term:'Rain',def:'Falling water'}]};
+ h.setApi(async(path)=>{if(path==='shares/ABCDEFGHJK')return {share:{code:'ABCDEFGHJK',sharedBy:'Ms. Lee',mine:false},activity:template};if(path==='shares/ABCDEFGHJK/copy')return {activity:template,sharedBy:'Ms. Lee',code:'ABCDEFGHJK'};throw new Error(path)});
+ v.sharePreview('ABCDEFGHJK');await new Promise(r=>setImmediate(r));
+ assert.match(text(),/Water cycle/);assert.match(text(),/Shared by Ms\. Lee/);assert.match(text(),/Evaporation/);assert.match(text(),/Copy to my Hex Space/);
+ await v.copyShared('ABCDEFGHJK','bio');await new Promise(r=>setImmediate(r));
+ const copy=TW.activities.find(a=>a.title==='Water cycle');assert.ok(copy);assert.equal(copy.folder,'bio');assert.equal(JSON.stringify(copy.assign),'{}');assert.equal(copy.terms.map(t=>t.id).join(),'4,9');assert.equal(copy.idSeq,9);
+ assert.equal(saved,1);assert.equal(location.hash,'#teacher/edit-'+copy.id);
+});
+test('students see a teacher-profile message instead of a shared Hex Space',()=>{
+ const {h,text,location}=make();h.GA.ready=true;h.GA.user={uid:'s'};h.PX.loaded=true;h.PX.profile={role:'student'};location.hash='#share-ABCDEFGHJK';h.route();
+ assert.match(text(),/Teacher profile needed/);assert.doesNotMatch(text(),/Copy to my Hex Space/);
 });

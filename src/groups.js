@@ -37,7 +37,8 @@ export async function handleGroupRoutes(c){
   if(!g)fail(404,'Group code not found.');
   const post=await one(db,'SELECT * FROM posts WHERE id=?',g.post_id);
   if(!post||parse(post.body).asg.open===false)fail(403,'This assignment is closed.');
-  const google=await getGoogle();await studentInPost(db,google,user,post);
+  if(c.isManual(post))await c.joinManual(db,user,post);
+  else{const google=await getGoogle();await studentInPost(db,google,user,post);}
   const existing=await groupForUser(db,post.id,user.uid);
   if(existing&&existing.id!==g.id)fail(409,'You already belong to another group for this assignment.');
   if(!existing){

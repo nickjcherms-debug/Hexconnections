@@ -1,18 +1,23 @@
-VERIFICATION — VERSION 3.0.0
+VERIFICATION — VERSION 4.0.0
 ============================
-58 automated tests pass using in-memory SQLite, simulated Firebase/Classroom
-responses, and execution of the actual frontend script in a DOM test harness.
-No real Google Classroom assignment was created or modified by these tests.
+71 automated tests pass (40 backend, 31 frontend) using in-memory SQLite,
+simulated Firebase/Classroom responses, and execution of the actual frontend
+script in a DOM test harness. No real Google Classroom assignment was created
+or modified by these tests.
 
-Coverage includes Google signup/profile persistence; account/workspace isolation;
-Classroom permissions, course discovery and assignment membership; publishing,
-republishing, grading, reclaim and immutable submitted snapshots; AI validation
-and quotas; board validation and expanded layouts; teacher dashboard routing,
-course/assignment counts and student active/submitted lists; assignment/group
-code entry; group ownership, capacity, idempotent joining, leaving, one-group-per-
-assignment constraints, unauthorized access, independent-edit merges, conflicts,
-placement collisions and authoritative group revisions at turn-in. Missing group
-tables produce setup guidance while individual boards continue to work.
+New in 4.0.0: folder-tree validation (depth, cycles, missing parents); code-only
+class posting, joining, turn-in, reclaim and grading without Classroom; closed
+and unknown codes, reposting and code clashes; group codes in code-only classes;
+the share lifecycle (create, preview, copy count, update, revoke, non-teacher
+blocking); the homepage; the pending code flow through sign-in; New Hex Space
+hidden from students; folder create/move/delete; Classroom class import;
+share preview and copy; students blocked from share pages.
+
+Earlier coverage remains: Google signup/profile persistence; account/workspace
+isolation; Classroom permissions, course discovery and assignment membership;
+publishing, republishing, grading, reclaim and immutable submitted snapshots;
+AI validation and quotas; board validation and expanded layouts; dashboards;
+group ownership, capacity, joining, leaving, merges and conflicts.
 
 Run with Node 24:
   npm test
@@ -21,13 +26,11 @@ Wrangler build check (after npm install):
 Read-only deployment routing check:
   npm run check:deployment
 
-The current source is based on GitHub main ea8e371 and includes the pending
-signup/debug fixes. Build/routing checks do not verify Google OAuth, live school
-policies, real Classroom publishing/turn-in/grading, real model inference, or D1
-production migrations. Those require an authenticated deployment and test users.
+Browser QA (Playwright Chromium, stubbed Firebase and API) covered the homepage,
+mobile menu, code entry, editor with nested folders and drag-and-drop, folder
+menu, share dialog, Classes & codes with a code-only class, the posted-code
+dialog, account menu, dashboard, share preview and the student view, at 1280px
+light and 390px dark. No layout or console problems were found.
 
-Browser QA used preview-only synthetic teacher/student accounts and API responses.
-Verified classroom cards, assignment lists, submissions, group controls and the
-student assignment/code sections. A missing-action rendering issue was found,
-fixed and covered by a regression test. Fixtures are excluded from the source.
-Wrangler 4.156.0 successfully bundled the Worker with DB, AI and ASSETS bindings.
+Not verified here: live Google OAuth, real Classroom publishing/grading, and
+D1 migration 0004 on the production database.
