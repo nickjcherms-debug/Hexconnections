@@ -41,7 +41,15 @@ What changed:
   renamed classes and offers to remove classes no longer active in Classroom.
   Any class can be removed; removing a code-only class turns its code off.
   Removing never deletes anything in Google Classroom or any student work.
+- Imported Classroom classes link to their course: "Open in Google Classroom"
+  on each class card and class page, and the Classroom chip in the Hex Space
+  sidebar. Resync also refreshes these links.
+- Fixed: imported classes could vanish. The editor reopened an older browser
+  copy of the Hex Space (from before the import) and the next save wrote it
+  back without the classes. Online saves now refresh the browser copy, and
+  the editor ignores a browser copy older than the saved version.
 - Fixed: drop-down menus (account, phone Menu, folder menus) opened empty.
+  Sign out is in the menu under your name and in the phone Menu.
 
 HOMEPAGE, FOLDERS, CODE-ONLY CLASSES AND SHARING 4.0.0
 =====================================================
