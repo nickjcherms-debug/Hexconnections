@@ -28,9 +28,11 @@ function make(){
  let hash='';Object.defineProperty(location,'hash',{get(){return hash},set(value){hash=value?(value.startsWith('#')?value:'#'+value):''}});
  const context={document,location,window:{addEventListener(){},innerWidth:1000},setTimeout(){},clearTimeout(){},console,TextDecoder,Uint8Array,Blob,URL,AbortController,DOMException,localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v)}};
  vm.createContext(context);
- const hooks=`globalThis.hx={GA,PX,AUTH_CONFIG,caps,renderGoogleGate,chooseAccountRole,route,loadPlatform,lsGet,lsSet,googleTeacher,classroomReady,buildDocument,clearAccountView,boardCells,boardOf,onBoardLimit,connectClassroom,setupPane,
+ const hooks=`globalThis.hx={GA,PX,AUTH_CONFIG,caps,renderGoogleGate,chooseAccountRole,route,loadPlatform,lsGet,lsSet,googleTeacher,classroomReady,buildDocument,clearAccountView,boardCells,boardOf,onBoardLimit,connectClassroom,setupPane,GROUP,adoptGroup,queueCloudDraft,flushCloudDraft,submit,
+ setReady(fn){checkReady=fn},setStudent(s){ST=s},setStudentRender(fn){renderStudentShell=fn},setUpdate(fn){updateStudent=fn},setOpenAssignment(fn){openPlatformAssignment=fn},
+ getData(){return DATA},setData(w){DATA=w},setView(fn){viewSubmission=fn},
  setWork(w){TW=w;TS.rows={};TS.sel=w.activities[0].id},setRenderTeacher(fn){renderTeacher=fn},
- setApi(fn){platformApi=fn},setTeacher(fn){startTeacher=fn}};`;
+ setApi(fn){platformApi=fn},setTeacher(fn){startTeacher=fn;teacherDashboard=fn}};`;
  vm.runInContext(script.replace(/route\(\);\nbootGoogle\(\);\n\}\)\(\);\s*$/,hooks+'})();'),context);
  const h=context.hx;
  function flatten(n=root){return [n,...(n.children||[]).flatMap(flatten)]}
@@ -47,9 +49,9 @@ test('configured public login screen offers explicit teacher and student Google 
 });
 test('first Google login creates the selected profile and loads its teacher workspace',async()=>{
  const {h,location}=make();h.GA.ready=true;h.GA.user={uid:'teacher'};h.PX.loginRole='teacher';const calls=[];
- h.setApi(async(path,body)=>{calls.push({path,body});if(path==='me')return {profile:{role:null}};if(path==='profile')return {profile:{role:body.role}};if(path==='workspace')return {workspace:{version:4,classes:[],activities:[]},revision:0};throw new Error(path)});
+ h.setApi(async(path,body)=>{calls.push({path,body});if(path==='me')return {profile:{role:null}};if(path==='register')return {profile:{role:body.role},created:true};if(path==='workspace')return {workspace:{version:4,classes:[],activities:[]},revision:0};throw new Error(path)});
  let renders=0;h.setTeacher(()=>renders++);h.loadPlatform();await tick();
- assert.equal(h.PX.profile.role,'teacher');assert.equal(h.PX.loaded,true);assert.equal(location.hash,'#teacher');assert.equal(renders,1);assert.equal(calls.find(c=>c.path==='profile').body.role,'teacher');
+ assert.equal(h.PX.profile.role,'teacher');assert.equal(h.PX.loaded,true);assert.equal(location.hash,'#teacher');assert.equal(renders,1);assert.equal(calls.find(c=>c.path==='register').body.role,'teacher');
 });
 test('student profiles cannot open the teacher workspace without selecting a separate teacher view',()=>{
  const {h,location,text}=make();h.GA.ready=true;h.GA.user={uid:'student',displayName:'Student'};h.PX.loaded=true;h.PX.profile={role:'student'};location.hash='#teacher';
@@ -101,4 +103,87 @@ test('AI suggestions stay in review until selected and then persist as vocabular
  h.setApi(async(path,b)=>{assert.equal(path,'vocabulary/generate');assert.equal(b.topic,'Memory');return {terms:[{term:'Encoding',definition:'Converting information into a form that can be stored.'}]}});
  find('Generate terms').listeners.click();await tick();assert.match(text(),/Pick the terms to add/);assert.equal(act.terms.length,0);
  find('Add to table').listeners.click();assert.equal(act.terms[0].term,'Encoding');assert.ok(Number.isInteger(act.terms[0].id));
+});
+
+test('teacher workspace survives visiting an assignment on a device with no local working copy',async()=>{
+ const {h,location}=make();h.GA.ready=true;h.GA.user={uid:'teacher'};
+ const workspace={version:4,classes:[{id:'class-a'},{id:'class-b'}],activities:[{id:'first'},{id:'second'}]};
+ h.setApi(async path=>path==='me'?{profile:{role:'teacher'}}:{workspace,revision:3});
+ let restored;h.setTeacher(()=>{restored=h.getData()});h.loadPlatform();await tick();assert.equal(restored.activities.length,2);
+ h.setData({version:4,classes:[{id:'class-a'}],activities:[{id:'first'}]});
+ location.hash='#teacher';h.route();assert.equal(restored.activities.length,2);assert.equal(restored.classes.length,2);
+});
+test('Classroom review link uses the submission snapshot after the original activity was removed',async()=>{
+ const {h,location}=make();h.GA.ready=true;h.GA.user={uid:'teacher'};h.PX.loaded=true;h.PX.profile={role:'teacher'};
+ const snapshot={id:'removed',title:'Original assignment',terms:[]};const p={_postId:'post',_studentUid:'student',activityId:'removed',activitySnapshot:snapshot};
+ h.setApi(async path=>path==='submissions'?{submissions:[p]}:path==='workspace'?{workspace:{activities:[]}}:{assignments:[]});
+ let reviewed=null;h.setView((a,submission)=>{reviewed={a,submission}});location.hash='#review-post~student';h.route();await tick();
+ assert.ok(reviewed);assert.equal(reviewed.a.title,'Original assignment');assert.equal(reviewed.submission._studentUid,'student');
+});
+
+test('explicit signup screen offers teacher/student Google account creation',()=>{
+ const {h,text,flatten}=make();h.GA.ready=true;h.GA.auth={};h.renderGoogleGate();
+ flatten().find(n=>n.textContent==='New here? Create an account').listeners.click();
+ assert.match(text(),/Create your Hex Connections account/);assert.match(text(),/Create teacher account with Google/);assert.match(text(),/Create student account with Google/);
+ h.GA.sdk={GoogleAuthProvider:class {setCustomParameters(){}},signInWithPopup:()=>Promise.resolve()};
+ flatten().find(n=>n.textContent==='Create student account with Google').listeners.click();
+ assert.equal(h.PX.signupRequested,true);assert.equal(h.PX.loginRole,'student');
+});
+test('Google signup creates a student website profile and opens its dashboard',async()=>{
+ const {h,text}=make();h.GA.ready=true;h.GA.user={uid:'new-student',displayName:'New student'};h.PX.loginRole='student';h.PX.signupRequested=true;const calls=[];
+ h.setApi(async(path,body)=>{calls.push(path);if(path==='me')return {profile:{role:null}};if(path==='register')return {profile:{role:body.role},created:true};if(path==='student/dashboard')return {active:[],submitted:[],needsClassroom:true};throw new Error(path)});
+ h.loadPlatform();await tick();assert.equal(h.PX.profile.role,'student');assert.equal(h.PX.loaded,true);assert.equal(calls.filter(p=>p==='register').length,1);assert.match(text(),/Your assignments/);
+});
+test('signup with an existing Google account preserves its existing website profile',async()=>{
+ const {h}=make();h.GA.ready=true;h.GA.user={uid:'teacher'};h.PX.loginRole='student';h.PX.signupRequested=true;
+ h.setTeacher(()=>{});const calls=[];
+ h.setApi(async(path)=>{calls.push(path);if(path==='me'||path==='register')return {profile:{role:'teacher'},created:false};if(path==='workspace')return {workspace:{version:4,classes:[],activities:[]},revision:1};throw new Error(path)});
+ h.loadPlatform();await tick();assert.equal(h.PX.profile.role,'teacher');assert.ok(calls.includes('register'));assert.ok(!calls.includes('profile'));
+});
+
+test('teacher login lands on a classroom dashboard rather than the activity editor',async()=>{
+ const {h,location,text}=make();h.GA.ready=true;h.GA.user={uid:'teacher'};h.PX.loaded=true;h.PX.profile={role:'teacher'};h.PX.token='token';h.PX.tokenRole='teacher';h.PX.tokenUntil=Date.now()+10000;
+ h.setApi(async path=>path==='teacher/dashboard'?{assignments:[{id:'post',courseId:'course',courseName:'Psychology',className:'Period 1',title:'Memory',status:'PUBLISHED',open:true,submissions:2,turnedIn:1}]}:{courses:[{id:'course',name:'Psychology'}]});
+ location.hash='#teacher';h.route();await tick();assert.match(text(),/Your classrooms/);assert.match(text(),/Psychology/);assert.match(text(),/View classroom/);assert.doesNotMatch(text(),/Vocabulary/);
+ location.hash='#teacher/class-course';h.route();await tick();assert.match(text(),/Classroom assignments/);assert.match(text(),/Memory/);assert.match(text(),/View submissions & groups/);assert.match(text(),/Create assignment for this classroom/);assert.match(text(),/← All classrooms/);
+});
+test('student dashboard lists active and completed assignments and always offers an add-code box',async()=>{
+ const {h,text}=make();h.GA.ready=true;h.GA.user={uid:'student'};h.PX.loaded=true;h.PX.profile={role:'student'};
+ h.setApi(async path=>{assert.equal(path,'student/dashboard');return {active:[{id:'a',title:'Memory',className:'Psychology',classroomStatus:'NEW'}],submitted:[{id:'b',title:'Learning',className:'Psychology',classroomStatus:'TURNED_IN'}],needsClassroom:false}});
+ h.route();await tick();assert.match(text(),/Active assignments/);assert.match(text(),/Memory/);assert.match(text(),/Submitted and returned/);assert.match(text(),/Add an assignment or group code/);
+});
+test('a student can join a shared project from the dashboard group-code box',async()=>{
+ const {h,text,flatten,location}=make();h.GA.ready=true;h.GA.user={uid:'student'};h.PX.loaded=true;h.PX.profile={role:'student'};h.PX.token='token';h.PX.tokenRole='student';h.PX.tokenUntil=Date.now()+10000;
+ let joined=false,opened=null;h.setOpenAssignment(id=>opened=id);
+ h.setApi(async(path,body)=>{if(path==='student/dashboard')return {active:[],submitted:[],needsClassroom:false};if(path==='groups/join'){joined=body.code==='ABCDEF123456';return {postId:'post'}}throw new Error(path)});
+ h.route();await tick();flatten().find(n=>n.attrs?.['aria-label']==='Assignment or group code').value='ABCD-EF12-3456';flatten().find(n=>n.textContent==='Add code').listeners.click();await tick();assert.equal(joined,true);assert.equal(location.hash,'#a-post');assert.equal(opened,'post');
+});
+test('shared-board saves use the group endpoint and acknowledge the returned revision',async()=>{
+ const {h}=make();h.GA.user={uid:'student'};h.PX.activePost='post';h.setStudentRender(()=>{});
+ const group={id:'group',name:'Team',revision:0,members:[],draft:{place:{},conns:{}}};const state=h.adoptGroup(group,'post');
+ const board={act:{id:'act'},cls:{id:'class'},d:{name:'Student',place:{1:[0,0]},conns:{}},preview:false};h.setStudent(board);
+ h.setApi(async(path,b)=>{assert.equal(path,'posts/post/group/draft');assert.equal(b.revision,0);assert.deepEqual(Object.keys(b.base.place),[]);return {group:{...group,revision:1,draft:b.draft}}});
+ h.queueCloudDraft();await h.flushCloudDraft();assert.equal(state.revision,1);assert.equal(board.d._groupUnsaved,false);
+});
+test('shared-board conflicts keep the student’s local edits and offer a safe reload',async()=>{
+ const {h,text}=make();h.GA.user={uid:'student'};h.PX.activePost='post';h.setStudentRender(()=>{});
+ h.adoptGroup({id:'group',name:'Team',revision:0,members:[],draft:{place:{},conns:{}}},'post');
+ const board={act:{id:'act'},cls:{id:'class'},d:{name:'Student',place:{1:[0,0]},conns:{}},preview:false};h.setStudent(board);
+ h.setApi(async()=>{const e=new Error('A teammate changed this tile');e.code='group-conflict';throw e});
+ h.queueCloudDraft();await assert.rejects(h.flushCloudDraft());assert.equal(board.d.place[1][0],0);assert.equal(board.d._groupUnsaved,true);assert.match(text(),/Load shared board/);
+});
+
+test('teacher assignment page renders submission controls and the create-group action',async()=>{
+ const {h,location,text,flatten}=make();h.GA.ready=true;h.GA.user={uid:'teacher'};h.PX.loaded=true;h.PX.profile={role:'teacher'};
+ h.setApi(async path=>path==='teacher/dashboard'?{assignments:[{id:'post',title:'Memory',courseName:'Psychology',submissions:1}]}:path.startsWith('submissions')?{submissions:[{name:'Alex',_status:'TURNED_IN',_grade:null}]}:{groups:[]});
+ location.hash='#teacher/post-post';h.route();await tick();assert.match(text(),/Psychology · 1 submissions/);assert.match(text(),/Refresh submissions/);assert.match(text(),/Create group/);assert.match(text(),/View board & grade/);
+ flatten().find(n=>n.textContent==='Create group').listeners.click();assert.match(text(),/Create a project group/);assert.match(text(),/Create shared board/);
+});
+
+test('group turn-in waits for the shared save and sends its acknowledged revision',async()=>{
+ const {h}=make();h.GA.user={uid:'student'};h.PX.activePost='post';h.PX.token='token';h.PX.tokenRole='student';h.PX.tokenUntil=Date.now()+10000;h.setReady(()=>true);h.setStudentRender(()=>{});h.setUpdate(()=>{});
+ const group={id:'group',name:'Team',revision:1,members:[],draft:{place:{},conns:{}}};h.adoptGroup(group,'post');h.setStudent({act:{id:'act'},cls:{id:'class'},d:{name:'Student',place:{1:[0,0]},conns:{}},preview:false});
+ const calls=[];let acknowledge;
+ h.setApi(async(path,b)=>{calls.push(path);if(path.endsWith('/group/draft'))return new Promise(resolve=>acknowledge=()=>resolve({group:{...group,revision:2,draft:b.draft}}));assert.equal(b.groupRevision,2);return {submittedAt:'2026-10-30T00:00:00Z'}});
+ h.submit();await tick();assert.equal(calls.length,1);assert.match(calls[0],/group\/draft$/);acknowledge();await tick();assert.equal(calls[1],'posts/post/submit');assert.equal(h.PX.submitting,false);
 });

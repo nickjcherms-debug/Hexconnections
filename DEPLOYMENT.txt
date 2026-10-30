@@ -1,9 +1,60 @@
+DASHBOARDS AND GROUP PROJECTS 3.0.0
+==================================
+Existing databases need the new group tables before using shared boards:
+  npx wrangler d1 execute hex-connections --remote --file migrations/0003_group_boards.sql
+If migration 0002 has not been applied, apply it as well for vocabulary AI.
+New empty databases can run npm run db:migrate for all three migrations.
+Do not rerun the initial schema against an existing database.
+
+Deploy the complete Worker and public assets with npm run deploy. This revision
+has been prepared locally; it has not been pushed to GitHub or deployed here.
+The account-specific Firebase and Google setup below still applies. No new
+OAuth scopes or API secrets are required for the dashboard/group features.
+
+After sign-in, teachers land at #teacher: classrooms, then issued assignments,
+submissions and group management. #teacher/editor opens the activity editor.
+Students land on active assignments with an always-visible Add code section.
+Classroom consent loads the courses and assignments accessible to that account;
+without consent, students see assignments already cached for their account.
+Only assignments published through this app are listed.
+
+Teachers create groups from an issued assignment's View submissions & groups
+page. Share a 12-character group code with enrolled students. Students enter it
+in Add code; ordinary assignment codes remain 6 characters. Groups support 2-8
+members and one group per student per assignment. Google Classroom assignment
+membership is checked before joining, so a code alone does not grant access.
+
+Shared boards autosave and check for teammates' changes every 5 seconds.
+Independent edits merge; conflicting edits keep a local copy and offer CSV
+backup and an explicit Load shared board action. This is polling, without live
+cursors. Polling uses Cloudflare Worker requests and remains subject to plan
+limits. Each member turns in their own Classroom submission. A turn-in stores
+that student's snapshot of the saved group revision; later group edits do not
+change earlier submitted snapshots. Leaving a group preserves the shared board
+and submission history and allows joining a different group for the assignment.
+
+SIGNUP AND DEBUG UPDATE 2.2.0
+==================
+This revision adds explicit Google teacher/student website signup with duplicate
+account protection. It also fixes Classroom republishing, teacher workspace restoration,
+review of removed activities and duplicate board-pair validation. That signup-only revision required no extra tables; version 3.0.0 adds migration 0003.
+
+After deploying the complete Worker to the domain, run:
+  npm run check:deployment
+The command checks the frontend and /api/me without credentials or writes.
+A signed-out /api/me response should be HTTP 401 with code sign-in. A 404 points
+to a missing/wrong Worker route; a backend-setup response points to missing runtime
+bindings. Continue with real sign-in and Classroom testing after this check passes.
+
 UPDATE: LARGER BOARDS, VOCABULARY AI AND CLASSROOM DIAGNOSTICS
 ==========================================================
-Live-domain check on 2026-10-30: hexconnections.com's homepage served the older
+Earlier live-domain check on 2026-10-30: hexconnections.com's homepage served the older
 standalone HTML without the Firebase profile config or Classroom connection code;
 /api/me returned HTTP 404. The repository backend should return HTTP 401 when
 signed out. This points to the older/static deployment being served at the domain.
+A subsequent read-only check now passes: the account/Classroom frontend is
+present and /api/me returns the expected signed-out 401 response. This confirms
+routing, not live Google OAuth or Classroom write access.
 In Cloudflare, find the Worker attached to hexconnections.com under Domains &
 Routes. Deploy this complete project to that Worker (matching its exact Worker
 name in wrangler.jsonc). Uploading only HTML will not install the API routes.
@@ -22,8 +73,8 @@ both src/worker.js and src/vocabulary.js; copying only one JavaScript file into
 a dashboard editor will not include the imported generator module.
 
 If you originally created tables manually in the D1 Console, do not blindly run
-all migrations over those tables. Apply just the new idempotent 0002 file above.
-New EMPTY databases can use npm run db:migrate to install both migrations.
+all migrations over those tables. Apply the idempotent 0002 and 0003 files listed above.
+New EMPTY databases can use npm run db:migrate to install all three migrations.
 
 No external AI API key is required. The selected model uses Cloudflare's free
 AI allowance. This allowance is shared across the account and is finite; Workers

@@ -8,6 +8,7 @@ const aiTerms=Array.from({length:5},(_,i)=>({term:'Concept '+(i+1),definition:'A
 const aiRequest={topic:'Memory',subject:'Psychology',grade:'11-12',count:5,style:'student',notes:'',existing:[]};
 function harness(){
  const sql=new DatabaseSync(':memory:');sql.exec(readFileSync(new URL('../migrations/0001_initial.sql',import.meta.url),'utf8'));sql.exec(readFileSync(new URL('../migrations/0002_ai_usage.sql',import.meta.url),'utf8'));
+ sql.exec(readFileSync(new URL('../migrations/0003_group_boards.sql',import.meta.url),'utf8'));
  const DB = {
   prepare(query) {
    return {
@@ -36,16 +37,22 @@ function harness(){
   state.googleCalls.push({url:url.pathname,query:url.search,method,body,uid});
   if(state.classroomError)return Response.json(state.classroomError,{status:403});
   if(url.pathname.endsWith('/teachers/me'))return Response.json(uid==='teacher'?{userId:'g-teacher'}:{error:{}},{status:uid==='teacher'?200:403});
-  if(url.pathname.endsWith('/students/me'))return Response.json(uid==='student'?{userId:'g-student'}:{},{status:uid==='student'?200:403});
+  if(url.pathname.endsWith('/students/me'))return Response.json(uid.startsWith('student')?{userId:'g-'+uid}:{},{status:uid.startsWith('student')?200:403});
   if(url.pathname==='/v1/courses')return Response.json({courses:[{id:'course-1',name:'Psychology'}]});
   if(url.pathname==='/v1/courses/course-1/courseWork' && method==='POST'){
    state.postCount++;if(state.failCreate)return Response.json({}, {status:500});
-   return Response.json({id:'cw-1',alternateLink:'https://classroom.google.com/c/test/a/test'});
+   state.coursework={...body,id:'cw-1',alternateLink:'https://classroom.google.com/c/test/a/test'};return Response.json(state.coursework);
   }
   if(url.pathname==='/v1/courses/course-1/courseWork' && method==='GET')return Response.json({courseWork:[{id:'cw-1'}]});
-  if(url.pathname==='/v1/courses/course-1/courseWork/cw-1' && method==='PATCH')return Response.json({id:'cw-1',alternateLink:'https://classroom.google.com/c/test/a/test'});
+  if(url.pathname==='/v1/courses/course-1/courseWork/cw-1' && method==='PATCH'){
+   const mask=url.searchParams.get('updateMask').split(',');
+   const writable=['title','description','state','dueDate','dueTime','maxPoints','scheduledTime','submissionModificationMode','topicId','gradingPeriodId','learningGoals'];
+   if(mask.some(key=>!writable.includes(key)))return Response.json({error:{status:'INVALID_ARGUMENT'}},{status:400});
+   for(const key of mask){if(body[key]===undefined)delete state.coursework[key];else state.coursework[key]=body[key]}
+   return Response.json(state.coursework);
+  }
   const sub={id:'sub-1',userId:'g-student',state:state.subState,assignmentSubmission:{attachments:state.subAttachments}};
-  if(url.pathname.endsWith('/studentSubmissions'))return Response.json({studentSubmissions:uid==='student'&&!state.unassigned?[sub]:[]});
+  if(url.pathname.endsWith('/studentSubmissions'))return Response.json({studentSubmissions:uid.startsWith('student')&&!state.unassigned?[{...sub,userId:'g-'+uid}]:[]});
   if(url.pathname.endsWith('/studentSubmissions/sub-1')&&method==='GET')return Response.json(sub);
   if(url.pathname.endsWith(':modifyAttachments')){state.subAttachments.push(...body.addAttachments);return Response.json({})}
   if(url.pathname.endsWith(':turnIn')){if(state.failTurnIn)return Response.json({}, {status:500});state.subState='TURNED_IN';return Response.json({})}
@@ -198,4 +205,108 @@ test('Classroom errors distinguish disabled API, missing scopes and school polic
   h.state.classroomError={error:{details:[{reason}]}};
   const r=await h.call('teacher','classroom/courses?role=teacher');assert.equal(r.body.code,code);
  }
+});
+
+test('Classroom republishing changes supported fields while preserving the assignment attachment',async()=>{
+ const h=harness();await h.publish();const originalLink=h.state.coursework.materials[0].link.url;
+ const changed=structuredClone(h.workspace);changed.activities[0].title='Updated assignment';changed.activities[0].assign['class-1'].due='';
+ assert.equal((await h.call('teacher','workspace',{workspace:changed,revision:1})).status,200);
+ const r=await h.call('teacher','classroom/publish',{activityId:'activity-1',classId:'class-1',courseId:'course-1',maxPoints:80});
+ assert.equal(r.status,200);assert.equal(h.state.coursework.title,'Updated assignment');assert.equal(h.state.coursework.maxPoints,80);
+ assert.equal(h.state.coursework.materials[0].link.url,originalLink);assert.equal(h.state.coursework.dueDate,undefined);assert.equal(h.state.coursework.dueTime,undefined);assert.equal(h.state.postCount,1);
+});
+test('board saves reject reversed duplicate pairs instead of counting one connection twice',async()=>{
+ const h=harness(),id=await h.publish();await h.call('student','posts/'+id);
+ const invalid={...h.draft,conns:{...h.draft.conns,'2-1':{why:'Same relationship in reverse.',at:2}}};
+ assert.equal((await h.call('student','posts/'+id+'/draft',{draft:invalid})).status,400);
+ assert.equal((await h.call('student','posts/'+id+'/submit',{draft:invalid})).status,400);
+});
+
+test('Google registration creates teacher and student website profiles without duplicate accounts',async()=>{
+ const h=harness();assert.equal((await h.call(null,'register',{role:'teacher'})).status,401);
+ const teacher=await h.call('new-teacher','register',{role:'teacher'});assert.equal(teacher.status,201);assert.equal(teacher.body.profile.role,'teacher');assert.equal(teacher.body.profile.email,'new-teacher@example.org');
+ const again=await h.call('new-teacher','register',{role:'student'});assert.equal(again.status,200);assert.equal(again.body.created,false);assert.equal(again.body.profile.role,'teacher');
+ const student=await h.call('new-student','register',{role:'student',uid:'new-teacher'});assert.equal(student.status,201);assert.equal(student.body.profile.uid,'new-student');assert.equal(student.body.profile.role,'student');
+ assert.equal(h.sql.prepare('SELECT count(*) AS n FROM users').get().n,2);
+ assert.equal((await h.call('new-student','register',{role:'admin'})).status,400);
+});
+test('simultaneous Google registration requests choose one profile without overwriting it',async()=>{
+ const h=harness();const results=await Promise.all([h.call('new-user','register',{role:'teacher'}),h.call('new-user','register',{role:'student'})]);
+ assert.equal(results.filter(r=>r.body.created).length,1);assert.equal(results[0].body.profile.role,results[1].body.profile.role);assert.equal(h.sql.prepare('SELECT count(*) AS n FROM users').get().n,1);
+});
+
+async function createGroup(h,id,size=4){const r=await h.call('teacher','posts/'+id+'/groups',{name:'Project team',maxMembers:size});assert.equal(r.status,201);return r.body.group}
+async function joinGroup(h,uid,group){const r=await h.call(uid,'groups/join',{code:group.code});assert.equal(r.status,200);return r.body.group}
+test('teacher dashboard lists issued assignments and submission totals for the owner only',async()=>{
+ const h=harness(),id=await h.publish();await h.call('student','posts/'+id+'/submit',{draft:h.draft});
+ const r=await h.call('teacher','teacher/dashboard');assert.equal(r.status,200);assert.equal(r.body.assignments.length,1);assert.equal(r.body.assignments[0].id,id);assert.equal(r.body.assignments[0].turnedIn,1);
+ await h.call('teacher2','profile',{role:'teacher'});assert.equal((await h.call('teacher2','teacher/dashboard')).body.assignments.length,0);
+ await h.call('student','profile',{role:'student'});assert.equal((await h.call('student','teacher/dashboard')).status,403);
+ assert.equal((await h.call('teacher2','submissions?postId='+id)).body.submissions.length,0);
+});
+test('student dashboard discovers active assignments before the student has opened them',async()=>{
+ const h=harness(),id=await h.publish();await h.call('student','profile',{role:'student'});
+ const cached=await h.call('student','student/dashboard',undefined,{access:false});assert.equal(cached.body.active.length,0);assert.equal(cached.body.needsClassroom,true);
+ const connected=await h.call('student','student/dashboard');assert.equal(connected.body.active[0].id,id);assert.equal(connected.body.needsClassroom,false);
+ await h.call('student','posts/'+id+'/submit',{draft:h.draft});const done=await h.call('student','student/dashboard');assert.equal(done.body.active.length,0);assert.equal(done.body.submitted.length,1);
+ const w=structuredClone(h.workspace);w.activities[0].assign['class-1'].open=false;await h.call('teacher','workspace',{workspace:w,revision:1});await h.call('teacher','classroom/publish',{activityId:'activity-1',classId:'class-1',courseId:'course-1',maxPoints:100});
+ const closed=await h.call('student','student/dashboard');assert.equal(closed.body.active.length+closed.body.submitted.length,0);
+});
+test('teachers create assignment-scoped groups; unauthorized users cannot list their codes',async()=>{
+ const h=harness(),id=await h.publish(),g=await createGroup(h,id);
+ assert.match(g.code,/^[A-F0-9]{12}$/);assert.equal(g.members.length,0);
+ assert.equal((await h.call('student','posts/'+id+'/groups')).status,403);
+ assert.equal((await h.call('intruder','posts/'+id+'/groups',{name:'Wrong',maxMembers:4})).status,403);
+ const owner=await h.call('teacher','posts/'+id+'/groups');assert.equal(owner.body.groups[0].code,g.code);assert.equal(owner.body.activity.id,'activity-1');
+});
+test('group code requires real Classroom assignment membership and joining is idempotent',async()=>{
+ const h=harness(),id=await h.publish(),g=await createGroup(h,id);
+ assert.equal((await h.call('intruder','groups/join',{code:g.code})).status,403);
+ assert.equal((await h.call('student','groups/join',{code:'FFFFFFFFFFFF'})).status,404);
+ await joinGroup(h,'student',g);await joinGroup(h,'student',g);
+ assert.equal((await h.call('student','posts/'+id+'/group')).body.group.members.length,1);
+ assert.equal((await h.call('student','posts/'+id)).body.group.id,g.id);
+ assert.equal((await h.call('intruder','posts/'+id+'/group')).status,403);
+});
+test('group capacity and one-group-per-assignment are enforced during simultaneous joins',async()=>{
+ const h=harness(),id=await h.publish(),g=await createGroup(h,id,2);await joinGroup(h,'student',g);
+ const r=await Promise.all([h.call('student2','groups/join',{code:g.code}),h.call('student3','groups/join',{code:g.code})]);assert.equal(r.filter(x=>x.status===200).length,1);assert.equal(r.filter(x=>x.status===409).length,1);
+ const g2=await createGroup(h,id);assert.equal((await h.call('student','groups/join',{code:g2.code})).status,409);
+ assert.equal((await h.call('teacher','posts/'+id+'/groups')).body.groups.find(x=>x.id===g.id).members.length,2);
+});
+test('group board merges independent concurrent tile edits and rejects conflicting edits',async()=>{
+ const h=harness(),id=await h.publish(),g=await createGroup(h,id);await joinGroup(h,'student',g);await joinGroup(h,'student2',g);
+ const base={place:{},conns:{}};
+ const first=await h.call('student','posts/'+id+'/group/draft',{base,draft:{place:{1:[0,0]},conns:{}},revision:0});assert.equal(first.status,200);
+ const second=await h.call('student2','posts/'+id+'/group/draft',{base,draft:{place:{2:[1,0]},conns:{}},revision:0});assert.equal(second.status,200);assert.deepEqual(second.body.group.draft.place,{1:[0,0],2:[1,0]});assert.equal(second.body.group.revision,2);
+ const conflict=await h.call('student2','posts/'+id+'/group/draft',{base,draft:{place:{1:[0,1]},conns:{}},revision:0});assert.equal(conflict.status,409);assert.equal(conflict.body.code,'group-conflict');
+ const current=await h.call('student','posts/'+id+'/group');assert.deepEqual(current.body.group.draft.place,{1:[0,0],2:[1,0]});
+ assert.equal((await h.call('intruder','posts/'+id+'/group/draft',{base,draft:base,revision:0})).status,403);
+});
+test('independent group edits cannot merge two tiles into the same cell',async()=>{
+ const h=harness(),id=await h.publish(),g=await createGroup(h,id);await joinGroup(h,'student',g);await joinGroup(h,'student2',g);
+ const base={place:{},conns:{}};await h.call('student','posts/'+id+'/group/draft',{base,draft:{place:{1:[0,0]},conns:{}},revision:0});
+ const r=await h.call('student2','posts/'+id+'/group/draft',{base,draft:{place:{2:[0,0]},conns:{}},revision:0});assert.equal(r.status,409);assert.equal(r.body.code,'group-conflict');
+});
+test('group submission uses the shared board snapshot and only submits the current student',async()=>{
+ const h=harness(),id=await h.publish(),g=await createGroup(h,id);await joinGroup(h,'student',g);await joinGroup(h,'student2',g);
+ const saved=await h.call('student','posts/'+id+'/group/draft',{base:g.draft,draft:h.draft,revision:0});assert.equal(saved.status,200);
+ const stale=await h.call('student','posts/'+id+'/submit',{draft:h.draft,groupRevision:0});assert.equal(stale.status,409);assert.equal(stale.body.code,'group-not-saved');
+ const submitted=await h.call('student','posts/'+id+'/submit',{draft:{place:{},conns:{}},groupRevision:saved.body.group.revision});assert.equal(submitted.status,200);
+ const row=h.sql.prepare('SELECT payload FROM submissions WHERE post_id=? AND uid=?').get(id,'student'),snapshot=JSON.parse(row.payload);
+ assert.deepEqual(snapshot.placements,h.draft.place);assert.equal(snapshot.group.id,g.id);assert.equal(snapshot.group.revision,1);
+ assert.equal(h.sql.prepare('SELECT payload FROM submissions WHERE post_id=? AND uid=?').get(id,'student2').payload,null);
+});
+test('individual boards still open if group migration is pending; group controls explain setup',async()=>{
+ const h=harness(),id=await h.publish();h.sql.exec('DROP TABLE project_group_members; DROP TABLE project_groups');
+ const normal=await h.call('student','posts/'+id);assert.equal(normal.status,200);assert.equal(normal.body.group,null);
+ const groups=await h.call('teacher','posts/'+id+'/groups');assert.equal(groups.status,503);assert.equal(groups.body.code,'group-setup');
+});
+
+test('leaving a group preserves its board and lets the student join another team',async()=>{
+ const h=harness(),id=await h.publish(),g=await createGroup(h,id),other=await createGroup(h,id);await joinGroup(h,'student',g);
+ await h.call('student','posts/'+id+'/group/draft',{base:g.draft,draft:h.draft,revision:0});
+ assert.equal((await h.call('student','posts/'+id+'/group/leave',{})).status,200);assert.equal((await h.call('student','posts/'+id+'/group')).status,403);
+ const owner=await h.call('teacher','posts/'+id+'/groups');assert.deepEqual(owner.body.groups.find(x=>x.id===g.id).draft.place,h.draft.place);
+ assert.equal((await h.call('student','groups/join',{code:other.code})).status,200);
 });

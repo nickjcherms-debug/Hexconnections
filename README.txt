@@ -8,6 +8,9 @@ needs to be applied and the Worker deployed; live connectivity has not been test
 
 WHAT IS INCLUDED
 - Separate Teacher and Student Google sign-in choices.
+- Teacher classroom dashboard with issued assignments, submissions and grading.
+- Student active-assignment dashboard with assignment/group code entry.
+- Code-based shared group boards with conflict-aware saving and individual turn-in.
 - Public registration: a Google account creates its own profile on first use.
 - Persistent profiles, with a switch between teacher and student views.
 - A private workspace for each teacher; no fixed teacher email allowlist.
@@ -126,3 +129,32 @@ The app's request limits are not an exact account-wide billing cap.
 
 https://developers.cloudflare.com/workers-ai/platform/pricing/
 https://developers.cloudflare.com/workers-ai/models/llama-3.2-3b-instruct/
+
+GOOGLE WEBSITE SIGNUP
+Choose New here? Create an account, then Create teacher account with Google or
+Create student account with Google. Google signs the person in and /api/register
+creates the selected website profile using the verified Firebase UID, name and
+email. No separate website password is needed. Existing users are signed into
+their existing profile instead of getting a duplicate account or losing data.
+The Sign in buttons also register first-time Google users automatically.
+
+The explicit signup flow uses the existing users table; no new schema is needed.
+The complete Worker backend, original migrations and enabled Firebase Google
+provider must be deployed before signup can finish successfully.
+
+ROLE DASHBOARDS AND GROUP PROJECTS
+After login, teachers see classrooms and open each classroom to view issued
+assignments, student boards and grades. Assignment editor remains available.
+Students see their active and submitted assignments plus Add code. Connect
+Classroom to discover assigned Hex Connections activities across active courses.
+
+Teachers create named groups (2-8 members) on the assignment submissions page.
+Enrolled students enter the group code to share placements and explanations.
+Changes autosave and refresh every 5 seconds. Conflicting changes preserve local
+work and offer backup/reload; independent changes merge. Each student turns in
+an individual Classroom snapshot of the shared board. Teachers can inspect the
+current group board and review each student's submitted snapshot separately.
+Students can save and leave a group without deleting its board or past work.
+
+Apply migrations/0003_group_boards.sql to existing databases, then deploy the
+complete Worker. See DEPLOYMENT.txt for exact commands and setup requirements.

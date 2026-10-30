@@ -1,3 +1,5 @@
+import {handleGroupRoutes,groupForUser} from './groups.js';
+import {handleDashboardRoutes} from './dashboards.js';
 import { generateVocabulary } from './vocabulary.js';
 // Cloudflare Worker. Firebase verifies accounts; every SQL query enforces ownership.
 // Google access tokens are used only for the current request and never persisted.
@@ -123,7 +125,7 @@ function boardDraft(value, act) {
   const conns = {};
   for (const [key,c] of Object.entries(value.conns)) {
     const pair = key.split('-');
-    if (pair.length !== 2 || pair[0] === pair[1] || !pair.every(id => allowed.has(id)) || !c || typeof c.why !== 'string' || c.why.length > 600) fail(400, 'Invalid connection.');
+    if (pair.length !== 2 || Number(pair[0]) >= Number(pair[1]) || !pair.every(id => allowed.has(id)) || !c || typeof c.why !== 'string' || c.why.length > 600) fail(400, 'Invalid connection.');
     conns[key] = { why: c.why, at: Number.isFinite(c.at) ? c.at : 0 };
   }
   return { name: String(value.name || '').slice(0,60), place, conns, view: { orient: value.view?.orient === 'flat' ? 'flat' : 'pointy' }, _savedAt: NOW(), submittedAt: value.submittedAt || null };
@@ -171,7 +173,21 @@ export async function handle(request, env, net = fetch) {
     await run(db,'INSERT INTO users(uid,email,name,created_at) VALUES(?,?,?,?) ON CONFLICT(uid) DO UPDATE SET email=excluded.email,name=excluded.name',user.uid,user.email,user.name,NOW());
     const profile = await one(db,'SELECT uid,email,name,role FROM users WHERE uid=?',user.uid);
     const path=url.pathname;
+    const context={request,url,db,user,profile,input,fail,json,boardDraft,studentInPost,allPages,getGoogle:()=>classroomContext(request,user,net)};
+    const dashboard=await handleDashboardRoutes(context);if(dashboard)return dashboard;
+    const groupRoute=await handleGroupRoutes(context);if(groupRoute)return groupRoute;
     if (path==='/api/me' && request.method==='GET') return json({profile});
+    if(path==='/api/register' && request.method==='POST'){
+      const {role}=await input(request);
+      if(!['teacher','student'].includes(role)) fail(400,'Choose a teacher or student account.');
+      // Firebase UID is the account key. Repeated Google signup must not create a
+      // duplicate account or overwrite an existing account's chosen workspace.
+      const result=await run(db,'UPDATE users SET role=? WHERE uid=? AND role IS NULL',role,user.uid);
+      const registered=await one(db,'SELECT uid,email,name,role FROM users WHERE uid=?',user.uid);
+      const created=!!result.meta.changes;
+      return json({profile:registered,created},created?201:200);
+    }
+
     if(path==='/api/vocabulary/generate' && request.method==='POST'){
       if(profile.role!=='teacher') fail(403,'Only teacher accounts can generate vocabulary.','teacher-required');
       return json(await generateVocabulary({env,db,user,body:await input(request),fail}));
@@ -196,7 +212,7 @@ export async function handle(request, env, net = fetch) {
       return json({revision:b.revision+1});
     }
     if (path==='/api/submissions' && request.method==='GET') {
-      const list=await rows(db,`SELECT s.*,p.activity_id,p.max_points FROM submissions s JOIN posts p ON p.id=s.post_id WHERE p.owner_uid=? AND s.payload IS NOT NULL`,user.uid);
+      const list=await rows(db,`SELECT s.*,p.activity_id,p.max_points FROM submissions s JOIN posts p ON p.id=s.post_id WHERE p.owner_uid=? AND s.payload IS NOT NULL`+(url.searchParams.get('postId')?' AND p.id=?':''),...(url.searchParams.get('postId')?[user.uid,url.searchParams.get('postId')]:[user.uid]));
       return json({submissions:list.map(s=>({...parse(s.payload),_postId:s.post_id,_studentUid:s.uid,_grade:s.grade,_maxPoints:s.max_points,_status:s.status,_classroomStatus:s.classroom_status}))});
     }
     if (path==='/api/my-assignments' && request.method==='GET') {
@@ -230,7 +246,7 @@ export async function handle(request, env, net = fetch) {
       if (existing && existing.status!=='PUBLISHED') fail(409,'An earlier Classroom publication is unresolved. Check Classroom before asking the site owner to reconcile it.','publish-unresolved');
       const id=existing?.id||crypto.randomUUID(), link=new URL('/#a-'+id,env.PUBLIC_ORIGIN||url.origin).href;
       const code=String(asg.code||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
-      const snapshot=JSON.stringify({act,cls,asg});
+      const snapshot=JSON.stringify({act,cls,asg,courseName:typeof b.courseName==='string'?b.courseName.slice(0,200):cls.name});
       if (!existing) await run(db,'INSERT INTO posts(id,owner_uid,activity_id,class_id,course_id,status,body,max_points,code,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)',id,user.uid,act.id,cls.id,b.courseId,'CREATING',snapshot,b.maxPoints,code,NOW());
       const coursework={title:act.title,description:(act.instructions||'Complete your Hex Connections board.')+'\nOpen the Hex Connections link, sign in and turn in your work.',materials:[{link:{url:link}}],maxPoints:b.maxPoints};
       // Due dates use explicit UTC in both Classroom and server late calculations.
@@ -239,8 +255,11 @@ export async function handle(request, env, net = fetch) {
       }
       let result;
       if (existing) {
-        const mask=['title','description','materials','maxPoints','dueDate','dueTime'].join(',');
-        result=await g('/courses/'+enc(b.courseId)+'/courseWork/'+enc(existing.coursework_id)+'?updateMask='+enc(mask),'PATCH',coursework);
+        // Classroom cannot patch materials. The existing assignment link uses the
+        // same post ID, so preserve the original attachment and update legal fields only.
+        const {materials:unchangedMaterials,...updates}=coursework;
+        const mask=['title','description','maxPoints','dueDate','dueTime'].join(',');
+        result=await g('/courses/'+enc(b.courseId)+'/courseWork/'+enc(existing.coursework_id)+'?updateMask='+enc(mask),'PATCH',updates);
       } else result=await g('/courses/'+enc(b.courseId)+'/courseWork','POST',{...coursework,workType:'ASSIGNMENT',state:'PUBLISHED'});
       await run(db,'UPDATE posts SET coursework_id=?,classroom_url=?,status=?,body=?,max_points=?,code=? WHERE id=? AND owner_uid=?',result.id,result.alternateLink||'', 'PUBLISHED',snapshot,b.maxPoints,code,id,user.uid);
       return json({id,url:link,classroomUrl:result.alternateLink||'',updated:!!existing});
@@ -264,7 +283,9 @@ export async function handle(request, env, net = fetch) {
         if(post.owner_uid!==user.uid) await studentInPost(db,g,user,post);
         else await g('/courses/'+enc(post.course_id)+'/teachers/me');
         const s=await one(db,'SELECT draft,status,grade,classroom_status FROM submissions WHERE post_id=? AND uid=?',id,user.uid);
-        return json({assignment:{...info,id,ownerUid:post.owner_uid},draft:parse(s?.draft),status:s?.status||'DRAFT',classroomStatus:s?.classroom_status,grade:s?.grade});
+        const group=await groupForUser(db,id,user.uid);
+        const groupData=group?await (await handleGroupRoutes({...context,url:new URL('/api/posts/'+id+'/group',url.origin)})).json():null;
+        return json({assignment:{...info,id,ownerUid:post.owner_uid},draft:parse(s?.draft),status:s?.status||'DRAFT',classroomStatus:s?.classroom_status,grade:s?.grade,group:groupData?.group||null});
       }
       if(action==='grade' && request.method==='POST') {
         if(post.owner_uid!==user.uid) fail(403,'Only this assignment’s owner may grade it.');
@@ -308,7 +329,10 @@ export async function handle(request, env, net = fetch) {
           }
           fail(409,'Reclaim the assignment in Classroom before changing submitted work.','needs-reclaim');
         }
-        const b=await input(request), draft=boardDraft(b.draft,info.act), payload=submissionPayload(draft,post,user);
+        const b=await input(request),group=await groupForUser(db,id,user.uid);
+        if(group&&b.groupRevision!==group.revision)fail(409,'Save and refresh the shared board before turning it in.','group-not-saved');
+        const draft=boardDraft(group?parse(group.draft):b.draft,info.act),payload=submissionPayload(draft,post,user);
+        if(group)payload.group={id:group.id,name:group.name,revision:group.revision};
         // Save first. If Classroom rejects turn-in, work stays safe and status says pending.
         await run(db,'UPDATE submissions SET draft=?,payload=?,status=?,updated_at=? WHERE post_id=? AND uid=?',JSON.stringify(draft),JSON.stringify(payload),'SAVED_PENDING_CLASSROOM',NOW(),id,user.uid);
         if(sub.state!=='TURNED_IN') {

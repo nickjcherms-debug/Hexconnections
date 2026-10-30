@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Hexagonal thinking boards: arrange vocabulary hexagons and explain every connection.">
+<meta name="hex-connections-build" content="3.0.0">
 <title>Hex Connections</title>
 
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=JetBrains+Mono:wght@500;700&display=swap">
@@ -292,7 +293,7 @@ var AUTH_CONFIG;
 try { AUTH_CONFIG = JSON.parse(document.getElementById('hx-auth-config').textContent); }
 catch(e){ AUTH_CONFIG = {}; }
 AUTH_CONFIG.firebase = AUTH_CONFIG.firebase || {};
-var GA = { user:null, ready:false, busy:false, error:'', auth:null, sdk:null };
+var GA = { authMode:'signin', user:null, ready:false, busy:false, error:'', auth:null, sdk:null };
 function googleConfigured(){
   return ['apiKey','authDomain','projectId','appId'].every(function(k){ return typeof AUTH_CONFIG.firebase[k] === 'string' && !!AUTH_CONFIG.firebase[k].trim(); });
 }
@@ -312,15 +313,16 @@ function googleError(error){
   return messages[error && error.code] || 'Google sign-in is unavailable. Try again, or ask the site owner to check the Firebase configuration and network access.';
 }
 function renderGoogleGate(){
-  var configured = googleConfigured();
-  var heading = !configured ? 'Google sign-in needs setup' : (!GA.ready && !GA.error ? 'Connecting to Google…' : 'Sign in to Hex Connections');
+  var configured = googleConfigured(), signup=GA.authMode==='signup';
+  var heading = !configured ? 'Google sign-in needs setup' : (!GA.ready && !GA.error ? 'Connecting to Google…' : (signup?'Create your Hex Connections account':'Sign in to Hex Connections'));
   fill(root, topBar(), el('div',{class:'gate'}, el('div',{class:'panel'},
     el('div',{class:'eyebrow',text:'Welcome'}), el('h2',{text:heading}),
-    el('p',{class:'muted',style:'margin:0',text:configured ? 'Sign in with Google to create a teacher or student account and open your Classroom assignments.' : 'The site owner needs to add the Firebase configuration and enable Google sign-in. See the included README.txt.'}),
+    el('p',{class:'muted',style:'margin:0',text:configured ? (signup?'Choose a teacher or student account below. Google verifies your identity and creates your website profile; no separate password is needed.':'Sign in with Google to open your account. First-time users can also create their website profile automatically.') : 'The site owner needs to add the Firebase configuration and enable Google sign-in. See the included README.txt.'}),
     GA.error ? el('p',{class:'err',role:'alert',text:GA.error}) : null,
     configured && GA.auth ? el('div',{class:'stack'},
-      el('button',{class:'btn primary',disabled:GA.busy,onclick:function(){PX.loginRole='teacher';googleSignIn()},text:GA.busy?'Signing in…':'Teacher · Sign in with Google'}),
-      el('button',{class:'btn honey',disabled:GA.busy,onclick:function(){PX.loginRole='student';googleSignIn()},text:GA.busy?'Signing in…':'Student · Sign in with Google'})) : null,
+      el('button',{class:'btn primary',disabled:GA.busy,onclick:function(){PX.loginRole='teacher';PX.signupRequested=signup;googleSignIn()},text:GA.busy?'Connecting…':(signup?'Create teacher account with Google':'Teacher · Sign in with Google')}),
+      el('button',{class:'btn honey',disabled:GA.busy,onclick:function(){PX.loginRole='student';PX.signupRequested=signup;googleSignIn()},text:GA.busy?'Connecting…':(signup?'Create student account with Google':'Student · Sign in with Google')})) : null,
+    configured ? el('button',{class:'btn ghost',disabled:GA.busy,onclick:function(){GA.authMode=signup?'signin':'signup';GA.error='';renderGoogleGate()},text:signup?'Already have an account? Sign in':'New here? Create an account'}) : null,
     configured && !GA.auth && GA.error ? el('button',{class:'btn',onclick:function(){ location.reload(); },text:'Retry connection'}) : null,
     el('p',{class:'hint',text:'Your account keeps your assignments and saved boards together. Connect Google Classroom when prompted. Sign out on shared computers.'})
   )));
@@ -1946,7 +1948,7 @@ function topBar(){
   var right = [];
   if (GA.user){
     right.push(el('span',{class:'chip',text:GA.user.displayName || GA.user.email || 'Google account',title:GA.user.email || ''}));
-    if (googleTeacher() && !isTeacherHash()) right.push(el('a',{class:'btn ghost sm',href:'#teacher',text:'Teacher view'}));
+    if (googleTeacher() && !isTeacherHash()) right.push(el('a',{class:'btn ghost sm',href:'#teacher',text:'Classrooms'}));
     right.push(el('button',{class:'btn ghost sm',disabled:GA.busy,onclick:googleSignOut,text:'Sign out'}));
   }
   if (caps.teacher && !previewing) right.push(el('span',{class:'chip ok',text: caps.standalone ? 'Teacher workspace' : 'Teacher view'}));
@@ -1989,7 +1991,7 @@ window.addEventListener('hashchange', function(){
 });
 
 /* ===== Shared platform: Cloudflare API, Classroom and account onboarding ===== */
-var PX = {submitting:false,loginRole:null,profile:null,loaded:false,loading:false,error:'',revision:0,token:null,tokenUntil:0,tokenRole:null,activePost:null,postState:null,routeId:0,draftTimer:null,pendingDraft:null,draftChain:Promise.resolve(),saving:false,postsLoading:false};
+var PX = {signupRequested:false,teacherData:null,submitting:false,loginRole:null,profile:null,loaded:false,loading:false,error:'',revision:0,token:null,tokenUntil:0,tokenRole:null,activePost:null,postState:null,routeId:0,draftTimer:null,pendingDraft:null,draftChain:Promise.resolve(),saving:false,postsLoading:false};
 function platformApi(path,body,withClassroom,signal){
   var account=GA.user;
   if(!account) return Promise.reject(new Error('Sign in with Google first.'));
@@ -2017,19 +2019,26 @@ function loadPlatform(){
   PX.loading=true;PX.error='';
   var loadingUid=GA.user.uid;
   platformApi('me').then(function(r){
-    if(PX.loginRole){var selected=PX.loginRole;PX.loginRole=null;return platformApi('profile',{role:selected})}
+    if(PX.loginRole){
+      var selected=PX.loginRole,signup=PX.signupRequested;PX.loginRole=null;PX.signupRequested=false;
+      var endpoint=signup||!r.profile.role?'register':'profile';
+      return platformApi(endpoint,{role:selected}).then(function(result){
+        if(signup&&result.created===false)toast('You already have an account. Signed in to your existing profile.');
+        return result;
+      });
+    }
     return r;
   }).then(function(r){
     if(!GA.user||GA.user.uid!==loadingUid)throw new Error('Account changed.');
     PX.profile=r.profile;
     if(r.profile.role==='teacher') return platformApi('workspace').then(function(w){
-      DATA=w.workspace;PX.revision=w.revision;
+      PX.teacherData=clone(w.workspace);DATA=clone(w.workspace);PX.revision=w.revision;
       var local=lsGet('hx-teacher-work');
       var localBase=lsGet('hx-workspace-base');
       if(local && localBase!==null && localBase!==w.revision){lsSet('hx-workspace-conflict-backup',local);lsSet('hx-teacher-work',w.workspace);}
       lsSet('hx-workspace-base',w.revision);
     });
-    DATA={version:4,classes:[],activities:[]};
+    PX.teacherData=null;DATA={version:4,classes:[],activities:[]};
   }).then(function(){if(!GA.user||GA.user.uid!==loadingUid)return;PX.loaded=true;PX.loading=false;if(PX.profile.role==='teacher'&&!location.hash)location.hash='teacher';route();}).catch(function(e){if(!GA.user||GA.user.uid!==loadingUid)return;PX.loading=false;PX.error=e.message;route();});
 }
 function platformGate(){
@@ -2040,7 +2049,7 @@ function platformGate(){
 }
 function chooseAccountRole(){
   function setRole(role){
-    platformApi('profile',{role:role}).then(function(r){PX.profile=r.profile;PX.loaded=false;TW=null;ST=null;location.hash=role==='teacher'?'teacher':'';loadPlatform();route();}).catch(platformError);
+    platformApi(PX.profile&&PX.profile.role?'profile':'register',{role:role}).then(function(r){PX.profile=r.profile;PX.loaded=false;TW=null;ST=null;location.hash=role==='teacher'?'teacher':'';loadPlatform();route();}).catch(platformError);
   }
   fill(root,topBar(),el('div',{class:'gate'},el('div',{class:'panel'},
     el('div',{class:'eyebrow',text:'Create your account'}),el('h2',{text:'How will you use Hex Connections?'}),
@@ -2080,7 +2089,7 @@ function saveWorkspaceCloud(){
   PX.saving=true;
   var out=clone(TW), account=GA.user.uid;
   return platformApi('workspace',{workspace:out,revision:PX.revision}).then(function(r){
-    if(GA.user&&GA.user.uid===account){PX.revision=r.revision;DATA=clone(out);lsSet('hx-workspace-base',r.revision);}
+    if(GA.user&&GA.user.uid===account){PX.revision=r.revision;PX.teacherData=clone(out);DATA=clone(out);lsSet('hx-workspace-base',r.revision);}
     return r;
   }).finally(function(){PX.saving=false;});
 }
@@ -2091,13 +2100,13 @@ function publishToClassroom(a,c){
   platformApi('classroom/courses?role=teacher',undefined,true).then(function(r){
     if(!GA.user||GA.user.uid!==account)return;
     if(!r.courses.length){toast('No active courses found where this Google account is a teacher.');return;}
-    var sel=el('select',{'aria-label':'Google Classroom course'},r.courses.map(function(course){return el('option',{value:course.id,text:course.name+(course.section?' · '+course.section:'')})}));
+    var sel=el('select',{'aria-label':'Google Classroom course'},r.courses.map(function(course){return el('option',{value:course.id,selected:c.classroomId===course.id,text:course.name+(course.section?' · '+course.section:'')})}));
     var points=el('input',{type:'number',min:1,max:10000,value:100,'aria-label':'Maximum points'});
     var err=el('p',{class:'err',role:'alert'});
     var button=el('button',{class:'btn primary',text:'Publish or update in Classroom',onclick:function(){
       var max=Number(points.value);if(!Number.isFinite(max)||max<=0||max>10000){err.textContent='Enter points between 0 and 10,000.';return;}
       button.disabled=true;err.textContent='';
-      saveWorkspaceCloud().then(function(){return platformApi('classroom/publish',{activityId:a.id,classId:c.id,courseId:sel.value,maxPoints:max},true)}).then(function(result){
+      saveWorkspaceCloud().then(function(){return platformApi('classroom/publish',{activityId:a.id,classId:c.id,courseId:sel.value,courseName:(r.courses.find(function(x){return x.id===sel.value})||{}).name||c.name,maxPoints:max},true)}).then(function(result){
         closeModal();renderTeacher();
         openModal([el('h3',{text:result.updated?'Classroom assignment updated':'Published to Google Classroom'}),
           el('p',{text:'Students open the assignment’s Hex Connections link and sign in. Share the assignment through Classroom so course membership can be checked.'}),
@@ -2158,7 +2167,7 @@ function studentDashboard(){
 }
 function assignmentLink(a){return el('a',{class:'btn',href:'#a-'+a.id,text:a.title+' · '+a.className+(a.status?' · '+a.status.replace(/_/g,' ').toLowerCase():'')});}
 function openPlatformAssignment(id){
-  if(PX.activePost===id&&ST){renderStudentShell();return;}
+  if(PX.activePost===id&&ST){renderStudentShell();if(GROUP.current)startGroupPolling();return;}
   var seq=PX.routeId;
   if(!classroomReady('student')){
     fill(root,topBar(),el('div',{class:'gate'},el('div',{class:'panel'},el('h2',{text:'Connect Google Classroom'}),
@@ -2170,12 +2179,17 @@ function openPlatformAssignment(id){
     if(seq!==PX.routeId)return;
     var a=r.assignment;
     PX.activePost=id;PX.postState=r;
+    var shared=adoptGroup(r.group,id);
     DATA={version:4,classes:[a.cls],activities:[a.act]};
     var key=draftKey(a.act.id,a.cls.id),local=lsGet(key);
-    if(r.draft&&(!local||!local._savedAt||new Date(r.draft._savedAt)>=new Date(local._savedAt)))lsSet(key,r.draft);
+    if(shared){
+      if(local&&local._groupUnsaved&&local._groupBase){shared.base=clone(local._groupBase);shared.revision=Math.min(local._groupRevision||0,r.group.revision);}
+      else lsSet(key,Object.assign({},r.group.draft,{name:GA.user.displayName||GA.user.email,_groupUnsaved:false}));
+    }else if(r.draft&&(!local||!local._savedAt||new Date(r.draft._savedAt)>=new Date(local._savedAt)))lsSet(key,r.draft);
     startStudent(a.act,a.cls,a.asg,a.ownerUid===GA.user.uid);
     // Owner preview does not enroll the teacher as a student.
     if(a.ownerUid===GA.user.uid){ST.preview=true;addPreviewBanner();}
+    if(shared)startGroupPolling();
   }).catch(function(e){if(seq!==PX.routeId)return;fill(root,topBar(),el('div',{class:'gate'},el('div',{class:'panel'},el('h2',{text:'Could not open assignment'}),el('p',{class:'err',text:e.message}),el('button',{class:'btn',onclick:function(){PX.activePost=null;route()},text:'Retry'}),el('a',{class:'btn',href:'#',text:'Your assignments'}))));});
 }
 function queueCloudDraft(){
@@ -2205,7 +2219,7 @@ saveDraft=function(){
   if(ST){ST.d._savedAt=new Date().toISOString();localSaveDraft();queueCloudDraft();var status=document.getElementById('hx-cloud-status');if(status)status.textContent=ST.preview?'Preview saved in this browser':'Saving…';}
 };
 var oldDraftKey=draftKey;
-draftKey=function(a,c){return oldDraftKey(a,c)+(PX.activePost?'-'+PX.activePost:'')};
+draftKey=function(a,c){return oldDraftKey(a,c)+(PX.activePost?'-'+PX.activePost:'')+(typeof GROUP!=='undefined'&&GROUP.current?'-group-'+GROUP.current.id:'')};
 // startStudent calls draftKey; do not append the post ID twice when priming it above.
 var renderBoard=renderStudentShell;
 renderStudentShell=function(){
@@ -2231,7 +2245,9 @@ submit=function(){
     PX.submitting=true;
     clearTimeout(PX.draftTimer);PX.pendingDraft=null;
     toast('Saving your board and turning it in to Classroom…');
-    platformApi('posts/'+id+'/submit',{draft:clone(board.d)},true).then(function(r){
+    var shared=GROUP.current;
+    var saved=shared?(queueCloudDraft(),flushCloudDraft()):Promise.resolve();
+    saved.then(function(){return platformApi('posts/'+id+'/submit',{draft:clone(board.d),groupRevision:shared?shared.revision:undefined},true)}).then(function(r){
       if(!GA.user||GA.user.uid!==account||ST!==board)return;
       board.d.submittedAt=r.submittedAt;localSaveDraft();updateStudent();
       toast('Turned in to Google Classroom. Your teacher can now review your board.');
@@ -2242,7 +2258,7 @@ submit=function(){
 // All workspace state is account-specific. Classroom tokens remain in memory only.
 var clearView=clearAccountView;
 clearAccountView=function(){
-  clearView();PX.submitting=false;clearTimeout(PX.draftTimer);PX.pendingDraft=null;PX.token=null;PX.tokenUntil=0;PX.tokenRole=null;PX.loaded=false;PX.loading=false;PX.profile=null;PX.error='';PX.activePost=null;PX.routeId++;DATA={version:4,classes:[],activities:[]};
+  clearView();PX.submitting=false;clearTimeout(PX.draftTimer);PX.pendingDraft=null;PX.token=null;PX.tokenUntil=0;PX.tokenRole=null;PX.loaded=false;PX.loading=false;PX.profile=null;PX.teacherData=null;PX.error='';PX.activePost=null;PX.routeId++;DATA={version:4,classes:[],activities:[]};
 };
 googleSignOut=function(){
   if(!GA.auth||GA.busy)return;
@@ -2273,7 +2289,7 @@ topBar=function(){
     add(header,el('button',{class:'btn ghost sm',onclick:function(){connectClassroom(PX.profile.role)},text:classroomReady(PX.profile.role)?'Reconnect Classroom':'Connect Classroom'}));
     add(header,el('button',{class:'btn ghost sm',onclick:switchAccountRole,text:PX.profile.role==='teacher'?'Switch to student':'Switch to teacher'}));
     if(PX.profile.role==='teacher'&&TW)add(header,el('button',{class:'btn ghost sm',onclick:function(){downloadBlob('hex-workspace-backup.json',JSON.stringify(lsGet('hx-workspace-conflict-backup')||TW,null,2),'application/json')},text:'Download workspace backup'}));
-    if(PX.profile.role==='teacher'&&!isTeacherHash())add(header,el('a',{class:'btn ghost sm',href:'#teacher',text:'Teacher workspace'}));
+    if(PX.profile.role==='teacher'&&!isTeacherHash())add(header,el('a',{class:'btn ghost sm',href:'#teacher',text:'Classrooms'}));
   }
   return header;
 };
@@ -2284,11 +2300,23 @@ route=function(){
   if(!PX.profile.role){chooseAccountRole();return;}
   caps.teacher=isTeacherHash()&&googleTeacher();
   if(previewing)return;
-  if(caps.teacher){PX.activePost=null;ST=null;startTeacher();return;}
+  if(caps.teacher){PX.activePost=null;ST=null;if(PX.teacherData)DATA=clone(PX.teacherData);startTeacher();return;}
   if(isTeacherHash()){chooseAccountRole();return;}
   var review=location.hash.match(/^#review-([a-zA-Z0-9-]+)~(.+)$/);
   if(review){
-    platformApi('submissions').then(function(r){var p=r.submissions.filter(function(s){return s._postId===review[1]&&s._studentUid===decodeURIComponent(review[2])})[0];if(!p){toast('This board is visible only to the assignment owner after submission.');return;}platformApi('workspace').then(function(w){var a=w.workspace.activities.filter(function(x){return x.id===p.activityId})[0];if(a)viewSubmission(a,p);else toast('The original activity is no longer in your workspace.');}).catch(platformError)}).catch(platformError);
+    var reviewSeq=PX.routeId;
+    platformApi('submissions').then(function(r){
+      if(reviewSeq!==PX.routeId)return;
+      var p=r.submissions.filter(function(s){return s._postId===review[1]&&s._studentUid===decodeURIComponent(review[2])})[0];
+      if(!p){toast('This board is visible only to the assignment owner after submission.');return;}
+      if(p.activitySnapshot){viewSubmission(p.activitySnapshot,p);return;}
+      // Legacy submissions may not have an activity snapshot.
+      return platformApi('workspace').then(function(w){
+        if(reviewSeq!==PX.routeId)return;
+        var a=w.workspace.activities.filter(function(x){return x.id===p.activityId})[0];
+        if(a)viewSubmission(a,p);else toast('The original activity is no longer in your workspace.');
+      });
+    }).catch(platformError);
     studentDashboard();return;
   }
   var match=location.hash.match(/^#a-([a-zA-Z0-9-]+)$/);
@@ -2297,6 +2325,185 @@ route=function(){
   PX.activePost=null;ST=null;
   studentDashboard();
   if(code){var codeInput=root.querySelector('[aria-label="Class code"]');if(codeInput)codeInput.value=fmtCode(code);toast('Select Open code to verify your Classroom assignment.');}
+};
+
+/* Classroom dashboards and opt-in group project boards. */
+function dashboardAdd(parent){for(var i=1;i<arguments.length;i++)add(parent,arguments[i])}
+
+function dashboardMessage(parent,message){dashboardAdd(parent,el('p',{class:'muted',text:message}))}
+function dashboardError(parent,error){dashboardAdd(parent,el('p',{class:'err',role:'alert',text:error.message||String(error)}))}
+function teacherDashboard(courseId){
+ var seq=PX.routeId,body=el('div',{class:'stack'});
+ fill(root,topBar(),el('div',{class:'row'},el('h2',{text:courseId?'Classroom assignments':'Your classrooms'}),el('a',{class:'btn',href:'#teacher/editor',text:'Assignment editor'})),body);
+ if(courseId)dashboardAdd(body,el('a',{class:'btn ghost',href:'#teacher',text:'← All classrooms'}));
+ dashboardMessage(body,'Loading classrooms…');
+ var courseError=null;
+ Promise.all([platformApi('teacher/dashboard'),classroomReady('teacher')?platformApi('classroom/courses?role=teacher',undefined,true).catch(function(e){courseError=e;return {courses:[]}}):Promise.resolve({courses:[]})]).then(function(results){
+  if(seq!==PX.routeId)return;body.replaceChildren();
+  var assignments=results[0].assignments||[],courses=new Map();
+  assignments.forEach(function(a){courses.set(a.courseId,{id:a.courseId,name:a.courseName||a.className})});
+  (results[1].courses||[]).forEach(function(c){courses.set(c.id,c)});PX.dashboardCourses=Array.from(courses.values());
+  if(!classroomReady('teacher'))dashboardAdd(body,el('div',{class:'panel stack'},el('p',{text:'Connect Google Classroom to load all the classrooms you teach.'}),el('button',{class:'btn primary',onclick:function(){connectClassroom('teacher',function(){route()})},text:'Connect Google Classroom'})));
+  if(courseError)dashboardError(body,courseError);
+  if(courseId){
+   dashboardAdd(body,el('a',{class:'btn ghost',href:'#teacher',text:'← All classrooms'}));
+   var course=courses.get(courseId)||{id:courseId,name:'Classroom'};
+   dashboardAdd(body,el('h3',{text:course.name}),el('button',{class:'btn primary',onclick:function(){newCourseAssignment(course)},text:'Create assignment for this classroom'}));
+   var issued=assignments.filter(function(a){return a.courseId===courseId});
+   if(!issued.length)dashboardMessage(body,'No assignments have been issued here through Hex Connections yet.');
+   issued.forEach(function(a){dashboardAdd(body,teacherAssignmentCard(a))});
+  }else{
+   if(!courses.size)dashboardMessage(body,'Your classrooms will appear here after you connect Google Classroom.');
+   var grid=el('div',{class:'grid2'});
+   courses.forEach(function(c){var issued=assignments.filter(function(a){return a.courseId===c.id});dashboardAdd(grid,el('div',{class:'panel stack'},el('h3',{text:c.name}),el('p',{text:issued.length+' issued assignment'+(issued.length===1?'':'s')+' · '+issued.reduce(function(n,a){return n+a.submissions},0)+' submissions'}),el('a',{class:'btn primary',href:'#teacher/class-'+encodeURIComponent(c.id),text:'View classroom'})))});dashboardAdd(body,grid);
+  }
+ }).catch(function(e){if(seq===PX.routeId){body.replaceChildren();dashboardError(body,e)}});
+}
+function teacherAssignmentCard(a){return el('div',{class:'panel stack'},el('div',{class:'row'},el('h3',{text:a.title}),el('span',{class:'chip',text:a.status==='PUBLISHED'?(a.open?'Open':'Closed'):'Publication pending'})),el('p',{text:a.turnedIn+' turned in · '+a.submissions+' saved submissions'+(a.due?' · Due '+a.due:'')}),el('div',{class:'row'},el('a',{class:'btn primary',href:'#teacher/post-'+a.id,text:'View submissions & groups'}),el('a',{class:'btn',href:'#teacher/edit-'+encodeURIComponent(a.activityId),text:'Edit assignment'}),a.classroomUrl?el('a',{class:'btn ghost',href:a.classroomUrl,target:'_blank',rel:'noopener',text:'Open Classroom'}):null))}
+function newCourseAssignment(course){
+ if(PX.teacherData)DATA=clone(PX.teacherData);oldTeacher();
+ var cls=TW.classes.find(function(c){return c.classroomId===course.id});
+ if(!cls){cls={id:uid(),name:course.name,classroomId:course.id};TW.classes.push(cls)}
+ var act=TW.activities.find(function(x){return isUntouched(x)&&!Object.keys(x.assign||{}).length})||blankActivity();act.assign[cls.id]={code:newCode(TW),open:true,due:''};if(!TW.activities.some(function(x){return x.id===act.id}))TW.activities.push(act);TS.sel=act.id;TS.tab='setup';saveWork();remember();location.hash='teacher/edit-'+act.id;
+}
+function teacherPostDashboard(postId){
+ var seq=PX.routeId,body=el('div',{class:'stack'});
+ fill(root,topBar(),el('a',{class:'btn ghost',href:'#teacher',text:'← Classrooms'}),el('h2',{text:'Assignment submissions'}),body);dashboardMessage(body,'Loading submissions…');
+ Promise.all([platformApi('teacher/dashboard'),platformApi('submissions?postId='+encodeURIComponent(postId)),platformApi('posts/'+postId+'/groups').catch(function(e){if(e.code==='group-setup')return {groups:[],setupError:e.message};throw e})]).then(function(r){
+  if(seq!==PX.routeId)return;body.replaceChildren();var a=r[0].assignments.find(function(x){return x.id===postId});
+  if(!a){dashboardMessage(body,'Assignment not found in your classrooms.');return;}
+  dashboardAdd(body,el('h3',{text:a.title}),el('p',{class:'muted',text:a.courseName+' · '+a.submissions+' submissions'}),el('div',{class:'row'},el('a',{class:'btn',href:'#teacher/edit-'+encodeURIComponent(a.activityId),text:'Edit assignment'}),el('button',{class:'btn',onclick:function(){route()},text:'Refresh submissions'})));
+  var subs=r[1].submissions||[];
+  if(!subs.length)dashboardMessage(body,'No student submissions yet.');
+  subs.forEach(function(p){dashboardAdd(body,el('div',{class:'panel row',style:'justify-content:space-between'},el('div',null,el('b',{text:p.name}),el('p',{class:'muted',text:(p.group?p.group.name+' · ':'')+p._status.replace(/_/g,' ').toLowerCase()+(p._grade==null?'':' · '+p._grade+' / '+p._maxPoints)})),el('button',{class:'btn primary',onclick:function(){var act=p.activitySnapshot||(PX.teacherData&&PX.teacherData.activities.find(function(x){return x.id===p.activityId}));if(act)viewSubmission(act,p);else toast('The activity snapshot is unavailable.')},text:'View board & grade'})))});
+  dashboardAdd(body,el('h3',{text:'Group project boards'}),el('p',{class:'muted',text:'Create a group and share its code with enrolled students. Each member submits their own Classroom assignment.'}),el('button',{class:'btn',disabled:!!r[2].setupError,onclick:function(){createProjectGroup(postId)},text:'Create group'}));
+  if(r[2].setupError)dashboardMessage(body,r[2].setupError);
+  (r[2].groups||[]).forEach(function(g){dashboardAdd(body,el('div',{class:'panel stack'},el('h3',{text:g.name}),el('p',{text:g.members.length+' / '+g.maxMembers+' members'+(g.members.length?' · '+g.members.map(function(m){return m.name}).join(', '):'')}),el('div',{class:'row'},el('code',{class:'linkcode',text:groupCode(g.code)}),el('button',{class:'btn sm',onclick:function(){copyText(groupCode(g.code),'Group code')},text:'Copy group code'}),el('button',{class:'btn sm',onclick:function(){viewSubmission(r[2].activity,{name:g.name,placements:g.draft.place,connections:activeConns(g.draft.place,g.draft.conns),period:a.className})},text:'View shared board'}))))});
+ }).catch(function(e){if(seq===PX.routeId){body.replaceChildren();dashboardError(body,e)}});
+}
+function groupCode(code){return String(code).match(/.{1,4}/g).join('-')}
+function createProjectGroup(postId){
+ var name=el('input',{maxlength:60,placeholder:'e.g. Group 1','aria-label':'Group name'}),size=el('input',{type:'number',min:2,max:8,value:4,'aria-label':'Maximum group members'}),err=el('p',{class:'err',role:'alert'});
+ var button=el('button',{class:'btn primary',text:'Create shared board',onclick:function(){button.disabled=true;platformApi('posts/'+postId+'/groups',{name:name.value,maxMembers:Number(size.value)}).then(function(){closeModal();route()}).catch(function(e){button.disabled=false;err.textContent=e.message})}});
+ openModal([el('h3',{text:'Create a project group'}),el('label',{class:'fld'},'Group name',name),el('label',{class:'fld'},'Maximum members',size),err,el('div',{class:'row'},button,el('button',{class:'btn ghost',onclick:closeModal,text:'Cancel'}))]);
+}
+function addCodePanel(){
+ var input=el('input',{maxlength:18,placeholder:'Assignment or group code',autocomplete:'off',autocapitalize:'characters','aria-label':'Assignment or group code'}),err=el('p',{class:'err',role:'alert'});
+ var button=el('button',{class:'btn primary',text:'Add code',onclick:function(){
+  var code=normCode(input.value);if(code.length!==6&&code.length!==12){err.textContent='Enter a 6-character assignment code or a 12-character group code.';return;}
+  function go(){button.disabled=true;platformApi(code.length===12?'groups/join':'resolve',{code:code},true).then(function(r){PX.activePost=null;ST=null;GROUP.current=null;location.hash='a-'+(r.postId||r.id);route()}).catch(function(e){button.disabled=false;err.textContent=e.message})}
+  if(!classroomReady('student'))connectClassroom('student',go);else go();
+ }});input.addEventListener('keydown',function(e){if(e.key==='Enter')button.click()});
+ return el('div',{class:'panel stack'},el('h3',{text:'Add an assignment or group code'}),el('p',{class:'muted',text:'Use the code from your teacher. Group codes open a board shared with your teammates.'}),el('div',{class:'row'},input,button),err);
+}
+studentDashboard=function(){
+ var seq=PX.routeId,body=el('div',{class:'stack'});
+ fill(root,topBar(),el('h2',{text:'Your assignments'}),addCodePanel(),body);dashboardMessage(body,'Loading active assignments…');
+ platformApi('student/dashboard',undefined,classroomReady('student')).then(function(r){
+  if(seq!==PX.routeId)return;body.replaceChildren();
+  if(r.needsClassroom)dashboardAdd(body,el('div',{class:'panel stack'},el('p',{text:'Connect Google Classroom to load all your active assignments.'}),el('button',{class:'btn primary',onclick:function(){connectClassroom('student',function(){route()})},text:'Connect Google Classroom'})));
+  dashboardAdd(body,el('h3',{text:'Active assignments'}));
+  if(!(r.active||[]).length)dashboardMessage(body,'No active assignments are available. Connect Classroom or add a code from your teacher.');
+  (r.active||[]).forEach(function(a){dashboardAdd(body,studentAssignmentCard(a))});
+  if((r.submitted||[]).length){dashboardAdd(body,el('h3',{text:'Submitted and returned'}));r.submitted.forEach(function(a){dashboardAdd(body,studentAssignmentCard(a))})}
+ }).catch(function(e){if(seq===PX.routeId){body.replaceChildren();dashboardError(body,e);dashboardAdd(body,el('button',{class:'btn',onclick:function(){connectClassroom('student',function(){route()})},text:'Reconnect Classroom'}))}});
+};
+function studentAssignmentCard(a){return el('div',{class:'panel row',style:'justify-content:space-between'},el('div',null,el('h3',{text:a.title}),el('p',{class:'muted',text:a.className+(a.due?' · Due '+a.due:'')+(a.classroomStatus?' · '+a.classroomStatus.replace(/_/g,' ').toLowerCase():'' )})),el('a',{class:'btn primary',href:'#a-'+a.id,text:'Open assignment'}))}
+
+var GROUP={current:null,states:{},timer:null,conflict:false};
+function stableBoard(v){return Array.isArray(v)?v.map(stableBoard):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(function(k){return [k,stableBoard(v[k])]})):v}
+function sameBoard(a,b){return JSON.stringify(stableBoard(a&&a.place||{}))===JSON.stringify(stableBoard(b&&b.place||{}))&&JSON.stringify(stableBoard(a&&a.conns||{}))===JSON.stringify(stableBoard(b&&b.conns||{}))}
+function stopGroupPolling(){clearTimeout(GROUP.timer);GROUP.timer=null}
+function adoptGroup(g,postId){
+ if(!g){GROUP.current=null;return null;}
+ var state=GROUP.states[g.id]||{pending:0};
+ state.id=g.id;state.postId=postId;state.group=g;state.revision=g.revision;state.base=clone(g.draft);state.server=clone(g.draft);
+ GROUP.states[g.id]=state;GROUP.current=state;GROUP.conflict=false;return state;
+}
+function applySharedBoard(state,draft){
+ if(!ST||!GROUP.current||GROUP.current.id!==state.id)return;
+ ST.d.place=clone(draft.place||{});ST.d.conns=clone(draft.conns||{});ST.d._groupUnsaved=false;ST.d._groupBase=clone(draft);ST.d._groupRevision=state.revision;
+ localSaveDraft();renderStudentShell();
+}
+function startGroupPolling(){
+ stopGroupPolling();var state=GROUP.current;if(!state)return;
+ function tick(){GROUP.timer=setTimeout(function(){
+  if(!ST||!GROUP.current||GROUP.current.id!==state.id)return;
+  if(document.hidden){tick();return;}
+  platformApi('posts/'+state.postId+'/group').then(function(r){
+   if(!GROUP.current||GROUP.current.id!==state.id)return;
+   state.group=r.group;
+   if(r.group.revision>state.revision&&!state.pending&&!GROUP.conflict&&sameBoard(ST.d,state.base)){
+    state.revision=r.group.revision;state.base=clone(r.group.draft);state.server=clone(r.group.draft);applySharedBoard(state,r.group.draft);
+   }
+  }).catch(function(e){if(e.code==='group-access'){state.blocked=true;stopGroupPolling();toast(e.message);return}}).finally(function(){if(ST&&GROUP.current&&GROUP.current.id===state.id&&!state.blocked)tick()});
+ },5000)}tick();
+}
+function showGroupConflict(state){
+ if(GROUP.conflict)return;GROUP.conflict=true;
+ openModal([el('h3',{text:'A teammate changed this board'}),el('p',{text:'Your edits are still saved in this browser. Save a CSV copy before loading the shared version. Independent changes merge automatically; this edit conflicts with another tile or connection.'}),el('div',{class:'row'},el('button',{class:'btn',onclick:exportMine,text:'Save my CSV copy'}),el('button',{class:'btn primary',onclick:function(){platformApi('posts/'+state.postId+'/group').then(function(r){state.group=r.group;state.base=clone(r.group.draft);state.server=clone(r.group.draft);state.revision=r.group.revision;PX.pendingDraft=null;GROUP.conflict=false;closeModal();applySharedBoard(state,r.group.draft)}).catch(platformError)},text:'Load shared board'}),el('button',{class:'btn ghost',onclick:function(){GROUP.conflict=false;closeModal()},text:'Keep editing locally'}))]);
+}
+var queuePrivateDraft=queueCloudDraft;
+queueCloudDraft=function(){
+ if(!GROUP.current)return queuePrivateDraft();
+ if(!ST||ST.preview||!GA.user)return;
+ var state=GROUP.current;if(state.blocked)return;
+ ST.d._groupUnsaved=true;ST.d._groupBase=clone(state.base);ST.d._groupRevision=state.revision;localSaveDraft();
+ PX.pendingDraft={post:state.postId,group:state,key:draftKey(ST.act.id,ST.cls.id),draft:clone(ST.d),uid:GA.user.uid};
+ clearTimeout(PX.draftTimer);PX.draftTimer=setTimeout(flushCloudDraft,700);
+};
+var flushPrivateDraft=flushCloudDraft;
+flushCloudDraft=function(){
+ if(!PX.pendingDraft||!PX.pendingDraft.group)return flushPrivateDraft();
+ clearTimeout(PX.draftTimer);var item=PX.pendingDraft;PX.pendingDraft=null;var state=item.group;if(state.blocked)return Promise.reject(new Error('You no longer have access to this shared board.'));state.pending++;
+ PX.draftChain=PX.draftChain.catch(function(){}).then(function(){
+  if(!GA.user||GA.user.uid!==item.uid)return;
+  return platformApi('posts/'+item.post+'/group/draft',{base:clone(state.base),draft:item.draft,revision:state.revision}).then(function(r){
+   state.group=r.group;state.revision=r.group.revision;state.server=clone(r.group.draft);
+   var editedAfter=state.pending>1||(PX.pendingDraft&&PX.pendingDraft.group===state)||(ST&&GROUP.current===state&&!sameBoard(ST.d,item.draft));
+   state.base=clone(editedAfter?item.draft:r.group.draft);
+   var stored=lsGet(item.key);if(stored&&!editedAfter&&sameBoard(stored,item.draft))lsSet(item.key,Object.assign({},stored,r.group.draft,{name:stored.name,view:stored.view,_groupUnsaved:false,_groupBase:clone(r.group.draft),_groupRevision:state.revision}));
+   if(ST&&GROUP.current===state&&!editedAfter)applySharedBoard(state,r.group.draft);
+  }).catch(function(e){if(!PX.pendingDraft)PX.pendingDraft=item;if(GROUP.current===state&&e.code==='group-conflict')showGroupConflict(state);throw e});
+ }).finally(function(){state.pending--});PX.draftChain.catch(function(){});return PX.draftChain;
+};
+var renderGroupBoard=renderStudentShell;
+renderStudentShell=function(){
+ renderGroupBoard();if(!GROUP.current||!ST||ST.preview)return;
+ var state=GROUP.current;
+ root.insertBefore(el('div',{class:'panel stack'},el('div',{class:'row'},el('b',{text:'Shared board: '+state.group.name}),el('button',{class:'btn sm',onclick:leaveProjectGroup,text:'Leave group'}),el('span',{class:'chip',text:state.group.members.length+' members'})),el('p',{class:'muted',text:state.group.members.map(function(m){return m.name}).join(', ')+' · Updates every 5 seconds. Each member turns in their own Classroom submission.'}),ST.d._groupUnsaved?el('p',{class:'hint',text:'You have local group changes. Save online to merge them with the shared board.'}):null),root.children[2]||null);
+};
+
+function leaveProjectGroup(){
+ var state=GROUP.current;if(!state)return;
+ var err=el('p',{class:'err',role:'alert'});
+ var leave=el('button',{class:'btn primary',text:'Save and leave group',onclick:function(){
+  leave.disabled=true;queueCloudDraft();flushCloudDraft().then(function(){return platformApi('posts/'+state.postId+'/group/leave',{})}).then(function(){closeModal();GROUP.current=null;PX.activePost=null;ST=null;route()}).catch(function(e){leave.disabled=false;err.textContent=e.message});
+ }});
+ openModal([el('h3',{text:'Leave '+state.group.name+'?'}),el('p',{text:'The shared board stays with the group. Your individual draft and any submitted work are kept. You can join a group again using its code.'}),err,el('div',{class:'row'},leave,el('button',{class:'btn ghost',onclick:closeModal,text:'Cancel'}))]);
+}
+
+var clearDashboardAccount=clearAccountView;
+clearAccountView=function(){stopGroupPolling();GROUP.current=null;GROUP.states={};GROUP.conflict=false;PX.dashboardCourses=[];clearDashboardAccount()};
+var existingPlatformRoute=route;
+route=function(){
+ stopGroupPolling();
+ if(GA.ready&&GA.user&&PX.loaded&&PX.profile&&googleTeacher()&&isTeacherHash()&&!previewing){
+  var classroom=location.hash.match(/^#teacher\/class-(.+)$/),post=location.hash.match(/^#teacher\/post-([a-zA-Z0-9-]+)$/);
+  if(location.hash==='#teacher'||classroom||post){
+   PX.routeId++;caps.teacher=true;ST=null;PX.activePost=null;GROUP.current=null;
+   if(PX.teacherData)DATA=clone(PX.teacherData);
+   if(post)teacherPostDashboard(post[1]);else teacherDashboard(classroom?decodeURIComponent(classroom[1]):null);return;
+  }
+ }
+ if(!/^#a-/.test(location.hash))GROUP.current=null;
+ existingPlatformRoute();
+ var edit=location.hash.match(/^#teacher\/edit-(.+)$/);
+ if(caps.teacher&&TW){
+  if(edit){var id=decodeURIComponent(edit[1]);if(TW.activities.some(function(a){return a.id===id})){TS.sel=id;TS.tab='setup';remember();renderTeacher()}}
+  root.insertBefore(el('a',{class:'btn ghost',href:'#teacher',text:'← Classrooms'}),root.children[1]||null);
+ }
+ if(GROUP.current&&ST)startGroupPolling();
 };
 
 route();

@@ -1,6 +1,6 @@
 {
   "name": "hex-connections",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,7 +8,8 @@
     "deploy": "wrangler deploy",
     "test": "node --test tests/*.test.js",
     "db:create": "wrangler d1 create hex-connections",
-    "db:migrate": "wrangler d1 migrations apply hex-connections --remote"
+    "db:migrate": "wrangler d1 migrations apply hex-connections --remote",
+    "check:deployment": "node scripts/check-deployment.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.0.0"
