@@ -1,9 +1,46 @@
+HOMEPAGE, FOLDERS, CODE-ONLY CLASSES AND SHARING 4.0.0
+=====================================================
+Existing databases need the new shares table before teachers can share:
+  npx wrangler d1 execute hex-connections --remote --file migrations/0004_shares.sql
+Apply 0002 and 0003 first if they are not already applied. Then deploy:
+  npm install
+  npm test
+  npm run deploy
+No new OAuth scopes, secrets or bindings are required. Folders and classes live
+inside the existing teacher workspace JSON, so they need no new tables.
+
+Until 0004 is applied, the Share button reports that sharing needs setup;
+everything else keeps working.
+
+What changes for visitors:
+- Signed-out visitors land on a homepage (#home) that explains hexagonal
+  thinking and the Depth and Complexity icons, with two main actions:
+  Enter a class code (#code) and New Hex Space for teachers (#new).
+- After sign-in, a pending code or "new Hex Space" request resumes
+  automatically. Students never see New Hex Space or share pages.
+- Student-side file save/open (CSV) and the teacher "Upload student files"
+  import were removed. Online submissions are the only student record. Teachers
+  keep vocabulary CSV upload and the submissions CSV download.
+
+Code-only classes: a teacher can add a class without Google Classroom and use
+Post for <class>. Students who enter that class's code join it directly.
+For these classes, the code itself grants access (no Classroom roster check),
+so treat it like a password: close the class or choose New code to stop new
+joins. Grades for code-only classes are stored on the site only.
+
+Classroom classes: Import Classroom classes (account menu or the Hex Space
+sidebar) adds each active course the teacher teaches as a class card.
+
+Share links: /#share-XXXXXXXXXX shows a read-only preview to any signed-in
+teacher, who can copy it into a folder of their own Hex Space. The copy has no
+classes or codes attached. The owner can update the shared copy or stop sharing.
+
 DASHBOARDS AND GROUP PROJECTS 3.0.0
 ==================================
 Existing databases need the new group tables before using shared boards:
   npx wrangler d1 execute hex-connections --remote --file migrations/0003_group_boards.sql
 If migration 0002 has not been applied, apply it as well for vocabulary AI.
-New empty databases can run npm run db:migrate for all three migrations.
+New empty databases can run npm run db:migrate for all migrations.
 Do not rerun the initial schema against an existing database.
 
 Deploy the complete Worker and public assets with npm run deploy. This revision
@@ -25,8 +62,8 @@ members and one group per student per assignment. Google Classroom assignment
 membership is checked before joining, so a code alone does not grant access.
 
 Shared boards autosave and check for teammates' changes every 5 seconds.
-Independent edits merge; conflicting edits keep a local copy and offer CSV
-backup and an explicit Load shared board action. This is polling, without live
+Independent edits merge; conflicting edits keep a local copy and offer an
+explicit Load shared board action. This is polling, without live
 cursors. Polling uses Cloudflare Worker requests and remains subject to plan
 limits. Each member turns in their own Classroom submission. A turn-in stores
 that student's snapshot of the saved group revision; later group edits do not
@@ -73,8 +110,8 @@ both src/worker.js and src/vocabulary.js; copying only one JavaScript file into
 a dashboard editor will not include the imported generator module.
 
 If you originally created tables manually in the D1 Console, do not blindly run
-all migrations over those tables. Apply the idempotent 0002 and 0003 files listed above.
-New EMPTY databases can use npm run db:migrate to install all three migrations.
+all migrations over those tables. Apply the idempotent 0002, 0003 and 0004 files listed above.
+New EMPTY databases can use npm run db:migrate to install all migrations.
 
 No external AI API key is required. The selected model uses Cloudflare's free
 AI allowance. This allowance is shared across the account and is finite; Workers
