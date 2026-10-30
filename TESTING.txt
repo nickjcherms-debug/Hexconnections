@@ -1,9 +1,14 @@
-VERIFICATION — VERSION 4.2.0
+VERIFICATION — VERSION 4.3.0
 ============================
-94 automated tests pass (49 backend, 45 frontend) using in-memory SQLite,
+99 automated tests pass (49 backend, 50 frontend) using in-memory SQLite,
 simulated Firebase/Classroom responses, and execution of the actual frontend
 script in a DOM test harness. No real Google Classroom assignment was created
 or modified by these tests.
+
+New in 4.3.0: posting one Hex Space to several classes at once; posting from a
+class page with a Hex Space picker, repeatedly; new folders from the folder
+drop-down (including inside another folder); deleting a Hex Space with its
+open postings closed; offering to update open postings after an edit.
 
 New in 4.2.0: whole-day dates in the teacher's time zone across daylight saving;
 posting the same Hex Space to a class repeatedly with distinct codes; students

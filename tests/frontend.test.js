@@ -33,7 +33,7 @@ function make(){
  getData(){return DATA},setData(w){DATA=w},setView(fn){viewSubmission=fn},
  setWork(w){TW=w;TS.rows={};TS.sel=w.activities[0].id},setRenderTeacher(fn){renderTeacher=fn},
  setApi(fn){platformApi=fn},setTeacher(fn){startTeacher=fn;teacherDashboard=fn},
- v4:{openPostDialog,studentCard:a=>studentAssignmentCard(a),setPosts(v){PX.posts=v},keyToPath,pathToKey,navItems:()=>navItems(),startPage,renderHome,hexSpaceSidebar,newFolder,deleteFolder,moveActivity,folderById,childFolders,folderActs,canMoveFolder,syncClassroomClasses,importClassroomClasses,sharePreview,copyShared,postManual,codesPane,TS,getTW(){return TW},startTeacher(){startTeacher()},renderTeacher(){renderTeacher()},setSave(fn){saveWorkspaceCloud=fn},setTS(o){Object.assign(TS,o)}}};`;
+ v4:{folderPicker:a=>folderPicker(a),deleteHexSpace:a=>deleteHexSpace(a),publishNow:()=>publishNow(),setTeacherData(v){PX.teacherData=v},openPostDialog,studentCard:a=>studentAssignmentCard(a),setPosts(v){PX.posts=v},keyToPath,pathToKey,navItems:()=>navItems(),startPage,renderHome,hexSpaceSidebar,newFolder,deleteFolder,moveActivity,folderById,childFolders,folderActs,canMoveFolder,syncClassroomClasses,importClassroomClasses,sharePreview,copyShared,postManual,codesPane,TS,getTW(){return TW},startTeacher(){startTeacher()},renderTeacher(){renderTeacher()},setSave(fn){saveWorkspaceCloud=fn},setTS(o){Object.assign(TS,o)}}};`;
  vm.runInContext(script.replace(/startPage\(\);\nroute\(\);\nbootGoogle\(\);\n\}\)\(\);\s*$/,hooks+'})();'),context);
  const h=context.hx;
  function flatten(n=root){return [n,...(n.children||[]).flatMap(flatten)]}
@@ -426,4 +426,64 @@ test('students see a scheduled assignment as "Opens …" instead of an open butt
  const words=all(card).map(n=>n.textContent).join(' ');assert.match(words,/Opens /);assert.doesNotMatch(words,/Open assignment/);
  const open=h.v4.studentCard({id:'p2',title:'Cells',className:'Science club',start:dayOff(-1),startAt:new Date(Date.now()-86400000).toISOString(),due:dayOff(9)});
  assert.match(all(open).map(n=>n.textContent).join(' '),/Open assignment/);
+});
+
+function teacher2(h){
+ h.GA.user={uid:'t'};h.PX.profile={role:'teacher'};h.PX.loaded=true;
+ h.setWork({version:4,folders:[{id:'bio',name:'Biology',parent:null}],classes:[{id:'club',name:'Science club'},{id:'gc-1',name:'Period 2',classroomId:'111'},{id:'p4',name:'Period 4'}],activities:[{id:'a1',title:'Cells',folder:'bio',terms:[{n:1,id:1,term:'Nucleus'}],assign:{}},{id:'a2',title:'Atoms',terms:[{n:1,id:1,term:'Proton'}],assign:{}}]});
+ h.setRenderTeacher(()=>{});
+}
+const everything=t=>[...t.flatten(),...t.flatten(t.body)];
+test('one Post dialog posts to several classes at once, each with its own code',async()=>{
+ const t=make();const {h,text}=t;teacher2(h);const v=h.v4;v.setSave(async()=>({revision:2}));v.setPosts([]);
+ const sent=[];h.setApi(async(path,body,withClassroom)=>{if(path==='posts/new'){sent.push([body.classId,withClassroom]);return {id:'p'+sent.length,code:'ABC2'+sent.length+'X',title:body.title,start:body.start,due:body.due}}if(path==='teacher/dashboard')return {assignments:[]};throw new Error(path)});
+ v.openPostDialog(v.getTW().activities[0]);
+ const byId=id=>everything(t).find(n=>n.attrs?.id===id);
+ byId('pd-c-club').checked=true;byId('pd-c-p4').checked=true;byId('pd-c-club').listeners.change();
+ assert.ok(everything(t).some(n=>n.textContent==='Post to 2 classes'));
+ everything(t).find(n=>n.textContent==='Post to 2 classes').listeners.click();await settle();
+ assert.equal(JSON.stringify(sent),JSON.stringify([['club',false],['p4',false]]));
+ assert.match(text(),/Science club/);assert.match(text(),/Period 4/);assert.match(text(),/ABC-21X/);assert.match(text(),/ABC-22X/);
+});
+test('a class page can post any Hex Space to that class, as many times as needed',async()=>{
+ const t=make();const {h,text}=t;teacher2(h);const v=h.v4;v.setSave(async()=>({revision:2}));
+ const sent=[];h.setApi(async(path,body)=>{if(path==='posts/new'){sent.push(body);return {id:'p'+sent.length,code:'XYZ23'+sent.length,title:body.title}}if(path==='teacher/dashboard')return {assignments:[]};throw new Error(path)});
+ v.openPostDialog(null,null,{pickActivity:true,classIds:['p4']});
+ const byId=id=>everything(t).find(n=>n.attrs?.id===id);
+ assert.ok(byId('pd-act'));assert.equal(byId('pd-c-p4').checked,true);assert.ok(!byId('pd-c-club').checked);
+ byId('pd-act').value='a2';byId('pd-act').listeners.change();assert.equal(byId('pd-name').value,'Atoms');
+ everything(t).find(n=>n.textContent==='Post').listeners.click();await settle();
+ v.openPostDialog(null,null,{pickActivity:true,classIds:['p4']});byId('pd-act').value='a2';byId('pd-act').listeners.change();byId('pd-name').value='Atoms — round 2';
+ everything(t).filter(n=>n.textContent==='Post').at(-1).listeners.click();await settle();
+ assert.equal(JSON.stringify(sent.map(b=>[b.activityId,b.classId,b.title])),JSON.stringify([['a2','p4','Atoms'],['a2','p4','Atoms — round 2']]));
+});
+test('the folder drop-down can create a folder inside another and move the Hex Space into it',()=>{
+ const t=make();const {h}=t;teacher2(h);const v=h.v4,TW=v.getTW();const a=TW.activities[1];
+ const picker=v.folderPicker(a);const sel=[picker,...picker.children].find(n=>n.attrs?.id==='f-folder');
+ assert.ok(sel.children.some(n=>n.textContent==='+ New folder…'));
+ sel.value='__new';sel.listeners.change();
+ const byId=id=>everything(t).find(n=>n.attrs?.id===id);
+ byId('nf-name').value='Unit 2';byId('nf-parent').value='bio';everything(t).find(n=>n.textContent==='Create folder').listeners.click();
+ const f=TW.folders.find(x=>x.name==='Unit 2');assert.ok(f);assert.equal(f.parent,'bio');assert.equal(a.folder,f.id);
+});
+test('deleting a Hex Space saves online, can close its open postings and keeps other Hex Spaces',async()=>{
+ const t=make();const {h,text}=t;teacher2(h);const v=h.v4,TW=v.getTW();
+ let saved=null;v.setSave(async()=>{saved=JSON.parse(JSON.stringify(TW));return {revision:3}});
+ v.setPosts([{id:'p1',activityId:'a1',title:'Cells',className:'Science club',open:true,status:'PUBLISHED',manual:true},{id:'p2',activityId:'a1',title:'Cells',className:'Period 4',open:false,status:'PUBLISHED',manual:true}]);
+ const calls=[];h.setApi(async(path,body)=>{calls.push([path,body&&body.open]);if(path==='teacher/dashboard')return {assignments:[]};return {}});
+ v.deleteHexSpace(TW.activities[0]);assert.match(text(),/Delete “Cells”\?/);assert.match(text(),/close its 1 open posting/);
+ everything(t).find(n=>n.textContent==='Delete Hex Space').listeners.click();await settle();
+ assert.equal(JSON.stringify(TW.activities.map(a=>a.id)),JSON.stringify(['a2']));assert.equal(saved.activities.length,1);
+ assert.equal(JSON.stringify(calls.filter(c=>c[0].startsWith('posts/'))),JSON.stringify([['posts/p1/edit',false]]));assert.match(text(),/Deleted “Cells”/);
+});
+test('saving changes to a posted Hex Space offers to update its open postings',async()=>{
+ const t=make();const {h,text}=t;teacher2(h);const v=h.v4,TW=v.getTW();
+ v.setTeacherData(JSON.parse(JSON.stringify(TW)));TW.activities[0].terms.push({n:2,id:2,term:'Membrane'});
+ v.setSave(async()=>{v.setTeacherData(JSON.parse(JSON.stringify(TW)));return {revision:3}});
+ v.setPosts([{id:'p1',activityId:'a1',title:'Cells',className:'Science club',open:true,status:'PUBLISHED',manual:true},{id:'p9',activityId:'a2',title:'Atoms',className:'Period 4',open:true,status:'PUBLISHED',manual:true}]);
+ const calls=[];h.setApi(async(path,body)=>{calls.push([path,body&&body.refresh]);if(path==='teacher/dashboard')return {assignments:[]};return {}});
+ v.publishNow();await settle();
+ assert.match(text(),/Update the posted copy too\?/);assert.match(text(),/Cells · Science club/);assert.doesNotMatch(text(),/Atoms · Period 4/);
+ everything(t).find(n=>n.textContent==='Update postings').listeners.click();await settle();
+ assert.equal(JSON.stringify(calls.filter(c=>c[0].startsWith('posts/'))),JSON.stringify([['posts/p1/edit',true]]));assert.match(text(),/Updated 1 posting/);
 });
