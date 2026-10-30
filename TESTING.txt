@@ -1,9 +1,16 @@
-VERIFICATION — VERSION 4.1.0
+VERIFICATION — VERSION 4.2.0
 ============================
-87 automated tests pass (44 backend, 43 frontend) using in-memory SQLite,
+94 automated tests pass (49 backend, 45 frontend) using in-memory SQLite,
 simulated Firebase/Classroom responses, and execution of the actual frontend
 script in a DOM test harness. No real Google Classroom assignment was created
 or modified by these tests.
+
+New in 4.2.0: whole-day dates in the teacher's time zone across daylight saving;
+posting the same Hex Space to a class repeatedly with distinct codes; students
+blocked before the start date; late flag from the due date; editing, closing,
+reopening and refreshing a posting; Classroom scheduled drafts and due dates;
+refused Classroom postings leave nothing pending; migration 0005 tested with
+existing submissions and group boards.
 
 New in 4.1.0: email + password accounts (verified only), locked account types,
 teacher-only routes refusing students, Classroom requiring a linked Google

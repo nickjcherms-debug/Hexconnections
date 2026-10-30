@@ -1,3 +1,25 @@
+POSTING WITH START AND DUE DATES 4.2.0
+=====================================
+Database: migrations/0005_multiple_posts.sql removes the old one-post-per-class
+limit. It was applied to the live database on 2026-10-30 (the posts table was
+empty). For any other database:
+  npx wrangler d1 execute hex-connections --remote --file migrations/0005_multiple_posts.sql
+Run it as one file; it rebuilds the posts table and keeps every row and link.
+
+What changed:
+- Dates are set only when posting, never on a class. A Hex Space's "Post" tab
+  (formerly Classes & codes) lists every posting and has "Post to a class".
+- Each posting is its own assignment: own name, code, start date, due date and
+  points (Classroom). The same Hex Space can be posted to the same class again.
+- Start date: students can't open, join, save or turn in before it. Google
+  Classroom postings with a future start are created as scheduled drafts and
+  appear in Classroom on that day.
+- Due date: the end of that day (11:59 PM) in the teacher's time zone, sent to
+  Classroom in UTC. Late work is accepted and marked Late.
+- Edit dates & details, Close/Reopen and "also update hexagons from this Hex
+  Space" work per posting. Closing doesn't need a Classroom connection.
+- Students see a not-yet-open assignment as "Opens <date>".
+
 LOGIN, MENUS, PAGE ADDRESSES AND CLASS MANAGEMENT 4.1.0
 =======================================================
 One-time Firebase step (needed for email login):

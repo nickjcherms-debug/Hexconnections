@@ -2,6 +2,7 @@ import {handleGroupRoutes,groupForUser} from './groups.js';
 import {handleDashboardRoutes} from './dashboards.js';
 import { generateVocabulary } from './vocabulary.js';
 import {handleShareRoutes} from './shares.js';
+import {handlePostingRoutes,assertStarted,isLate} from './postings.js';
 // Cloudflare Worker. Firebase verifies accounts; every SQL query enforces ownership.
 // Google access tokens are used only for the current request and never persisted.
 const NOW = () => new Date().toISOString();
@@ -171,7 +172,7 @@ function submissionPayload(draft, post, user) {
   if (used < need) fail(400, 'Use the required number of terms with justified connections before submitting.');
   return { activitySnapshot:act,activityId:act.id,activityTitle:act.title,classId:info.cls.id,className:info.cls.name,period:info.cls.name,
     name:user.name,email:user.email,submittedAt:NOW(),placements:draft.place,connections:validConns,termsUsed:used,
-    due:info.asg.due || '',late:!!(info.asg.due && Date.now()>new Date(info.asg.due+'T23:59:59Z').getTime()) };
+    due:info.asg.due || '',dueAt:info.asg.dueAt || '',late:isLate(info.asg) };
 }
 async function studentInPost(db, g, user, post) {
   if (post.status !== 'PUBLISHED') fail(404, 'This assignment is unavailable.');
@@ -190,6 +191,7 @@ const isManual = post => String(post.course_id || '').startsWith('manual:');
 async function joinManual(db, user, post) {
   if (post.status !== 'PUBLISHED') fail(404, 'This assignment is unavailable.');
   if (parse(post.body)?.asg?.open === false) fail(403, 'This assignment is closed for your class.');
+  assertStarted(parse(post.body), fail);
   await run(db, `INSERT INTO submissions(post_id,uid,google_sub,classroom_submission_id,updated_at,classroom_status)
     VALUES(?,?,?,?,?,?) ON CONFLICT(post_id,uid) DO NOTHING`, post.id, user.uid, user.googleSub, 'code', NOW(), 'NEW');
 }
@@ -214,8 +216,9 @@ export async function handle(request, env, net = fetch) {
     await run(db,'INSERT INTO users(uid,email,name,created_at) VALUES(?,?,?,?) ON CONFLICT(uid) DO UPDATE SET email=excluded.email,name=excluded.name',user.uid,user.email,user.name,NOW());
     const profile = await one(db,'SELECT uid,email,name,role FROM users WHERE uid=?',user.uid);
     const path=url.pathname;
-    const context={request,url,db,user,profile,input,fail,json,boardDraft,studentInPost,allPages,isManual,joinManual,manualMember,getGoogle:()=>classroomContext(request,user,net)};
+    const context={request,url,db,user,profile,input,fail,json,boardDraft,studentInPost,allPages,isManual,joinManual,manualMember,origin:env.PUBLIC_ORIGIN||url.origin,getGoogle:()=>classroomContext(request,user,net)};
     const shareRoute=await handleShareRoutes(context);if(shareRoute)return shareRoute;
+    const postingRoute=await handlePostingRoutes(context);if(postingRoute)return postingRoute;
     const dashboard=await handleDashboardRoutes(context);if(dashboard)return dashboard;
     const groupRoute=await handleGroupRoutes(context);if(groupRoute)return groupRoute;
     if (path==='/api/me' && request.method==='GET') return json({profile});
@@ -363,6 +366,7 @@ export async function handle(request, env, net = fetch) {
       if(!post) fail(404,'Assignment not found.');
       const info=parse(post.body);
       if(!action && request.method==='GET') {
+        if(post.owner_uid!==user.uid) assertStarted(info,fail);
         if(isManual(post)){ if(post.owner_uid!==user.uid) await manualMember(db,user,post); }
         else {
           const g=await classroomContext(request,user,net);
@@ -399,6 +403,7 @@ export async function handle(request, env, net = fetch) {
         const s=await one(db,'SELECT uid FROM submissions WHERE post_id=? AND uid=?',id,user.uid);
         if(!s) fail(403,'Open the assignment through Google Classroom first.');
         if(info.asg.open===false || post.status!=='PUBLISHED') fail(403,'This assignment is closed.');
+        assertStarted(info,fail);
         const b=await input(request), draft=boardDraft(b.draft,info.act);
         await run(db,'UPDATE submissions SET draft=?,updated_at=? WHERE post_id=? AND uid=?',JSON.stringify(draft),NOW(),id,user.uid);
         return json({savedAt:draft._savedAt});
@@ -412,6 +417,7 @@ export async function handle(request, env, net = fetch) {
           return json({reclaimed:true});
         }
         if(info.asg.open===false) fail(403,'Your teacher has closed this assignment.');
+        assertStarted(info,fail);
         if(row.status==='TURNED_IN') fail(409,'Reclaim the assignment before changing submitted work.','needs-reclaim');
         const b=await input(request),group=await groupForUser(db,id,user.uid);
         if(group&&b.groupRevision!==group.revision)fail(409,'Save and refresh the shared board before turning it in.','group-not-saved');
@@ -430,6 +436,7 @@ export async function handle(request, env, net = fetch) {
           return json({reclaimed:true});
         }
         if(info.asg.open===false) fail(403,'Your teacher has closed this assignment.');
+        assertStarted(info,fail);
         if(sub.state==='TURNED_IN') {
           const prior=await one(db,'SELECT payload,status FROM submissions WHERE post_id=? AND uid=?',id,user.uid);
           if(prior?.status==='SAVED_PENDING_CLASSROOM' && prior.payload){

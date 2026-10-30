@@ -205,3 +205,9 @@ menu under their name. Pages now have clean addresses such as
 /teacher/classes and /student/assignments. Teachers choose which Google
 Classroom classes to import, can resync names with Classroom, and can remove
 any class. See DEPLOYMENT.txt for the one-time Firebase Email/Password step.
+
+VERSION 4.2.0: POSTING WITH DATES
+Post a Hex Space from its Post tab. Each posting chooses a class, an assignment
+name, a start date and an optional due date (end of day, your time zone), and
+gets its own code. Post the same Hex Space to a class again for another round.
+Students can open it from the start date; late work is accepted and marked Late.

@@ -2,7 +2,7 @@ const rows=async(db,sql,...args)=>(await db.prepare(sql).bind(...args).all()).re
 const parse=s=>JSON.parse(s);
 function card(p,s={}){
  const info=parse(p.body);
- return {id:p.id,activityId:p.activity_id,classId:p.class_id,title:info.act.title,className:info.cls.name,courseId:p.course_id,courseName:info.courseName||info.cls.name,manual:String(p.course_id||'').startsWith('manual:'),code:info.asg.code||'',classroomUrl:p.classroom_url,status:p.status,due:info.asg.due||'',open:info.asg.open!==false,
+ return {id:p.id,activityId:p.activity_id,classId:p.class_id,title:info.act.title,className:info.cls.name,courseId:p.course_id,courseName:info.courseName||info.cls.name,manual:String(p.course_id||'').startsWith('manual:'),code:info.asg.code||'',classroomUrl:p.classroom_url,status:p.status,due:info.asg.due||'',dueAt:info.asg.dueAt||'',start:info.asg.start||'',startAt:info.asg.startAt||'',tz:info.asg.tz||'',maxPoints:p.max_points,open:info.asg.open!==false,
  submissions:Number(p.submission_count||0),turnedIn:Number(p.turned_in_count||0),...s};
 }
 export async function handleDashboardRoutes(c){
