@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Hexagonal thinking boards for classrooms: students arrange vocabulary hexagons and explain every connection, with optional Depth and Complexity icons.">
-<meta name="hex-connections-build" content="4.0.0">
+<meta name="hex-connections-build" content="4.1.0">
 <title>Hex Connections</title>
 
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=JetBrains+Mono:wght@500;700&display=swap">
@@ -68,7 +68,7 @@ h3{font-family:var(--f-display);font-weight:600;font-size:1.05rem;margin:0;text-
 .stack{display:flex;flex-direction:column;gap:12px}
 label.fld{display:flex;flex-direction:column;gap:4px;font-weight:700;font-size:.85rem;min-width:0}
 label.fld span.hint,.hint{font-weight:400;color:var(--muted);font-size:.8rem}
-input[type=text],input[type=number],textarea,select{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:8px 10px;width:100%;font-weight:400;font-size:.95rem}
+input[type=text],input[type=email],input[type=password],input[type=number],textarea,select{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:8px 10px;width:100%;font-weight:400;font-size:.95rem}
 input[type=file]{max-width:100%;font-size:.85rem}
 textarea{resize:vertical;min-height:90px;line-height:1.45}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
@@ -272,13 +272,13 @@ td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:now
 .nav-link.login:hover{box-shadow:inset 0 0 0 1.5px var(--blue)}
 .nav-mobile{display:none}
 .menu-wrap{position:relative}
-.menu-pop{position:absolute;right:0;top:calc(100% + 6px);z-index:30;min-width:230px;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 34px var(--shadow);padding:6px;display:flex;flex-direction:column}
+.menu-pop{position:absolute;right:0;top:calc(100% + 6px);z-index:30;min-width:230px;max-width:calc(100vw - 32px);background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 34px var(--shadow);padding:6px;display:flex;flex-direction:column}
 .menu-item{display:block;width:100%;text-align:left;padding:9px 12px;border-radius:8px;border:0;background:transparent;color:var(--ink);font:inherit;font-size:.92rem;cursor:pointer;text-decoration:none}
 .menu-item:hover,.menu-item:focus-visible{background:var(--paper)}
 .menu-item.danger{color:var(--danger)}
 .menu-sep{height:1px;background:var(--line);margin:4px 6px}
 .menu-note{padding:6px 12px;font-size:.8rem;color:var(--muted)}
-.acct-btn{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acct-btn{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media (max-width:860px){
   .nav{display:none}
   .nav-mobile{display:block;margin-left:auto}
@@ -317,6 +317,36 @@ td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:now
 .credit{font-size:.82rem;color:var(--muted);max-width:80ch}
 .class-card .chip{flex:none}
 .class-card .btn{align-self:flex-start}
+.login-page{max-width:500px;margin:24px auto 0;display:flex;flex-direction:column;gap:14px}
+.login-card{display:flex;flex-direction:column;gap:12px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field-label{font-weight:700;font-size:.9rem}
+.btn.google{display:inline-flex;align-items:center;justify-content:center;gap:10px;background:var(--panel);color:var(--ink);border:1.5px solid var(--line);min-height:44px;font-weight:700}
+.btn.google:hover{border-color:var(--blue)}
+.or{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.85rem}
+.or::before,.or::after{content:'';flex:1;height:1px;background:var(--line)}
+.role-picks{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.role-pick{display:flex;flex-direction:column;gap:4px;text-align:left;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer;font:inherit}
+.role-pick span{font-size:.86rem;color:var(--muted)}
+.role-pick:hover{border-color:var(--blue)}
+.role-pick.on{border-color:var(--blue);box-shadow:0 0 0 3px color-mix(in srgb,var(--blue) 25%,transparent);background:var(--t1)}
+.swap{margin:0;font-size:.95rem}
+.swap a{font-weight:700}
+.ok-note{margin:0;color:var(--ok)}
+.ok-note:empty,.login-card .err:empty{display:none}
+.home-note{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between}
+.page-head{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.share-row{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+.share-row.off{opacity:.7}
+.btn.danger-ghost{color:var(--danger);background:transparent;border:1.5px solid color-mix(in srgb,var(--danger) 45%,transparent)}
+@media (max-width:520px){.role-picks{grid-template-columns:1fr}}
+.pick-list{display:flex;flex-direction:column;gap:2px;max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:4px}
+.pick-row{display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;cursor:pointer}
+.pick-row:hover{background:var(--t1)}
+.pick-note{padding:6px 8px;font-size:.92rem}
+.sync-body{gap:14px}
+.danger-text{color:var(--danger)}
+.cls-row.manage{grid-template-columns:minmax(0,1fr) auto auto}
 .hero-login{margin:14px 0 0;color:var(--muted);font-size:.95rem}
 .hero-login a{font-weight:700}
 .benefits{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
@@ -421,6 +451,88 @@ var DIRS = [[1,0],[1,-1],[0,-1],[-1,0],[-1,1],[0,1]];
 var SVGNS = 'http://www.w3.org/2000/svg';
 var root = document.getElementById('root');
 
+/* ---------- Page addresses ----------
+   The app routes on short keys such as "#teacher/class-ID". In a browser, the
+   address bar shows clean paths instead (/teacher/classes/ID), and old "#" links
+   (including ones already posted in Google Classroom) forward to the new path.
+   Without the History API (tests, downloaded copies) the keys stay in the hash. */
+var PATH_MODE = typeof history !== 'undefined' && !!history.pushState && /^https?:$/.test(location.protocol);
+function encSeg(v){ return encodeURIComponent(v); }
+function decSeg(v){ try { return decodeURIComponent(v); } catch(e){ return v; } }
+function keyToPath(key){
+  key = key || ''; if (key.charAt(0) === '#') key = key.slice(1);
+  var m;
+  if (key === '') return '/student/assignments';
+  if (key === 'home') return '/';
+  if (key === 'signin') return '/login';
+  if (key === 'signup') return '/signup';
+  if (key === 'code') return '/code';
+  if (key === 'new') return '/new';
+  if (key === 'teacher') return '/teacher/classes';
+  if (key === 'teacher/editor') return '/teacher/hex-space';
+  if (key === 'teacher/new') return '/teacher/hex-space/new';
+  if (key === 'teacher/shared') return '/teacher/shared';
+  if ((m = key.match(/^c-(.+)$/))) return '/code/' + encSeg(m[1]);
+  if ((m = key.match(/^share-(.+)$/))) return '/share/' + encSeg(m[1]);
+  if ((m = key.match(/^teacher\/class-(.+)$/))) return '/teacher/classes/' + encSeg(decSeg(m[1]));
+  if ((m = key.match(/^teacher\/post-(.+)$/))) return '/teacher/assignments/' + encSeg(m[1]);
+  if ((m = key.match(/^teacher\/edit-(.+)$/))) return '/teacher/hex-space/' + encSeg(decSeg(m[1]));
+  if ((m = key.match(/^a-(.+)$/))) return '/student/assignments/' + encSeg(m[1]);
+  if ((m = key.match(/^review-([^~]+)~(.+)$/))) return '/teacher/review/' + encSeg(m[1]) + '/' + encSeg(decSeg(m[2]));
+  return null;
+}
+function pathToKey(path){
+  path = (path || '/').replace(/\/+$/, '') || '/';
+  var m;
+  var exact = {'/':'#home','/index.html':'#home','/login':'#signin','/signup':'#signup','/code':'#code','/new':'#new',
+    '/teacher':'#teacher','/teacher/classes':'#teacher','/teacher/hex-space':'#teacher/editor','/teacher/hex-space/new':'#teacher/new',
+    '/teacher/shared':'#teacher/shared','/student':'','/student/assignments':''};
+  if (Object.prototype.hasOwnProperty.call(exact, path)) return exact[path];
+  if ((m = path.match(/^\/code\/([^/]+)$/))) return '#c-' + decSeg(m[1]);
+  if ((m = path.match(/^\/share\/([^/]+)$/))) return '#share-' + decSeg(m[1]);
+  if ((m = path.match(/^\/teacher\/classes\/([^/]+)$/))) return '#teacher/class-' + encodeURIComponent(decSeg(m[1]));
+  if ((m = path.match(/^\/teacher\/assignments\/([^/]+)$/))) return '#teacher/post-' + decSeg(m[1]);
+  if ((m = path.match(/^\/teacher\/hex-space\/([^/]+)$/))) return '#teacher/edit-' + encodeURIComponent(decSeg(m[1]));
+  if ((m = path.match(/^\/student\/assignments\/([^/]+)$/))) return '#a-' + decSeg(m[1]);
+  if ((m = path.match(/^\/teacher\/review\/([^/]+)\/([^/]+)$/))) return '#review-' + decSeg(m[1]) + '~' + encodeURIComponent(decSeg(m[2]));
+  return '#home';
+}
+var navQueued = false;
+var NAV = {
+  get hash(){ return PATH_MODE ? pathToKey(location.pathname) : location.hash; },
+  set hash(v){
+    v = v ? (String(v).charAt(0) === '#' ? String(v) : '#' + v) : '';
+    if (!PATH_MODE){ location.hash = v; return; }
+    var path = keyToPath(v) || '/';
+    if (path === location.pathname && !location.hash) return;
+    history.pushState(null, '', path);
+    if (!navQueued){ navQueued = true; setTimeout(function(){ navQueued = false; onNavigate(); }, 0); }
+  }
+};
+function onNavigate(){ if (ST) saveDraft(); previewing = false; ST = null; route(); }
+function legacyToPath(){
+  /* Old "#" links (and Classroom attachments) forward to the clean path. */
+  if (!PATH_MODE || !location.hash || location.hash === '#') return false;
+  var path = keyToPath(location.hash);
+  if (path === null) return false;
+  history.replaceState(null, '', path + (location.search || ''));
+  return true;
+}
+function routeHref(href){ return PATH_MODE && typeof href === 'string' && href.charAt(0) === '#' && keyToPath(href) !== null ? keyToPath(href) : href; }
+if (PATH_MODE){
+  window.addEventListener('popstate', function(){ onNavigate(); });
+  document.addEventListener('click', function(e){
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    var a = e.target && e.target.closest && e.target.closest('a[href]');
+    if (!a || a.target || a.hasAttribute('download')) return;
+    var url; try { url = new URL(a.getAttribute('href'), location.href); } catch(err){ return; }
+    if (url.origin !== location.origin || url.pathname.indexOf('/api/') === 0) return;
+    if (url.hash && url.pathname === location.pathname && keyToPath(url.hash) === null) return;
+    e.preventDefault();
+    NAV.hash = url.hash && keyToPath(url.hash) !== null ? url.hash : pathToKey(url.pathname);
+  });
+}
+
 /* Firebase signs users in; the Cloudflare API enforces ownership and Classroom membership. */
 var AUTH_CONFIG;
 try { AUTH_CONFIG = JSON.parse(document.getElementById('hx-auth-config').textContent); }
@@ -497,7 +609,7 @@ function bootGoogle(){
     GA.sdk = modules[1];
     GA.auth = GA.sdk.getAuth(modules[0].initializeApp(AUTH_CONFIG.firebase));
     GA.auth.useDeviceLanguage();
-    return GA.sdk.setPersistence(GA.auth, GA.sdk.browserSessionPersistence);
+    return GA.sdk.setPersistence(GA.auth, GA.sdk.browserLocalPersistence || GA.sdk.browserSessionPersistence);
   }).then(function(){
     GA.sdk.onAuthStateChanged(GA.auth, function(user){
       var changed = (GA.user && GA.user.uid) !== (user && user.uid);
@@ -539,6 +651,7 @@ function setAttrs(e, a){
     else if (k === 'text') e.textContent = v;
     else if (k === 'value') e.value = v;
     else if (k === 'checked') e.checked = !!v;
+    else if (k === 'href') e.setAttribute(k, routeHref(v));
     else e.setAttribute(k, v === true ? '' : v);
   });
 }
@@ -653,8 +766,8 @@ function readFile(file){ return new Promise(function(res, rej){ var r = new File
 /* ---------------- platform capabilities ---------------- */
 var caps = { ready:false, user:null, db:null, artifact:null, downloads:null, sample:null, uid:null, teacher:false, standalone:false };
 /* standalone retains CSV/local rendering; the platform integration below adds the shared API. */
-function isTeacherHash(){ return /^#teacher\b/i.test(location.hash || ''); }
-function siteLink(hash){ return location.origin + location.pathname + hash; }
+function isTeacherHash(){ return /^#teacher\b/i.test(NAV.hash || ''); }
+function siteLink(hash){ return PATH_MODE ? location.origin + (keyToPath(hash) || '/') : location.origin + location.pathname + hash; }
 function downloadBlob(filename, text, type){
   var url = URL.createObjectURL(new Blob([text], { type: type || 'text/plain' }));
   var a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click();
@@ -835,7 +948,7 @@ var ST = null; // { act, cls, asg, H, d:{name,place,conns,submittedAt,view}, sel
 function draftKey(actId, clsId){ return 'hx-draft-' + actId + '-' + clsId; }
 function saveDraft(){ if (ST) lsSet(draftKey(ST.act.id, ST.cls.id) + (ST.preview ? '-preview' : ''), ST.d); }
 function subKey(){ return ST.act.id + '~' + ST.cls.id; }
-function routeCode(){ var h = (location.hash||'').replace(/^#/,''); return h.indexOf('c-') === 0 ? normCode(h.slice(2)) : null; }
+function routeCode(){ var h = (NAV.hash||'').replace(/^#/,''); return h.indexOf('c-') === 0 ? normCode(h.slice(2)) : null; }
 function findAct(id){ return DATA.activities.filter(function(a){ return a.id === id; })[0] || null; }
 
 function renderStudentHome(problem, tried){
@@ -848,7 +961,7 @@ function renderStudentHome(problem, tried){
     var f = findByCode(c);
     if (!f){ err.textContent = 'We couldn’t find that code. Check it with your teacher and try again.'; err.hidden = false; return; }
     if (f.asg.open === false){ err.textContent = 'That assignment is closed for your class. Ask your teacher if you still need to turn it in.'; err.hidden = false; return; }
-    location.hash = 'c-' + c;
+    NAV.hash = 'c-' + c;
   }
   input.addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); go(); } });
   fill(root, 
@@ -905,7 +1018,7 @@ function renderStudentShell(){
   var nHex = hexList(a).length;
   fill(root, 
     topBar(),
-    ST.preview ? null : el('button',{class:'btn ghost sm',style:'margin:-6px 0 8px -8px',onclick:function(){ location.hash=''; },text:'← Your assignments'}),
+    ST.preview ? null : el('button',{class:'btn ghost sm',style:'margin:-6px 0 8px -8px',onclick:function(){ NAV.hash=''; },text:'← Your assignments'}),
     el('div',{class:'act-head'},
       el('div',{style:'min-width:0'}, el('div',{class:'eyebrow',text:'Hexagonal thinking · ' + nHex + ' hexagons'}), el('h2',{text:a.title || 'Hexagon activity'}), el('p',{class:'ins',text:a.instructions || DEFAULT_INS})),
       el('div',{class:'stack',style:'gap:6px;align-items:flex-end'},
@@ -1763,7 +1876,7 @@ function manageClasses(){
   setTimeout(function(){ addIn.focus(); }, 40);
 }
 function addPreviewBanner(){
-  var back = el('div',{class:'banner warn',style:'display:flex;gap:10px;align-items:center;flex-wrap:wrap'}, el('span',{style:'margin-right:auto',text:'Student preview. Your test board stays on this device and is never submitted.'}), el('button',{class:'btn sm',onclick:function(){ ST = null; PX.activePost=null; previewing = false; location.hash='teacher'; route(); },text:'Back to teacher view'}));
+  var back = el('div',{class:'banner warn',style:'display:flex;gap:10px;align-items:center;flex-wrap:wrap'}, el('span',{style:'margin-right:auto',text:'Student preview. Your test board stays on this device and is never submitted.'}), el('button',{class:'btn sm',onclick:function(){ ST = null; PX.activePost=null; previewing = false; NAV.hash='teacher'; route(); },text:'Back to teacher view'}));
   root.insertBefore(back, root.children[1]);
 }
 function previewAsStudent(a){
@@ -1919,7 +2032,7 @@ function route(){
   if (isTeacherHash() && !caps.teacher){
     fill(root, topBar(), el('div',{class:'gate'}, el('div',{class:'panel'},
       el('h2',{text:'Teacher access required'}),
-      el('p',{text:'This page is for teacher accounts. Switch to your teacher profile from the account menu, or sign in with your teacher account.'}),
+      el('p',{text:'This page is for teacher accounts.'}),
       el('a',{class:'btn',href:'#',text:'Go to student view'}))));
     return;
   }
@@ -1934,6 +2047,7 @@ function route(){
   ST = null; renderStudentHome();
 }
 window.addEventListener('hashchange', function(){
+  if (PATH_MODE && !legacyToPath()) return;
   if (ST) saveDraft();
   previewing = false; ST = null;
   route();
@@ -1988,7 +2102,7 @@ function loadPlatform(){
       lsSet('hx-workspace-base',w.revision);
     });
     PX.teacherData=null;DATA={version:4,classes:[],activities:[]};
-  }).then(function(){if(!GA.user||GA.user.uid!==loadingUid)return;PX.loaded=true;PX.loading=false;if(PX.profile.role==='teacher'&&!location.hash)location.hash='teacher';route();}).catch(function(e){if(!GA.user||GA.user.uid!==loadingUid)return;PX.loading=false;PX.error=e.message;route();});
+  }).then(function(){if(!GA.user||GA.user.uid!==loadingUid)return;PX.loaded=true;PX.loading=false;if(PX.profile.role==='teacher'&&!NAV.hash)NAV.hash='teacher';route();}).catch(function(e){if(!GA.user||GA.user.uid!==loadingUid)return;PX.loading=false;PX.error=e.message;route();});
 }
 function platformGate(){
   fill(root,topBar(),el('div',{class:'gate'},el('div',{class:'panel'},
@@ -1998,7 +2112,7 @@ function platformGate(){
 }
 function chooseAccountRole(){
   function setRole(role){
-    platformApi(PX.profile&&PX.profile.role?'profile':'register',{role:role}).then(function(r){PX.profile=r.profile;PX.loaded=false;TW=null;ST=null;location.hash=role==='teacher'?'teacher':'';loadPlatform();route();}).catch(platformError);
+    platformApi(PX.profile&&PX.profile.role?'profile':'register',{role:role}).then(function(r){PX.profile=r.profile;PX.loaded=false;TW=null;ST=null;NAV.hash=role==='teacher'?'teacher':'';loadPlatform();route();}).catch(platformError);
   }
   fill(root,topBar(),el('div',{class:'gate'},el('div',{class:'panel'},
     el('div',{class:'eyebrow',text:'Create your account'}),el('h2',{text:'How will you use Hex Connections?'}),
@@ -2008,7 +2122,7 @@ function chooseAccountRole(){
 function switchAccountRole(){
   if(TW) saveWork();
   var role=PX.profile.role==='teacher'?'student':'teacher';
-  platformApi('profile',{role:role}).then(function(r){PX.profile=r.profile;PX.loaded=false;TW=null;ST=null;DATA={version:4,classes:[],activities:[]};PX.activePost=null;location.hash=role==='teacher'?'teacher':'';loadPlatform();route();}).catch(platformError);
+  platformApi('profile',{role:role}).then(function(r){PX.profile=r.profile;PX.loaded=false;TW=null;ST=null;DATA={version:4,classes:[],activities:[]};PX.activePost=null;NAV.hash=role==='teacher'?'teacher':'';loadPlatform();route();}).catch(platformError);
 }
 function connectClassroom(role,after){
   if(GA.busy)return;
@@ -2017,7 +2131,8 @@ function connectClassroom(role,after){
   ['classroom.courses.readonly','classroom.rosters.readonly',role==='teacher'?'classroom.coursework.students':'classroom.coursework.me'].forEach(function(scope){provider.addScope('https://www.googleapis.com/auth/'+scope)});
   provider.setCustomParameters({prompt:'consent',login_hint:GA.user.email});
   // Reauthenticate preserves Firebase identity and prevents connecting a different account.
-  GA.sdk.reauthenticateWithPopup(account,provider).then(function(result){
+  // Email + password accounts link their Google account the first time instead.
+  (hasGoogle(account)?GA.sdk.reauthenticateWithPopup(account,provider):GA.sdk.linkWithPopup(account,provider)).then(function(result){
     if(!GA.user||GA.user.uid!==account.uid)return;
     var credential=GA.sdk.GoogleAuthProvider.credentialFromResult(result);
     if(!credential||!credential.accessToken)throw new Error('Google did not grant Classroom access.');
@@ -2030,7 +2145,7 @@ function connectClassroom(role,after){
       GA.busy=false;
       if(after)after();else route();
     });
-  }).catch(function(e){if(GA.user&&GA.user.uid===account.uid){PX.token=null;PX.tokenRole=null;PX.tokenUntil=0;}platformError(e.code&&e.code.indexOf('auth/')===0?new Error(googleError(e)):e)}).finally(function(){GA.busy=false;var header=root.querySelector('.top');if(header)header.replaceWith(topBar());});
+  }).catch(function(e){if(GA.user&&GA.user.uid===account.uid){PX.token=null;PX.tokenRole=null;PX.tokenUntil=0;}platformError(e.code&&e.code.indexOf('auth/')===0?new Error(authError(e)):e)}).finally(function(){GA.busy=false;var header=root.querySelector('.top');if(header)header.replaceWith(topBar());});
 }
 function classroomReady(role){return !!(PX.token && Date.now()<PX.tokenUntil && PX.tokenRole===role);}
 function saveWorkspaceCloud(ws){
@@ -2095,7 +2210,7 @@ function studentDashboard(){
   var courseArea=el('div',{class:'stack'});
   var input=el('input',{placeholder:'ABC-123',maxlength:9,'aria-label':'Class code'});
   var find=el('button',{class:'btn',text:'Open code',onclick:function(){
-    function resolve(){platformApi('resolve',{code:input.value},true).then(function(r){location.hash='a-'+r.id}).catch(platformError)}
+    function resolve(){platformApi('resolve',{code:input.value},true).then(function(r){NAV.hash='a-'+r.id}).catch(platformError)}
     if(!classroomReady('student'))connectClassroom('student',resolve);else resolve();
   }});
   var discover=el('button',{class:'btn primary',text:'Find assignments in Classroom',onclick:function(){
@@ -2139,7 +2254,7 @@ function openPlatformAssignment(id){
     // Owner preview does not enroll the teacher as a student.
     if(a.ownerUid===GA.user.uid){ST.preview=true;addPreviewBanner();}
     if(shared)startGroupPolling();
-  }).catch(function(e){if(seq!==PX.routeId)return;if(e.code==='classroom-reconnect'){needClassroom();return;}if(e.code==='code-required'){location.hash='code';return;}fill(root,topBar(),el('div',{class:'gate'},el('div',{class:'panel'},el('h2',{text:'Could not open assignment'}),el('p',{class:'err',text:e.message}),el('button',{class:'btn',onclick:function(){PX.activePost=null;route()},text:'Retry'}),el('a',{class:'btn',href:'#',text:'Your assignments'}))));});
+  }).catch(function(e){if(seq!==PX.routeId)return;if(e.code==='classroom-reconnect'){needClassroom();return;}if(e.code==='code-required'){NAV.hash='code';return;}fill(root,topBar(),el('div',{class:'gate'},el('div',{class:'panel'},el('h2',{text:'Could not open assignment'}),el('p',{class:'err',text:e.message}),el('button',{class:'btn',onclick:function(){PX.activePost=null;route()},text:'Retry'}),el('a',{class:'btn',href:'#',text:'Your assignments'}))));});
 }
 function queueCloudDraft(){
   if(!ST||ST.preview||!PX.activePost||!GA.user)return;
@@ -2256,7 +2371,7 @@ route=function(){
   if(previewing)return;
   if(caps.teacher){PX.activePost=null;ST=null;if(PX.teacherData)DATA=clone(PX.teacherData);startTeacher();return;}
   if(isTeacherHash()){chooseAccountRole();return;}
-  var review=location.hash.match(/^#review-([a-zA-Z0-9-]+)~(.+)$/);
+  var review=NAV.hash.match(/^#review-([a-zA-Z0-9-]+)~(.+)$/);
   if(review){
     var reviewSeq=PX.routeId;
     platformApi('submissions').then(function(r){
@@ -2273,7 +2388,7 @@ route=function(){
     }).catch(platformError);
     studentDashboard();return;
   }
-  var match=location.hash.match(/^#a-([a-zA-Z0-9-]+)$/);
+  var match=NAV.hash.match(/^#a-([a-zA-Z0-9-]+)$/);
   if(match){openPlatformAssignment(match[1]);return;}
   var code=routeCode();
   PX.activePost=null;ST=null;
@@ -2294,17 +2409,20 @@ function teacherDashboard(courseId){
  Promise.all([platformApi('teacher/dashboard'),classroomReady('teacher')?platformApi('classroom/courses?role=teacher',undefined,true).catch(function(e){courseError=e;return {courses:[]}}):Promise.resolve({courses:[]})]).then(function(results){
   if(seq!==PX.routeId)return;body.replaceChildren();
   var assignments=results[0].assignments||[],courses=new Map();
-  assignments.forEach(function(a){courses.set(a.courseId,{id:a.courseId,name:a.courseName||a.className})});
-  var live=results[1].courses||[];if(live.length){PX.lastCourses=live;importCoursesQuietly(live).then(function(n){if(n&&seq===PX.routeId)teacherDashboard(courseId)})}
-  live.forEach(function(c){courses.set(c.id,{id:c.id,name:(c.name+(c.section?' · '+c.section:'')).slice(0,100)})});
+  var live=results[1].courses||[];if(live.length)PX.lastCourses=live;
+  /* The class list is the teacher's own: imported or added classes, never every Classroom course. */
   hexSpaceClasses().forEach(function(c){
    if(c.classroomId)courses.set(c.classroomId,{id:c.classroomId,name:c.name,classId:c.id});
    else courses.set('manual:'+c.id,{id:'manual:'+c.id,name:c.name,manual:true,classId:c.id});
   });
+  var known={};hexSpaceClasses().forEach(function(c){known[c.id]=c});
+  assignments.forEach(function(a){if(!courses.has(a.courseId)&&known[a.classId])courses.set(a.courseId,{id:a.courseId,name:known[a.classId].name,classId:a.classId})});
   courses.forEach(function(c,id){if(id.indexOf('manual:')===0){c.manual=true;c.classId=id.slice(7)}});
   PX.dashboardCourses=Array.from(courses.values());
+  var anyImported=hexSpaceClasses().some(function(c){return c.classroomId});
   if(!courseId)dashboardAdd(body,el('div',{class:'row'},
-   el('button',{class:'btn'+(hexSpaceClasses().some(function(c){return c.classroomId})?'':' primary'),onclick:importClassroomClasses,text:classroomReady('teacher')?'Import Classroom classes':'Connect Google Classroom and import classes'}),
+   el('button',{class:'btn'+(anyImported?'':' primary'),onclick:importClassroomClasses,text:classroomReady('teacher')?'Import Classroom classes':'Connect Google Classroom and import classes'}),
+   anyImported?el('button',{class:'btn',onclick:importClassroomClasses,text:'Resync with Classroom'}):null,
    el('button',{class:'btn ghost',onclick:addClassFromDashboard,text:'Add a code-only class'})));
   if(courseError)dashboardError(body,courseError);
   if(courseId){
@@ -2317,7 +2435,7 @@ function teacherDashboard(courseId){
   }else{
    if(!courses.size)dashboardMessage(body,'No classes yet. Import your Google Classroom classes, or add a code-only class for students without Classroom.');
    var grid=el('div',{class:'grid2'});
-   Array.from(courses.values()).sort(function(x,y){return String(x.name).localeCompare(String(y.name))}).forEach(function(c){var issued=assignments.filter(function(a){return a.courseId===c.id});dashboardAdd(grid,el('div',{class:'panel stack class-card'},el('div',{class:'row',style:'justify-content:space-between;align-items:flex-start;gap:8px'},el('h3',{text:c.name}),el('span',{class:'chip '+(c.manual?'code':'gc'),text:c.manual?'Code only':'Google Classroom'})),el('p',{class:'muted',style:'margin:0',text:issued.length+' issued assignment'+(issued.length===1?'':'s')+' · '+issued.reduce(function(n,a){return n+a.submissions},0)+' submission'+(issued.reduce(function(n,a){return n+a.submissions},0)===1?'':'s')}),el('a',{class:'btn primary',href:'#teacher/class-'+encodeURIComponent(c.id),text:'Open class'})))});dashboardAdd(body,grid);
+   Array.from(courses.values()).sort(function(x,y){return String(x.name).localeCompare(String(y.name))}).forEach(function(c){var issued=assignments.filter(function(a){return a.courseId===c.id});dashboardAdd(grid,el('div',{class:'panel stack class-card'},el('div',{class:'row',style:'justify-content:space-between;align-items:flex-start;gap:8px'},el('h3',{text:c.name}),el('span',{class:'chip '+(c.manual?'code':'gc'),text:c.manual?'Code only':'Google Classroom'})),el('p',{class:'muted',style:'margin:0',text:issued.length+' issued assignment'+(issued.length===1?'':'s')+' · '+issued.reduce(function(n,a){return n+a.submissions},0)+' submission'+(issued.reduce(function(n,a){return n+a.submissions},0)===1?'':'s')}),el('div',{class:'row'},el('a',{class:'btn primary',href:'#teacher/class-'+encodeURIComponent(c.id),text:'Open class'}),c.classId?el('button',{class:'btn ghost sm danger-text','aria-label':'Remove class '+c.name,onclick:function(){removeClass(c.classId)},text:'Remove'}):null)))});dashboardAdd(body,grid);
   }
  }).catch(function(e){if(seq===PX.routeId){body.replaceChildren();dashboardError(body,e)}});
 }
@@ -2326,7 +2444,7 @@ function newCourseAssignment(course){
  if(PX.teacherData)DATA=clone(PX.teacherData);oldTeacher();
  var cls=course.manual?TW.classes.find(function(c){return c.id===course.classId}):TW.classes.find(function(c){return c.classroomId===course.id});
  if(!cls){cls=course.manual?{id:course.classId||uid(),name:course.name}:{id:uid(),name:course.name,classroomId:course.id};TW.classes.push(cls)}
- var act=TW.activities.find(function(x){return isUntouched(x)&&!Object.keys(x.assign||{}).length})||blankActivity();act.assign[cls.id]={code:newCode(TW),open:true,due:''};if(TS.folder&&!act.folder)act.folder=TS.folder;if(!TW.activities.some(function(x){return x.id===act.id}))TW.activities.push(act);TS.sel=act.id;TS.tab='setup';saveWork();remember();location.hash='teacher/edit-'+act.id;
+ var act=TW.activities.find(function(x){return isUntouched(x)&&!Object.keys(x.assign||{}).length})||blankActivity();act.assign[cls.id]={code:newCode(TW),open:true,due:''};if(TS.folder&&!act.folder)act.folder=TS.folder;if(!TW.activities.some(function(x){return x.id===act.id}))TW.activities.push(act);TS.sel=act.id;TS.tab='setup';saveWork();remember();NAV.hash='teacher/edit-'+act.id;
 }
 function teacherPostDashboard(postId){
  var seq=PX.routeId,body=el('div',{class:'stack'});
@@ -2353,7 +2471,7 @@ function addCodePanel(){
  var input=el('input',{type:'text',id:'add-code-input',class:'code-in',maxlength:18,placeholder:'ABC-123',autocomplete:'off',autocapitalize:'characters',spellcheck:'false','aria-label':'Assignment or group code'}),err=el('p',{class:'err',role:'alert'});
  var button=el('button',{class:'btn primary',text:'Add code',onclick:function(){
   var code=normCode(input.value);if(code.length!==6&&code.length!==12){err.textContent='Enter a 6-character assignment code or a 12-character group code.';return;}
-  function go(){button.disabled=true;err.textContent='';platformApi(code.length===12?'groups/join':'resolve',{code:code},classroomReady('student')).then(function(r){PX.activePost=null;ST=null;GROUP.current=null;location.hash='a-'+(r.postId||r.id);route()}).catch(function(e){button.disabled=false;if(e.code==='classroom-reconnect'){err.textContent='';fill(connectRow,el('span',{class:'muted',text:'This code belongs to a Google Classroom course.'}),el('button',{class:'btn',onclick:function(){connectClassroom('student',go)},text:'Connect Google Classroom'}));return;}err.textContent=e.message})}
+  function go(){button.disabled=true;err.textContent='';platformApi(code.length===12?'groups/join':'resolve',{code:code},classroomReady('student')).then(function(r){PX.activePost=null;ST=null;GROUP.current=null;NAV.hash='a-'+(r.postId||r.id);route()}).catch(function(e){button.disabled=false;if(e.code==='classroom-reconnect'){err.textContent='';fill(connectRow,el('span',{class:'muted',text:'This code belongs to a Google Classroom course.'}),el('button',{class:'btn',onclick:function(){connectClassroom('student',go)},text:'Connect Google Classroom'}));return;}err.textContent=e.message})}
   go();
  }});input.addEventListener('keydown',function(e){if(e.key==='Enter')button.click()});
  var connectRow=el('div',{class:'row'});
@@ -2452,16 +2570,16 @@ var existingPlatformRoute=route;
 route=function(){
  stopGroupPolling();
  if(GA.ready&&GA.user&&PX.loaded&&PX.profile&&googleTeacher()&&isTeacherHash()&&!previewing){
-  var classroom=location.hash.match(/^#teacher\/class-(.+)$/),post=location.hash.match(/^#teacher\/post-([a-zA-Z0-9-]+)$/);
-  if(location.hash==='#teacher'||classroom||post){
+  var classroom=NAV.hash.match(/^#teacher\/class-(.+)$/),post=NAV.hash.match(/^#teacher\/post-([a-zA-Z0-9-]+)$/);
+  if(NAV.hash==='#teacher'||classroom||post){
    PX.routeId++;caps.teacher=true;ST=null;PX.activePost=null;GROUP.current=null;
    if(PX.teacherData)DATA=clone(PX.teacherData);
    if(post)teacherPostDashboard(post[1]);else teacherDashboard(classroom?decodeURIComponent(classroom[1]):null);return;
   }
  }
- if(!/^#a-/.test(location.hash))GROUP.current=null;
+ if(!/^#a-/.test(NAV.hash))GROUP.current=null;
  existingPlatformRoute();
- var edit=location.hash.match(/^#teacher\/edit-(.+)$/);
+ var edit=NAV.hash.match(/^#teacher\/edit-(.+)$/);
  if(caps.teacher&&TW){
   if(edit){var id=decodeURIComponent(edit[1]);if(TW.activities.some(function(a){return a.id===id})){TS.sel=id;TS.tab='setup';remember();renderTeacher()}}
  }
@@ -2480,9 +2598,9 @@ function byName(a,b){return String(a.name||'').localeCompare(String(b.name||''),
 function byTitle(a,b){return String(a.title||'').localeCompare(String(b.title||''),undefined,{numeric:true,sensitivity:'base'})}
 function scrollToId(id){var n=document.getElementById(id);if(n&&n.scrollIntoView)n.scrollIntoView({behavior:'smooth',block:'start'})}
 function goHomeSection(id){
-  var onHome=!GA.user?(!location.hash||location.hash==='#home'):location.hash==='#home';
+  var onHome=!GA.user?(!NAV.hash||NAV.hash==='#home'):NAV.hash==='#home';
   if(onHome){scrollToId(id);return;}
-  PX.scrollTo=id;location.hash='home';
+  PX.scrollTo=id;NAV.hash='home';
 }
 
 /* ---------- small menu component ---------- */
@@ -2501,8 +2619,8 @@ function menuButton(label,items,opts){
     node.addEventListener('click',function(e){close();if(it.onclick){e.preventDefault&&it.href==null&&e.preventDefault();it.onclick()}});
     add(pop,node);
   });
-  btn.addEventListener('click',function(e){e.stopPropagation&&e.stopPropagation();var opening=pop.hidden;if(!opening){close();return;}pop.hidden=false;btn.setAttribute('aria-expanded','true');document.addEventListener('click',outside,true);document.addEventListener('keydown',esc,true);var first=pop.querySelector('.menu-item');if(first&&first.focus)first.focus()});
-  add(wrap,btn,pop);return wrap;
+  btn.addEventListener('click',function(e){e.stopPropagation&&e.stopPropagation();var opening=pop.hidden;if(!opening){close();return;}pop.hidden=false;btn.setAttribute('aria-expanded','true');pop.style.left='';pop.style.right='';var box=pop.getBoundingClientRect&&pop.getBoundingClientRect();if(box&&box.left<8){pop.style.left='0';pop.style.right='auto';}document.addEventListener('click',outside,true);document.addEventListener('keydown',esc,true);var first=pop.querySelector('.menu-item');if(first&&first.focus)first.focus()});
+  add(wrap,[btn,pop]);return wrap;
 }
 
 /* ---------- header ---------- */
@@ -2526,7 +2644,7 @@ function navItems(){
   return [{label:'About',href:'#home'}];
 }
 topBar=function(){
-  var items=navItems(),h=location.hash||'';
+  var items=navItems(),h=NAV.hash||'';
   var nav=el('nav',{class:'nav','aria-label':'Main'},items.map(function(it){
     var on=it.match?it.match.test(h):(it.href&&it.href===h);
     if(it.href!=null)return el('a',{class:'nav-link'+(it.cta?' cta':'')+(it.login?' login':'')+(on?' on':''),href:it.href,'aria-current':on?'page':null,title:it.hint||null,text:it.label});
@@ -2536,16 +2654,8 @@ topBar=function(){
   var right=[nav,mobile];
   if(GA.user){
     var role=profileRole(),ready=role&&classroomReady(role);
-    var first=String(GA.user.displayName||GA.user.email||'Account').split(' ')[0];
-    right.push(menuButton(first+' ▾',[
-      {note:(GA.user.email||'')+(role?' · '+(role==='teacher'?'Teacher':'Student')+' profile':'')},
-      role?{label:ready?'Reconnect Google Classroom':'Connect Google Classroom',onclick:function(){connectClassroom(role)}}:null,
-      role==='teacher'?{label:'Import Classroom classes',onclick:importClassroomClasses}:null,
-      role==='teacher'&&TW?{label:'Download Hex Space backup',onclick:function(){downloadBlob('hex-space-backup.json',JSON.stringify(lsGet('hx-workspace-conflict-backup')||TW,null,2),'application/json')}}:null,
-      role?{label:role==='teacher'?'Switch to student profile':'Switch to teacher profile',onclick:switchAccountRole}:null,
-      {sep:true},
-      {label:'Sign out',onclick:googleSignOut,disabled:GA.busy}
-    ],{btnCls:'ghost sm acct-btn',aria:'Account menu'}));
+    var full=String(GA.user.displayName||GA.user.email||'Account'),first=full.length>22?full.split(/[\s@]/)[0]:full;
+    right.push(menuButton(first+' ▾',accountItems(role,ready),{btnCls:'ghost sm acct-btn',aria:'Account menu'}));
   }
   return el('header',{class:'top'},
     el('a',{class:'brand',href:'#home','aria-label':'Hex Connections home'},
@@ -2667,6 +2777,11 @@ function renderCodePage(){
     el('p',{class:'muted',style:'margin:0',text:'Type the code from your teacher, then sign in with your school Google account. Your work saves to your account.'}),
     input,err,
     el('button',{class:'btn honey',disabled:GA.busy,onclick:go,text:GA.busy?'Connecting…':'Continue with Google'}),
+    el('button',{class:'btn ghost',onclick:function(){
+      var c=normCode(input.value);
+      if(c.length!==6&&c.length!==12){err.textContent='Enter the 6-character class code or 12-character group code from your teacher.';input.focus();return;}
+      ssSet('hx-pending',{type:'code',code:c});LG.role='student';LG.err='';NAV.hash='signup';
+    },text:'No Google account? Use your email'}),
     GA.error?el('p',{class:'err',role:'alert',text:GA.error}):null),
     el('p',{class:'muted',style:'text-align:center;margin:0',text:'Got a link in Google Classroom? Open it instead; it takes you straight to your board.'})));
   setTimeout(function(){if(input.focus)input.focus()},30);
@@ -2679,12 +2794,13 @@ function renderTeacherSignIn(kind){
     el('p',{class:'muted',style:'margin:0',text:share?'Sign in with your teacher Google account to preview it and save your own copy.':'Hex Spaces are for teacher accounts. Sign in with Google to build a board from your unit vocabulary.'}),
     el('button',{class:'btn primary',disabled:GA.busy,onclick:function(){startSignIn('teacher',share?null:{type:'new'})},text:GA.busy?'Connecting…':'Continue with Google as a teacher'}),
     GA.error?el('p',{class:'err',role:'alert',text:GA.error}):null,
-    el('p',{class:'hint',text:'New to Hex Connections? Signing in creates your teacher account. No separate password is needed.'})),
+    el('button',{class:'btn ghost',onclick:function(){ssSet('hx-pending',share?{type:'route',key:NAV.hash}:{type:'new'});LG.role='teacher';LG.err='';NAV.hash='signin'},text:'Use email and password instead'}),
+    el('p',{class:'hint',text:'New to Hex Connections? Continuing with Google creates your teacher account. No Google account? Use your email instead.'})),
     el('p',{class:'muted',style:'text-align:center;margin:0'},'Are you a student? ',el('a',{href:'#code',text:'Enter a class code'}),'.')));
 }
 var v3Gate=renderGoogleGate;
 renderGoogleGate=function(){
-  var h=location.hash||'';
+  var h=NAV.hash||'';
   if(!googleConfigured()||h==='#signin'||h==='#signup'||GA.authMode==='signup'){if(h==='#signup')GA.authMode='signup';v3Gate();return;}
   if(/^#share-/.test(h)){renderTeacherSignIn('share');return;}
   if(h==='#code'||/^#c-/.test(h)){renderCodePage();return;}
@@ -2727,7 +2843,7 @@ function importCourses(courses){
   var ws=TW||(PX.teacherData?clone(PX.teacherData):{version:4,folders:[],classes:[],activities:[]});
   var n=syncClassroomClasses(courses,ws);
   if(!n)return Promise.resolve(0);
-  if(TW&&!previewing&&caps.teacher&&isTeacherHash()&&/^#teacher\/(editor|edit-)/.test(location.hash||''))renderTeacher();
+  if(TW&&!previewing&&caps.teacher&&isTeacherHash()&&/^#teacher\/(editor|edit-)/.test(NAV.hash||''))renderTeacher();
   return saveWorkspaceCloud(ws).then(function(){return n},function(e){
     if(!TW){PX.teacherData=ws;DATA=clone(ws);} /* keep them for this visit even if the save failed */
     PX.classSaveFailed=true;throw e;
@@ -2743,26 +2859,11 @@ function importCoursesQuietly(courses){
   return importingQuietly;
 }
 function refreshClassViews(){
-  var h=location.hash||'';
+  var h=NAV.hash||'';
   if(/^#teacher\/(editor|edit-)/.test(h)&&TW)renderTeacher();
   else if(/^#teacher(\/class-.*)?$/.test(h))route();
 }
-function importClassroomClasses(){
-  if(!classroomReady('teacher')){connectClassroom('teacher',importClassroomClasses,true);return;}
-  toast('Loading your Google Classroom courses…');
-  platformApi('classroom/courses?role=teacher',undefined,true).then(function(r){
-    PX.lastCourses=r.courses||[];
-    if(!PX.lastCourses.length){toast('No active Google Classroom courses list this account as a teacher.');return;}
-    return importCourses(PX.lastCourses).then(function(n){
-      refreshClassViews();
-      if(!n)toast(PX.classLimitHit?'Your class list is full ('+CLASS_LIMIT+' classes). Remove a class to import more.':'All of your Google Classroom classes are already in your class list.');
-      else toast(n+' Google Classroom class'+(n===1?'':'es')+' added to your class list.'+(PX.classLimitHit?' Some were skipped because the list is full.':''));
-    },function(e){
-      refreshClassViews();
-      toast(e&&e.code==='workspace-conflict'?'Classes added here, but your Hex Space changed on another device. Reload, then import again.':'Classes added for this visit, but saving online failed. Select Save workspace online to keep them.');
-    });
-  }).catch(platformError);
-}
+function importClassroomClasses(){openClassroomSync();}
 function addClassFromDashboard(){
   promptDialog('Add a class','Class name','',function(name){
     var ws=TW||(PX.teacherData?clone(PX.teacherData):{version:4,folders:[],classes:[],activities:[]});
@@ -2777,7 +2878,7 @@ connectClassroom=function(role,after,skipSync){
   v3Connect(role,function(){
     if(role==='teacher'&&!skipSync)platformApi('classroom/courses?role=teacher',undefined,true).then(function(r){
       PX.lastCourses=r.courses||[];
-      return importCoursesQuietly(PX.lastCourses).then(function(n){if(n)refreshClassViews()});
+      return null;
     }).catch(function(){});
     if(after)after();else route();
   });
@@ -2953,7 +3054,7 @@ function hexSpaceSidebar(){
     filter,treeBody(),
     el('div',{class:'side-h'},el('span',{class:'eyebrow',text:'Classes'}),el('button',{class:'btn ghost sm',onclick:manageClasses,text:'Manage'})),
     classes.length?el('div',{class:'class-list'},classes.map(function(c){return el('div',{class:'class-li'},el('span',{text:c.name}),el('span',{class:'chip '+(c.classroomId?'gc':'code'),text:c.classroomId?'Classroom':'Code only'}))})):el('p',{class:'muted',style:'margin:0;font-size:.85rem',text:'No classes yet.'}),
-    el('div',{class:'row',style:'gap:6px'},el('button',{class:'btn sm',onclick:importClassroomClasses,text:'Import from Classroom'}),el('button',{class:'btn ghost sm',onclick:addManualClass,text:'Add a class'})));
+    el('div',{class:'row',style:'gap:6px'},el('button',{class:'btn sm',onclick:importClassroomClasses,text:classes.some(function(c){return c.classroomId})?'Import or resync':'Import from Classroom'}),el('button',{class:'btn ghost sm',onclick:addManualClass,text:'Add a class'})));
 }
 var v3NewActivity=newActivity;
 newActivity=function(){
@@ -3019,7 +3120,7 @@ function sharePreview(code){
   }).catch(function(e){
     if(seq!==PX.routeId)return;
     fill(body,el('div',{class:'panel stack'},el('h2',{text:e.code==='teacher-required'?'Teacher profile needed':'Can’t open this share link'}),el('p',{class:e.code==='teacher-required'?'':'err',text:e.message}),
-      e.code==='teacher-required'?el('button',{class:'btn primary',onclick:switchAccountRole,text:'Switch to my teacher profile'}):el('a',{class:'btn',href:'#home',text:'Go to the homepage'})));
+      el('a',{class:'btn',href:'#home',text:'Go to the homepage'})));
   });
 }
 function copyShared(code,folderId,btn){
@@ -3033,7 +3134,7 @@ function copyShared(code,folderId,btn){
       terms:t.terms.map(function(x,i){return {n:i+1,id:x.id||i+1,term:x.term,def:x.def||''}}),folder:folderId,sharedFrom:{code:r.code,by:r.sharedBy||''}};
     act.idSeq=act.terms.reduce(function(m,x){return Math.max(m,x.id)},0);
     TW.activities.push(act);TS.sel=nid;TS.tab='setup';TS.folder=folderId;if(folderId)revealFolder(folderId);remember();saveWork();
-    return saveWorkspaceCloud().then(function(){toast('Copied to your Hex Space.')},function(){toast('Copied. Select Save online to keep it on other devices.')}).then(function(){location.hash='teacher/edit-'+encodeURIComponent(nid)});
+    return saveWorkspaceCloud().then(function(){toast('Copied to your Hex Space.')},function(){toast('Copied. Select Save online to keep it on other devices.')}).then(function(){NAV.hash='teacher/edit-'+encodeURIComponent(nid)});
   }).catch(function(e){if(btn)btn.disabled=false;platformError(e)});
 }
 
@@ -3045,37 +3146,422 @@ startTeacher=function(){
   TW.folders=TW.folders||[];
   if(TS.folder&&!folderById(TS.folder))TS.folder=null;
   var cur=curAct();if(cur&&cur.folder&&TS.folder==null)TS.folder=cur.folder;
-  if(PX.lastCourses&&PX.lastCourses.length)importCoursesQuietly(PX.lastCourses);
+
   if(PX.wantNew){PX.wantNew=false;newActivity();setTimeout(function(){var t=document.getElementById('f-title');if(t&&t.focus)t.focus()},40);}
 };
 
 /* ---------- routes ---------- */
 var v3Route=route;
 route=function(){
-  var h=location.hash||'';
+  var h=NAV.hash||'';
   if(GA.ready&&GA.user&&PX.loaded&&PX.profile&&PX.profile.role){
     var role=PX.profile.role,p=takePending();
-    if(p&&p.type==='code'){if(role==='student'){location.hash='c-'+p.code;return;}toast('Class codes are for student accounts. Switch to your student profile to use one.');}
-    if(p&&p.type==='new'&&role==='teacher'){location.hash='teacher/new';return;}
-    if(h==='#signin'||h==='#signup'){location.hash=role==='teacher'?'teacher':'';return;}
-    if(h==='#new'){location.hash=role==='teacher'?'teacher/new':'home';return;}
+    if(p&&p.type==='code'){if(role==='student'){NAV.hash='c-'+p.code;return;}toast('Class codes are for student accounts. Log in with a student account to use one.');}
+    if(p&&p.type==='new'&&role==='teacher'){NAV.hash='teacher/new';return;}
+    if(h==='#signin'||h==='#signup'){NAV.hash=role==='teacher'?'teacher':'';return;}
+    if(h==='#new'){NAV.hash=role==='teacher'?'teacher/new':'home';return;}
     if(h==='#home'){PX.routeId++;stopGroupPolling();GROUP.current=null;ST=null;PX.activePost=null;caps.teacher=false;renderHome();return;}
     var share=h.match(/^#share-([A-Za-z0-9]+)$/);
     if(share){PX.routeId++;stopGroupPolling();GROUP.current=null;ST=null;PX.activePost=null;caps.teacher=false;
-      if(role!=='teacher'){fill(root,topBar(),el('div',{class:'code-page'},el('div',{class:'panel stack'},el('h2',{text:'Teacher profile needed'}),el('p',{text:'Shared Hex Spaces are for teachers. Switch to your teacher profile to preview and copy this one.'}),el('button',{class:'btn primary',onclick:switchAccountRole,text:'Switch to my teacher profile'}))));return;}
+      if(role!=='teacher'){fill(root,topBar(),el('div',{class:'code-page'},el('div',{class:'panel stack'},el('h2',{text:'Teacher account needed'}),el('p',{text:'Shared Hex Spaces are for teachers. Log in with a teacher account to preview and copy this one.'}),el('a',{class:'btn primary',href:'#',text:'Go to my assignments'}))));return;}
       sharePreview(share[1]);return;}
-    if(h==='#teacher/new'){if(role==='teacher'){PX.wantNew=true;location.hash='teacher/editor';return;}location.hash='home';return;}
-    if(h==='#code'&&role==='teacher'){toast('Class codes are for student accounts. Switch to your student profile to use one.');location.hash='teacher';return;}
+    if(h==='#teacher/new'){if(role==='teacher'){PX.wantNew=true;NAV.hash='teacher/editor';return;}NAV.hash='home';return;}
+    if(h==='#code'&&role==='teacher'){toast('Class codes are for student accounts. Log in with a student account to use one.');NAV.hash='teacher';return;}
   }
   v3Route();
   if(h==='#code'&&profileRole()==='student'){var input=document.getElementById('add-code-input');if(input&&input.focus)setTimeout(function(){input.focus();var box=document.getElementById('add-code');if(box&&box.scrollIntoView)box.scrollIntoView({block:'center'})},30);}
 };
 
+
+/* ===================== 4.1: login, email accounts, menus, account types =====================
+   - The homepage is the starting page; signed-out visits to private pages show it with a
+     "log in to continue" note and resume after login.
+   - Log in offers Google or email + password. New email accounts verify their address.
+   - The account type (teacher/student) is chosen once and locked on the server.
+   - One menu layout for visitors, teachers and students. */
+/* Sign-up choices are saved before the account exists, so they use a plain (not per-account) key. */
+function rawGet(k){try{var v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}}
+function rawSet(k,v){try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+function hasGoogle(u){u=u||GA.user;if(!u)return false;if(!Array.isArray(u.providerData))return true;return u.providerData.some(function(p){return p&&p.providerId==='google.com'});}
+function emailOnly(){return !!(GA.user&&!hasGoogle());}
+function authError(e){
+  var m={
+    'auth/invalid-credential':'That email and password don’t match an account. Check them, or choose Forgot password.',
+    'auth/wrong-password':'That email and password don’t match an account. Check them, or choose Forgot password.',
+    'auth/user-not-found':'That email and password don’t match an account. Check them, or choose Forgot password.',
+    'auth/invalid-email':'Enter a valid email address.',
+    'auth/missing-password':'Enter your password.',
+    'auth/email-already-in-use':'An account already uses this email. Log in instead, or choose Forgot password.',
+    'auth/weak-password':'Use a password with at least 8 characters.',
+    'auth/too-many-requests':'Too many attempts. Wait a few minutes, then try again.',
+    'auth/operation-not-allowed':'Email sign-in isn’t switched on yet. The site owner needs to enable Email/Password in Firebase Authentication.',
+    'auth/account-exists-with-different-credential':'This email already has an account that uses a password. Log in with your email and password, then choose Connect Google account.',
+    'auth/credential-already-in-use':'That Google account is already used by a different Hex Connections account.',
+    'auth/provider-already-linked':'A Google account is already connected.',
+    'auth/requires-recent-login':'For security, sign out and log in again, then try once more.'
+  };
+  return m[e&&e.code]||googleError(e);
+}
+function navReplace(key){
+  key=key?(String(key).charAt(0)==='#'?String(key):'#'+key):'';
+  if(PATH_MODE){history.replaceState(null,'',keyToPath(key)||'/');}else location.hash=key;
+}
+var PUBLIC_KEYS=/^(#home|#signin|#signup|#code|#new|#c-.+|#share-.+)$/;
+
+/* ---------- Login and create-account page ---------- */
+var LG={role:'',err:'',info:'',email:'',busy:false};
+function field(label,input,hint){return el('label',{class:'field'},el('span',{class:'field-label',text:label}),input,hint?el('span',{class:'hint',text:hint}):null);}
+function renderLogin(){
+  var signup=NAV.hash==='#signup',configured=googleConfigured(),ready=configured&&GA.auth;
+  var name=signup?el('input',{type:'text',id:'lg-name',autocomplete:'name',maxlength:80,placeholder:'e.g. Ms. Rivera or Ava Lopez'}):null;
+  var email=el('input',{type:'email',id:'lg-email',autocomplete:'email',maxlength:200,placeholder:'you@school.org',value:LG.email||''});
+  var pass=el('input',{type:'password',id:'lg-pass',autocomplete:signup?'new-password':'current-password',maxlength:200,placeholder:signup?'At least 8 characters':''});
+  var err=el('p',{class:'err',role:'alert',text:LG.err||GA.error||''});
+  var info=el('p',{class:'ok-note',role:'status',text:LG.info||''});
+  function busy(){return LG.busy||GA.busy}
+  function fail(e){LG.busy=false;LG.err=typeof e==='string'?e:authError(e);LG.info='';renderLogin();}
+  function needRole(){if(signup&&!LG.role){fail('Choose Teacher or Student first.');return true}return false}
+  function google(){
+    if(busy()||needRole())return;
+    LG.err='';GA.error='';
+    PX.loginRole=signup?LG.role:null;PX.signupRequested=signup;
+    googleSignIn();
+  }
+  function submit(e){
+    if(e&&e.preventDefault)e.preventDefault();
+    if(busy()||!ready)return;
+    var em=String(email.value||'').trim(),pw=String(pass.value||'');LG.email=em;
+    if(needRole())return;
+    if(signup&&!String(name.value||'').trim())return fail('Enter your name.');
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em))return fail('Enter a valid email address.');
+    if(signup&&pw.length<8)return fail('Use a password with at least 8 characters.');
+    if(!pw)return fail('Enter your password.');
+    LG.busy=true;LG.err='';LG.info='';renderLogin();
+    if(!signup){
+      PX.loginRole=null;PX.signupRequested=false;
+      GA.sdk.signInWithEmailAndPassword(GA.auth,em,pw).then(function(){LG.busy=false;LG.err='';},fail);
+      return;
+    }
+    var display=String(name.value).trim().slice(0,80),role=LG.role;
+    rawSet('hx-signup-role',{email:em.toLowerCase(),role:role});
+    GA.sdk.createUserWithEmailAndPassword(GA.auth,em,pw).then(function(cred){
+      rawSet('hx-signup-role',{uid:cred.user.uid,email:em.toLowerCase(),role:role});
+      return GA.sdk.updateProfile(cred.user,{displayName:display}).then(function(){return GA.sdk.sendEmailVerification(cred.user)});
+    }).then(function(){LG.busy=false;PX.needsVerify=true;PX.verifySent=true;route();},fail);
+  }
+  function forgot(){
+    var em=String(email.value||'').trim();LG.email=em;
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em))return fail('Enter your email address above, then choose Forgot password.');
+    if(!ready)return;
+    LG.busy=true;renderLogin();
+    GA.sdk.sendPasswordResetEmail(GA.auth,em).then(function(){LG.busy=false;LG.err='';LG.info='If an account uses '+em+', we’ve emailed a link to reset the password.';renderLogin();},function(e){if(e&&e.code==='auth/user-not-found'){LG.busy=false;LG.err='';LG.info='If an account uses '+em+', we’ve emailed a link to reset the password.';renderLogin();}else fail(e)});
+  }
+  pass.addEventListener('keydown',function(e){if(e.key==='Enter')submit(e)});
+  function roleCard(r,title,desc){
+    return el('button',{type:'button',class:'role-pick'+(LG.role===r?' on':''),'aria-pressed':LG.role===r?'true':'false',onclick:function(){LG.role=r;LG.err='';renderLogin()}},
+      el('b',{text:title}),el('span',{text:desc}));
+  }
+  var pending=ssGet('hx-pending');
+  fill(root,topBar(),el('div',{class:'login-page'},el('div',{class:'panel login-card'},
+    el('div',{class:'eyebrow',text:signup?'Create an account':'Welcome back'}),
+    el('h2',{text:signup?'Create your Hex Connections account':'Log in to Hex Connections'}),
+    pending?el('p',{class:'muted',style:'margin:0',text:pending.type==='code'?(signup?'Create your account, then you’ll join your class.':'Log in to join your class.'):(signup?'Create your account, then you’ll continue where you left off.':'Log in to continue where you left off.')}):null,
+    !configured?el('p',{class:'err',text:'Sign-in needs setup. The site owner must add the Firebase configuration.'}):null,
+    signup?el('div',{class:'stack',style:'gap:8px'},
+      el('span',{class:'field-label',text:'I am a…'}),
+      el('div',{class:'role-picks'},roleCard('teacher','Teacher','Build Hex Spaces, organize folders and assign classes.'),roleCard('student','Student','Join classes with a code and build your boards.')),
+      el('p',{class:'hint',style:'margin:0',text:'Choose carefully: the account type can’t be changed later.'})):null,
+    el('button',{class:'btn google',type:'button',disabled:busy()||!ready,onclick:google},googleMark(),el('span',{text:GA.busy?'Connecting…':'Continue with Google'})),
+    el('p',{class:'hint',style:'margin:-4px 0 0',text:'Any Google account works, including school accounts.'}),
+    el('div',{class:'or',role:'separator'},el('span',{text:'or use your email'})),
+    el('form',{class:'stack',style:'gap:10px',novalidate:true,onsubmit:submit},
+      signup?field('Name',name):null,
+      field('Email',email),
+      field('Password',pass,signup?'At least 8 characters. We’ll email you a link to confirm your address.':null),
+      el('button',{class:'btn primary',type:'submit',disabled:busy()||!ready,text:LG.busy?'Please wait…':(signup?'Create account':'Log in')})),
+    signup?null:el('button',{class:'btn ghost sm',type:'button',style:'align-self:flex-start',onclick:forgot,text:'Forgot password?'}),
+    err,info,
+    el('p',{class:'swap'},signup?'Already have an account? ':'New to Hex Connections? ',el('a',{href:signup?'#signin':'#signup',onclick:function(){LG.err='';LG.info='';GA.error=''},text:signup?'Log in':'Create an account'})),
+    el('p',{class:'hint',style:'margin:0',text:'You stay signed in on this device until you choose Sign out from the menu under your name. On a shared computer, sign out when you finish.'}))));
+  var first=signup?name:email;setTimeout(function(){if(first&&first.focus&&!LG.err)first.focus()},30);
+}
+function googleMark(){return sv('svg',{width:18,height:18,viewBox:'0 0 48 48','aria-hidden':'true'},
+  sv('path',{fill:'#EA4335',d:'M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z'}),
+  sv('path',{fill:'#4285F4',d:'M46.1 24.6c0-1.6-.1-3.1-.4-4.6H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.7c4.3-4 6.9-9.9 6.9-17z'}),
+  sv('path',{fill:'#FBBC05',d:'M10.6 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.9-6.1z'}),
+  sv('path',{fill:'#34A853',d:'M24 48c6.5 0 11.9-2.1 15.8-5.8l-7.4-5.7c-2.1 1.4-4.8 2.3-8.4 2.3-6.2 0-11.5-4.1-13.4-9.8l-7.9 6.1C6.6 42.6 14.6 48 24 48z'}));}
+
+/* ---------- Email verification ---------- */
+function renderVerify(){
+  var u=GA.user,msg=el('p',{role:'status',class:'muted',style:'margin:0'});
+  function check(btn){
+    btn.disabled=true;msg.textContent='Checking…';
+    u.reload().then(function(){return u.getIdToken(true)}).then(function(){
+      if(!GA.user||!GA.user.emailVerified){btn.disabled=false;msg.textContent='Not verified yet. Open the link in the email we sent, then try again.';return;}
+      PX.needsVerify=false;PX.error='';PX.loaded=false;loadPlatform();route();
+    }).catch(function(e){btn.disabled=false;msg.textContent=authError(e)});
+  }
+  fill(root,topBar(),el('div',{class:'login-page'},el('div',{class:'panel login-card'},
+    el('div',{class:'eyebrow',text:'One more step'}),el('h2',{text:'Check your email'}),
+    el('p',{style:'margin:0',text:'We sent a confirmation link to '+(u&&u.email||'your email')+'. Open it, then come back here.'}),
+    el('p',{class:'hint',style:'margin:0',text:'Can’t find it? Check your spam or junk folder. School email filters can take a few minutes.'}),
+    el('div',{class:'row'},
+      el('button',{class:'btn primary',onclick:function(e){check(e.currentTarget||e.target)},text:'I’ve confirmed my email'}),
+      el('button',{class:'btn',onclick:function(){GA.sdk.sendEmailVerification(u).then(function(){msg.textContent='Sent again to '+u.email+'.'},function(e){msg.textContent=authError(e)})},text:'Send the email again'})),
+    msg,
+    el('button',{class:'btn ghost sm',style:'align-self:flex-start',onclick:googleSignOut,text:'Use a different account'}))));
+}
+
+/* ---------- Account type: chosen once ---------- */
+function pendingSignupRole(){
+  var r=rawGet('hx-signup-role');if(!r||!GA.user)return null;
+  if(r.uid?r.uid===GA.user.uid:(r.email&&String(GA.user.email||'').toLowerCase()===r.email))return r.role==='teacher'||r.role==='student'?r.role:null;
+  return null;
+}
+loadPlatform=function(){
+  if(PX.loading||!GA.user)return;
+  PX.loading=true;PX.error='';
+  var loadingUid=GA.user.uid;
+  platformApi('me').then(function(r){
+    var selected=PX.loginRole||pendingSignupRole(),signup=PX.signupRequested;PX.loginRole=null;PX.signupRequested=false;
+    if(!selected)return r;
+    if(r.profile.role){
+      rawSet('hx-signup-role',null);
+      if(signup&&selected!==r.profile.role)toast('You already have a '+r.profile.role+' account, so you’re logged in to it.');
+      else if(signup)toast('You already have an account. Logged in.');
+      return r;
+    }
+    return platformApi('register',{role:selected}).then(function(res){rawSet('hx-signup-role',null);return res});
+  }).then(function(r){
+    if(!GA.user||GA.user.uid!==loadingUid)throw new Error('Account changed.');
+    PX.needsVerify=false;PX.profile=r.profile;
+    if(r.profile.role==='teacher')return platformApi('workspace').then(function(w){
+      PX.teacherData=clone(w.workspace);DATA=clone(w.workspace);PX.revision=w.revision;
+      var local=lsGet('hx-teacher-work'),localBase=lsGet('hx-workspace-base');
+      if(local&&localBase!==null&&localBase!==w.revision){lsSet('hx-workspace-conflict-backup',local);lsSet('hx-teacher-work',w.workspace);}
+      lsSet('hx-workspace-base',w.revision);
+    });
+    PX.teacherData=null;DATA={version:4,classes:[],activities:[]};
+  }).then(function(){if(!GA.user||GA.user.uid!==loadingUid)return;PX.loaded=true;PX.loading=false;if(PX.profile.role==='teacher'&&!NAV.hash)NAV.hash='teacher';route();})
+  .catch(function(e){if(!GA.user||GA.user.uid!==loadingUid)return;PX.loading=false;if(e.code==='email-unverified'){PX.needsVerify=true;route();return;}PX.error=e.message;route();});
+};
+chooseAccountRole=function(){
+  function setRole(role,btn){
+    btn.disabled=true;
+    platformApi('register',{role:role}).then(function(r){PX.profile=r.profile;PX.loaded=false;TW=null;ST=null;NAV.hash=r.profile.role==='teacher'?'teacher':'';loadPlatform();route();}).catch(function(e){btn.disabled=false;platformError(e)});
+  }
+  fill(root,topBar(),el('div',{class:'login-page'},el('div',{class:'panel login-card'},
+    el('div',{class:'eyebrow',text:'Finish creating your account'}),el('h2',{text:'Are you a teacher or a student?'}),
+    el('p',{class:'muted',style:'margin:0',text:'Choose carefully: the account type can’t be changed later.'}),
+    el('div',{class:'role-picks'},
+      el('button',{class:'role-pick',onclick:function(e){setRole('teacher',e.currentTarget||e.target)}},el('b',{text:'I’m a teacher'}),el('span',{text:'Build Hex Spaces and assign them to classes.'})),
+      el('button',{class:'role-pick',onclick:function(e){setRole('student',e.currentTarget||e.target)}},el('b',{text:'I’m a student'}),el('span',{text:'Join classes with a code and build boards.'}))),
+    el('button',{class:'btn ghost sm',style:'align-self:flex-start',onclick:googleSignOut,text:'Sign out'}))));
+};
+switchAccountRole=function(){toast('Account types can’t be changed. Sign out and log in with a different account instead.');};
+
+/* ---------- One menu for everyone ---------- */
+navItems=function(){
+  var role=profileRole();
+  var home={label:'Home',href:'#home',match:/^#home$/};
+  if(!GA.user||!role)return [home,
+    {label:'How it works',onclick:function(){goHomeSection('how')}},
+    {label:'Depth & Complexity',onclick:function(){goHomeSection('dc')}},
+    {label:'Enter a class code',href:'#code',match:/^#(code|c-.*)$/},
+    GA.user?{label:'Sign out',onclick:googleSignOut}:{label:'Log in',href:'#signin',login:true,match:/^#(signin|signup)$/},
+    {label:'New Hex Space',href:'#new',cta:true,hint:'For teachers'}].filter(Boolean);
+  if(role==='teacher')return [home,
+    {label:'Classes',href:'#teacher',match:/^#teacher(\/class-.*|\/post-.*|)$/},
+    {label:'Hex Space',href:'#teacher/editor',match:/^#teacher\/(editor|edit-.*)$/},
+    {label:'Shared links',href:'#teacher/shared',match:/^#teacher\/shared$/},
+    {label:'+ New Hex Space',href:'#teacher/new',cta:true}];
+  return [home,
+    {label:'My assignments',href:'#',match:/^(#?|#a-.*)$/},
+    {label:'Enter a class code',href:'#code',cta:true,match:/^#(code|c-.*)$/}];
+};
+function accountItems(role,ready){
+  var name=String(GA.user.displayName||GA.user.email||'Account');
+  return [
+    {note:name+(GA.user.email&&GA.user.email!==name?' · '+GA.user.email:'')},
+    {note:role?(role==='teacher'?'Teacher account':'Student account')+(emailOnly()?' · email login':' · Google login'):'Account not finished'},
+    role&&emailOnly()?{label:'Connect Google account',onclick:function(){connectClassroom(role)}}:null,
+    role&&!emailOnly()?{label:ready?'Reconnect Google Classroom':'Connect Google Classroom',onclick:function(){connectClassroom(role)}}:null,
+    role==='teacher'?{label:'Import or resync Classroom classes',onclick:importClassroomClasses}:null,
+    role==='teacher'&&TW?{label:'Download Hex Space backup',onclick:function(){downloadBlob('hex-space-backup.json',JSON.stringify(lsGet('hx-workspace-conflict-backup')||TW,null,2),'application/json')}}:null,
+    {sep:true},
+    {label:'Sign out',onclick:googleSignOut,disabled:GA.busy}
+  ].filter(Boolean);
+}
+
+
+/* ---------- Classes: choose what to import, resync with Classroom, remove ---------- */
+function classWorkspace(){return TW||(PX.teacherData?clone(PX.teacherData):{version:4,folders:[],classes:[],activities:[]});}
+function saveClassChange(ws,ok){
+  return saveWorkspaceCloud(ws).then(function(){if(ok)toast(ok)},function(e){
+    if(!TW){PX.teacherData=ws;DATA=clone(ws);}
+    toast(e&&e.code==='workspace-conflict'?'Your Hex Space changed on another device. Reload, then try again.':'Saved for this visit, but saving online failed. Select Save workspace online to keep it.');
+  }).then(function(){if(TW&&/^#teacher\/(editor|edit-)/.test(NAV.hash||''))renderTeacher();else refreshClassViews();});
+}
+function openClassroomSync(){
+  if(!classroomReady('teacher')){connectClassroom('teacher',openClassroomSync,true);return;}
+  toast('Loading your Google Classroom classes…');
+  platformApi('classroom/courses?role=teacher',undefined,true).then(function(r){
+    var courses=(r.courses||[]).slice().sort(function(a,b){return courseClassName(a).localeCompare(courseClassName(b))});
+    PX.lastCourses=courses;
+    var ws=classWorkspace();ws.classes=ws.classes||[];
+    var byId={};courses.forEach(function(c){byId[c.id]=c});
+    var imported=ws.classes.filter(function(c){return c.classroomId});
+    var fresh=courses.filter(function(c){return !imported.some(function(x){return x.classroomId===c.id})});
+    var renamed=imported.filter(function(c){return byId[c.classroomId]&&courseClassName(byId[c.classroomId])!==c.name});
+    var gone=imported.filter(function(c){return !byId[c.classroomId]});
+    var picks=fresh.map(function(c){return {c:c,box:el('input',{type:'checkbox',id:'imp-'+c.id})}});
+    var drops=gone.map(function(c){return {c:c,box:el('input',{type:'checkbox',id:'drop-'+c.id})}});
+    var renameBox=el('input',{type:'checkbox',id:'sync-names',checked:true});
+    var room=Math.max(0,CLASS_LIMIT-ws.classes.length);
+    var err=el('p',{class:'err',role:'alert'});
+    function checkRow(box,label,extra){return el('label',{class:'pick-row',for:box.attrs?box.attrs.id:box.id},box,el('span',{text:label}),extra||null)}
+    var sections=[];
+    if(fresh.length)sections.push(el('div',{class:'stack',style:'gap:6px'},
+      el('div',{class:'row',style:'justify-content:space-between'},el('b',{text:'Choose classes to import'}),
+        fresh.length>1?el('button',{class:'btn ghost sm',type:'button',onclick:function(){var all=picks.every(function(p){return p.box.checked});picks.forEach(function(p){p.box.checked=!all})},text:'Select all'}):null),
+      el('div',{class:'pick-list'},picks.map(function(p){return checkRow(p.box,courseClassName(p.c))}))));
+    if(renamed.length)sections.push(el('div',{class:'stack',style:'gap:6px'},el('b',{text:'Names changed in Google Classroom'}),
+      el('div',{class:'pick-list'},renamed.map(function(c){return el('div',{class:'pick-note',text:c.name+' → '+courseClassName(byId[c.classroomId])})})),
+      checkRow(renameBox,'Update these names here')));
+    if(gone.length)sections.push(el('div',{class:'stack',style:'gap:6px'},el('b',{text:'No longer active in Google Classroom'}),
+      el('p',{class:'hint',style:'margin:0',text:'These were archived or removed in Classroom, or you no longer teach them. Tick any to remove from your class list. Student work stays saved.'}),
+      el('div',{class:'pick-list'},drops.map(function(d){return checkRow(d.box,'Remove '+d.c.name)}))));
+    if(imported.length&&!fresh.length&&!renamed.length&&!gone.length)sections.push(el('p',{style:'margin:0',text:'Your class list already matches Google Classroom.'}));
+    if(!courses.length&&!imported.length)sections.push(el('p',{style:'margin:0',text:'Google Classroom shows no active classes where this account is a teacher.'}));
+    var inList=imported.filter(function(c){return byId[c.classroomId]});
+    if(inList.length)sections.push(el('p',{class:'hint',style:'margin:0',text:'Already in your class list: '+inList.map(function(c){return c.name}).join(', ')+'.'}));
+    var save=el('button',{class:'btn primary',onclick:function(){
+      var add=picks.filter(function(p){return p.box.checked}).map(function(p){return p.c});
+      var drop=drops.filter(function(d){return d.box.checked}).map(function(d){return d.c.id});
+      var doRename=renamed.length&&renameBox.checked;
+      if(add.length>room+drop.length){err.textContent='Your class list holds '+CLASS_LIMIT+' classes. Choose '+(room+drop.length)+' or fewer.';return;}
+      if(!add.length&&!drop.length&&!doRename){closeModal();return;}
+      if(drop.length){ws.classes=ws.classes.filter(function(c){return drop.indexOf(c.id)<0});(ws.activities||[]).forEach(function(a){drop.forEach(function(id){if(a.assign)delete a.assign[id]})});}
+      if(doRename)renamed.forEach(function(c){c.name=courseClassName(byId[c.classroomId])});
+      var n=syncClassroomClasses(add,ws);
+      var parts=[];if(n)parts.push(n+' class'+(n===1?'':'es')+' imported');if(doRename)parts.push(renamed.length+' renamed');if(drop.length)parts.push(drop.length+' removed');
+      save.disabled=true;closeModal();
+      saveClassChange(ws,parts.length?parts.join(', ').replace(/^./,function(x){return x.toUpperCase()})+'.':'');
+    },text:fresh.length?'Import selected':'Save changes'});
+    openModal([el('div',{class:'eyebrow',text:'Google Classroom'}),el('h3',{style:'font-size:1.25rem',text:imported.length?'Import or resync classes':'Import classes'}),
+      el('p',{class:'muted',style:'margin:0',text:'Only the classes you choose are added to your class list.'}),
+      el('div',{class:'stack sync-body'},sections),err,
+      el('div',{class:'row',style:'justify-content:flex-end'},el('button',{class:'btn ghost',onclick:closeModal,text:'Cancel'}),(fresh.length||renamed.length||gone.length)?save:null)]);
+  }).catch(platformError);
+}
+function removeClass(classId){
+  var ws=classWorkspace(),c=(ws.classes||[]).find(function(x){return x.id===classId});
+  if(!c){toast('That class is no longer in your list.');return;}
+  var used=(ws.activities||[]).filter(function(a){return (a.assign||{})[c.id]}).length;
+  openModal([el('h3',{style:'font-size:1.2rem',text:'Remove '+c.name+'?'}),
+    el('p',{style:'margin:0',text:(used?'It’s assigned in '+used+' Hex Space'+(used===1?'':'s')+'; those assignments are removed too. ':'')+
+      (c.classroomId?'Nothing is deleted in Google Classroom: assignments already published there stay until you remove them in Classroom.':'Its class code stops working right away.')}),
+    el('p',{class:'muted',style:'margin:0',text:'Student work that was already saved or turned in is kept.'+(c.classroomId?' You can import this class again later.':'')}),
+    el('div',{class:'row',style:'justify-content:flex-end'},el('button',{class:'btn ghost','data-autofocus':true,onclick:closeModal,text:'Keep class'}),
+      el('button',{class:'btn danger-solid',onclick:function(e){
+        var b=e.currentTarget||e.target;b.disabled=true;
+        ws.classes=ws.classes.filter(function(x){return x.id!==c.id});
+        (ws.activities||[]).forEach(function(a){if(a.assign)delete a.assign[c.id]});
+        closeModal();
+        var close=c.classroomId?Promise.resolve():platformApi('manual/close-class',{classId:c.id}).catch(function(){});
+        close.then(function(){return saveClassChange(ws,c.name+' removed.')});
+      },text:'Remove class'}))]);
+}
+manageClasses=function(){
+  var ws=TW,list=el('div',{class:'stack',style:'gap:8px'});
+  function draw(){
+    fill(list,ws.classes.length?ws.classes.map(function(c){
+      var inp=el('input',{type:'text',value:c.name,maxlength:100,'aria-label':'Class name'});
+      inp.addEventListener('input',function(){c.name=inp.value;ensureBar()});
+      inp.addEventListener('blur',function(){if(!c.name.trim()){c.name='Untitled class';inp.value=c.name}});
+      return el('div',{class:'cls-row manage'},inp,el('span',{class:'chip '+(c.classroomId?'gc':'code'),text:c.classroomId?'Classroom':'Code only'}),
+        el('button',{class:'btn ghost sm danger-text','aria-label':'Remove '+c.name,onclick:function(){closeModal();removeClass(c.id)},text:'Remove'}));
+    }):[el('p',{class:'muted',style:'margin:0',text:'No classes yet.'})]);
+  }
+  draw();
+  openModal([el('h3',{style:'font-size:1.2rem',text:'Your classes'}),
+    el('p',{class:'muted',style:'margin:0',text:'Rename or remove classes. Removing a class never deletes anything in Google Classroom.'}),list,
+    el('div',{class:'row'},el('button',{class:'btn sm',onclick:function(){closeModal();importClassroomClasses()},text:'Import or resync with Classroom'}),el('button',{class:'btn ghost sm',onclick:function(){closeModal();addManualClass()},text:'Add a code-only class'})),
+    el('div',{class:'row',style:'justify-content:flex-end'},el('button',{class:'btn primary',onclick:function(){closeModal();renderTeacher();if(dirty())saveWorkspaceCloud().then(function(){renderTeacher();toast('Classes saved.')},function(){})},text:'Done'}))]);
+};
+
+/* ---------- Shared links (teacher) ---------- */
+function renderSharedLinks(){
+  var seq=PX.routeId,body=el('div',{class:'stack'},el('p',{class:'muted',text:'Loading your share links…'}));
+  fill(root,topBar(),el('div',{class:'page-head'},el('div',{class:'eyebrow',text:'Teachers'}),el('h2',{text:'Shared links'}),
+    el('p',{class:'muted',style:'margin:0',text:'Links you’ve made so other teachers can copy a Hex Space. Make a new one with Share in any Hex Space.'})),body);
+  platformApi('shares').then(function(r){
+    if(seq!==PX.routeId)return;
+    var list=(r.shares||[]);
+    fill(body);
+    if(!list.length){add(body,el('div',{class:'panel stack'},el('p',{style:'margin:0',text:'You haven’t shared any Hex Spaces yet.'}),el('a',{class:'btn primary',style:'align-self:flex-start',href:'#teacher/editor',text:'Open Hex Space'})));return;}
+    list.forEach(function(sh){
+      var link=siteLink('#share-'+sh.code);
+      add(body,el('div',{class:'panel share-row'+(sh.revoked?' off':'')},
+        el('div',{class:'stack',style:'gap:4px;min-width:0'},
+          el('div',{class:'row',style:'gap:8px'},el('h3',{text:sh.title||'Untitled'}),el('span',{class:'chip '+(sh.revoked?'':'gc'),text:sh.revoked?'Turned off':'Active'})),
+          el('span',{class:'linkcode share-link',text:link}),
+          el('span',{class:'muted',style:'font-size:.88rem',text:sh.copies+' teacher'+(sh.copies===1?' has':'s have')+' saved a copy · updated '+fmtWhen(sh.updatedAt)})),
+        el('div',{class:'row'},
+          sh.revoked?null:el('button',{class:'btn sm',onclick:function(){copyText(link,'Share link')},text:'Copy link'}),
+          el('a',{class:'btn sm ghost',href:'#teacher/edit-'+encodeURIComponent(sh.activityId),text:'Open Hex Space'}),
+          sh.revoked?null:el('button',{class:'btn sm danger-ghost',onclick:function(e){var b=e.currentTarget||e.target;b.disabled=true;platformApi('shares/'+sh.code+'/revoke',{}).then(function(){toast('Sharing turned off. The link no longer works.');renderSharedLinks()}).catch(function(err){b.disabled=false;platformError(err)})},text:'Stop sharing'}))));
+    });
+  }).catch(function(e){if(seq!==PX.routeId)return;fill(body,el('p',{class:'err',role:'alert',text:e.message}))});
+}
+function fmtWhen(iso){try{return new Date(iso).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}catch(e){return ''}}
+
+/* ---------- Gate and routing ---------- */
+var v40Gate=renderGoogleGate;
+renderGoogleGate=function(){
+  var h=NAV.hash||'';
+  if(h==='#signin'||h==='#signup'){renderLogin();return;}
+  if(!PUBLIC_KEYS.test(h)&&!GA.ready){fill(root,topBar(),el('div',{class:'gate'},el('div',{class:'panel'},el('p',{class:'muted',role:'status',text:'Opening Hex Connections…'}))));return;}
+  v40Gate();
+};
+var v40Home=renderHome;
+renderHome=function(){
+  v40Home();
+  if(PX.homeNotice){
+    var note=el('div',{class:'banner home-note',role:'status'},el('span',{text:PX.homeNotice}),el('a',{class:'btn primary sm',href:'#signin',text:'Log in'}));
+    PX.homeNotice='';
+    var main=root.querySelector&&root.querySelector('.home');
+    if(main&&main.insertBefore)main.insertBefore(note,main.firstChild);else add(root,note);
+  }
+};
+var v40Route=route;
+route=function(){
+  var h=NAV.hash||'';
+  if(GA.ready&&!GA.user){
+    if(h==='#signin'||h==='#signup'||PUBLIC_KEYS.test(h)){v40Route();return;}
+    /* Private page while logged out: show the homepage, then return here after login. */
+    ssSet('hx-pending',{type:'route',key:h});
+    PX.homeNotice='Log in to open that page.';
+    navReplace('home');PX.routeId++;renderHome();return;
+  }
+  if(GA.ready&&GA.user&&PX.needsVerify){PX.routeId++;renderVerify();return;}
+  if(GA.ready&&GA.user&&PX.loaded&&PX.profile&&PX.profile.role){
+    var role=PX.profile.role,p=ssGet('hx-pending');
+    if(p&&p.type==='route'){takePending();if(p.key!==h&&(role==='teacher'||!/^#teacher/.test(p.key))){NAV.hash=p.key;return;}}
+    if(role==='student'&&(isTeacherHash()||h==='#new'||h==='#teacher/new')){
+      toast('That page is for teacher accounts.');navReplace('');PX.routeId++;v40Route();return;
+    }
+    if(role==='teacher'&&h==='#teacher/shared'){PX.routeId++;caps.teacher=false;ST=null;renderSharedLinks();return;}
+  }
+  v40Route();
+};
+
 /* The homepage is the starting page: a visit to the bare site address opens it,
    signed in or not. In-app links to "#" still go to the student dashboard. */
 function startPage(){
+  if(PATH_MODE){legacyToPath();return;}
   if(location.hash&&location.hash!=='#')return;
-  try{history.replaceState(null,'',location.pathname+(location.search||'')+'#home')}catch(e){location.hash='home'}
+  location.hash='home';
 }
 startPage();
 route();

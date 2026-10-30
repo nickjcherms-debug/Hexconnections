@@ -195,3 +195,13 @@ Share creates a link another teacher can open to preview the Hex Space and copy
 it into their own folders. Copies carry no classes, codes or student work.
 
 Apply migrations/0004_shares.sql before using sharing (see DEPLOYMENT.txt).
+
+VERSION 4.1.0: LOGIN, MENUS AND CLASSES
+Log in with Google or with an email and password. New accounts choose Teacher
+or Student once; the type can't be changed later. Email accounts confirm their
+address by email, and can connect a Google account later for Classroom.
+Everyone stays signed in on their device until they choose Sign out from the
+menu under their name. Pages now have clean addresses such as
+/teacher/classes and /student/assignments. Teachers choose which Google
+Classroom classes to import, can resync names with Classroom, and can remove
+any class. See DEPLOYMENT.txt for the one-time Firebase Email/Password step.

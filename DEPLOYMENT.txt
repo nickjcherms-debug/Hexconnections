@@ -1,3 +1,48 @@
+LOGIN, MENUS, PAGE ADDRESSES AND CLASS MANAGEMENT 4.1.0
+=======================================================
+One-time Firebase step (needed for email login):
+  Firebase console > hex-connections-a5214 > Authentication > Sign-in method >
+  Add new provider > Email/Password > turn on "Email/Password" (leave
+  "Email link" off) > Save.
+  Under Authentication > Settings > User account linking, keep
+  "Link accounts that use the same email".
+Until this is on, the email form shows: "Email sign-in isn't switched on yet."
+Google sign-in keeps working either way.
+
+No database migration is needed. Merging to main deploys through Workers Builds.
+wrangler.jsonc now sets assets.not_found_handling to "single-page-application",
+so addresses like /teacher/classes load the app. Old "#" links, including the
+ones already attached in Google Classroom, forward to the new addresses.
+
+What changed:
+- The site address always opens the homepage with the Home tab selected.
+  Logged-out visits to private pages show the homepage with a "Log in to open
+  that page" note, then continue there after login.
+- Log in (/login) offers Continue with Google, or email + password with
+  Forgot password. Create an account (/signup) asks Teacher or Student first.
+  Email accounts must confirm their address before using the site.
+  Email users can choose Connect Google account later to use Classroom.
+- Users stay signed in on the device until they choose Sign out (menu under
+  their name, top right).
+- Account types are locked after creation. Students can no longer switch to
+  teacher; every teacher page and teacher API refuses student accounts.
+  Anyone can still choose Teacher when creating a new account. Teachers only
+  ever see their own classes, Hex Spaces and student work.
+- Menus: Home first for everyone.
+  Logged out: Home, How it works, Depth & Complexity, Enter a class code,
+  Log in, New Hex Space. Teacher: Home, Classes, Hex Space, Shared links,
+  + New Hex Space. Student: Home, My assignments, Enter a class code.
+- Page addresses: / (home), /login, /signup, /code, /code/CODE, /share/CODE,
+  /teacher/classes, /teacher/classes/ID, /teacher/hex-space,
+  /teacher/hex-space/ID, /teacher/hex-space/new, /teacher/assignments/ID,
+  /teacher/shared, /student/assignments, /student/assignments/ID.
+- Classes: Import Classroom classes now lets the teacher choose which classes
+  to add (nothing is imported automatically). Resync with Classroom updates
+  renamed classes and offers to remove classes no longer active in Classroom.
+  Any class can be removed; removing a code-only class turns its code off.
+  Removing never deletes anything in Google Classroom or any student work.
+- Fixed: drop-down menus (account, phone Menu, folder menus) opened empty.
+
 HOMEPAGE, FOLDERS, CODE-ONLY CLASSES AND SHARING 4.0.0
 =====================================================
 Existing databases need the new shares table before teachers can share:

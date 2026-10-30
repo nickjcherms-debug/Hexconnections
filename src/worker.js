@@ -57,16 +57,22 @@ async function authenticate(request, env, net) {
   if (res.status >= 500 || res.status === 429) fail(503, 'Account verification is temporarily unavailable. Try again shortly.');
   const data = await res.json().catch(() => ({}));
   const account = data.users?.[0];
-  if (!res.ok || !account?.localId || account.disabled || !account.emailVerified) fail(401, 'Sign in again with a verified Google account.', 'sign-in');
+  if (!res.ok || !account?.localId || account.disabled) fail(401, 'Sign in again.', 'sign-in');
+  // Email + password accounts must confirm their address before using the site.
+  if (!account.emailVerified) fail(401, 'Verify your email address first. Open the link we emailed you, then continue.', 'email-unverified');
   let claims;
   try { const part=token.split('.')[1]; claims=JSON.parse(atob(part.replace(/-/g,'+').replace(/_/g,'/'))); } catch { fail(401,'Invalid account token.','sign-in'); }
   if(claims.aud!==env.FIREBASE_PROJECT_ID || claims.iss!=='https://securetoken.google.com/'+env.FIREBASE_PROJECT_ID || claims.sub!==account.localId || claims.exp<=Date.now()/1000) fail(401,'Sign in to this Firebase project.','sign-in');
-  const google = account.providerUserInfo?.find(p => p.providerId === 'google.com');
-  if (!google?.rawId) fail(403, 'A linked Google account is required.');
-  return { uid: account.localId, email: account.email || '', name: account.displayName || account.email || '', googleSub: google.rawId };
+  const providers = account.providerUserInfo || [];
+  const google = providers.find(p => p.providerId === 'google.com');
+  const password = providers.find(p => p.providerId === 'password');
+  if (!google?.rawId && !password) fail(403, 'Sign in with Google or with your email and password.');
+  // googleSub is empty for email-only accounts until they connect a Google account.
+  return { uid: account.localId, email: account.email || '', name: account.displayName || account.email || '', googleSub: google?.rawId || '' };
 }
 async function classroomContext(request, user, net) {
   const token = request.headers.get('X-Classroom-Token');
+  if (!user.googleSub) fail(403, 'Google Classroom needs a Google account. Open your account menu and choose Connect Google account.', 'google-link-required');
   if (!token || token.length > 8192) fail(401, 'Connect Google Classroom first.', 'classroom-reconnect');
   const res = await net('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { Authorization: 'Bearer ' + token } });
   const info = await googleResponse(res);
@@ -228,11 +234,15 @@ export async function handle(request, env, net = fetch) {
       return json(await generateVocabulary({env,db,user,body:await input(request),fail}));
     }
     if (path==='/api/profile' && request.method==='POST') {
+      // The account type is chosen once, when the account is created, and is then locked
+      // so a student account can never turn itself into a teacher account.
       const {role}=await input(request); if (!['teacher','student'].includes(role)) fail(400,'Choose teacher or student.');
-      await run(db,'UPDATE users SET role=? WHERE uid=?',role,user.uid); return json({profile:{...profile,role}});
+      if (!profile.role) { await run(db,'UPDATE users SET role=? WHERE uid=? AND role IS NULL',role,user.uid); return json({profile:{...profile,role}}); }
+      if (profile.role===role) return json({profile});
+      fail(403,'Your account type can’t be changed after it’s created. Ask the site owner if it was set by mistake.','role-locked');
     }
     if (path==='/api/workspace') {
-      if (profile.role!=='teacher') fail(403,'Switch to your teacher workspace first.');
+      if (profile.role!=='teacher') fail(403,'This is for teacher accounts only.','teacher-required');
       const existing=await one(db,'SELECT body,revision FROM workspaces WHERE owner_uid=?',user.uid);
       if (request.method==='GET') return json({workspace:existing?parse(existing.body):emptyWorkspace(),revision:existing?.revision||0});
       const b=await input(request), workspace=validateWorkspace(b.workspace);
@@ -269,7 +279,7 @@ export async function handle(request, env, net = fetch) {
       return json({assignments:posts.filter(p=>ids.has(p.coursework_id)).map(safePost)});
     }
     if (path==='/api/classroom/publish' && request.method==='POST') {
-      if (profile.role!=='teacher') fail(403,'Switch to your teacher workspace first.');
+      if (profile.role!=='teacher') fail(403,'This is for teacher accounts only.','teacher-required');
       const b=await input(request); if (![b.activityId,b.classId,b.courseId].every(v=>typeof v==='string'&&v.length>0&&v.length<=200)) fail(400,'Choose an activity, class and Classroom course.');
       if (typeof b.maxPoints!=='number' || !Number.isFinite(b.maxPoints) || b.maxPoints<=0 || b.maxPoints>10000) fail(400,'Points must be between 0 and 10,000.');
       const w=await one(db,'SELECT body FROM workspaces WHERE owner_uid=?',user.uid), workspace=w&&parse(w.body);
@@ -300,7 +310,7 @@ export async function handle(request, env, net = fetch) {
       return json({id,url:link,classroomUrl:result.alternateLink||'',updated:!!existing});
     }
     if (path==='/api/manual/publish' && request.method==='POST') {
-      if (profile.role!=='teacher') fail(403,'Switch to your teacher workspace first.');
+      if (profile.role!=='teacher') fail(403,'This is for teacher accounts only.','teacher-required');
       const b=await input(request); if (![b.activityId,b.classId].every(v=>typeof v==='string'&&v.length>0&&v.length<=200)) fail(400,'Choose an activity and class.');
       const maxPoints=b.maxPoints==null?100:b.maxPoints;
       if (typeof maxPoints!=='number' || !Number.isFinite(maxPoints) || maxPoints<=0 || maxPoints>10000) fail(400,'Points must be between 0 and 10,000.');
@@ -318,6 +328,18 @@ export async function handle(request, env, net = fetch) {
       if (existing) await run(db,'UPDATE posts SET status=?,body=?,max_points=?,code=? WHERE id=? AND owner_uid=?','PUBLISHED',snapshot,maxPoints,code,id,user.uid);
       else await run(db,'INSERT INTO posts(id,owner_uid,activity_id,class_id,course_id,status,body,max_points,code,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)',id,user.uid,act.id,cls.id,courseId,'PUBLISHED',snapshot,maxPoints,code,NOW());
       return json({id,url:link,code,updated:!!existing});
+    }
+    if (path==='/api/manual/close-class' && request.method==='POST') {
+      // A teacher removed a code-only class: its posted codes stop admitting students.
+      // Student work already saved or turned in is kept.
+      if (profile.role!=='teacher') fail(403,'This is for teacher accounts only.','teacher-required');
+      const b=await input(request); if (typeof b.classId!=='string'||!b.classId||b.classId.length>200) fail(400,'Choose a class.');
+      const list=await rows(db,'SELECT id,body FROM posts WHERE owner_uid=? AND course_id=?',user.uid,'manual:'+b.classId);
+      for (const post of list) {
+        const info=parse(post.body)||{}; info.asg={...(info.asg||{}),open:false};
+        await run(db,'UPDATE posts SET body=? WHERE id=? AND owner_uid=?',JSON.stringify(info),post.id,user.uid);
+      }
+      return json({closed:list.length});
     }
     if (path==='/api/resolve' && request.method==='POST') {
       const b=await input(request), code=String(b.code||'').toUpperCase().replace(/[^A-Z0-9]/g,'');

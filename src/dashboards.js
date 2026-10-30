@@ -9,7 +9,7 @@ export async function handleDashboardRoutes(c){
  const {request,url,db,user,profile,json,fail,getGoogle,allPages,studentInPost}=c;
  if(request.method!=='GET')return null;
  if(url.pathname==='/api/teacher/dashboard'){
-  if(profile.role!=='teacher')fail(403,'Open your teacher profile first.');
+  if(profile.role!=='teacher')fail(403,'This is for teacher accounts only.','teacher-required');
   const posts=await rows(db,`SELECT p.*,COUNT(s.payload) AS submission_count,
    SUM(CASE WHEN s.status IN ('TURNED_IN','GRADED') THEN 1 ELSE 0 END) AS turned_in_count
    FROM posts p LEFT JOIN submissions s ON s.post_id=p.id WHERE p.owner_uid=? GROUP BY p.id ORDER BY p.created_at DESC`,user.uid);

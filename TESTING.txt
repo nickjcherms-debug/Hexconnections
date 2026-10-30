@@ -1,9 +1,23 @@
-VERIFICATION — VERSION 4.0.0
+VERIFICATION — VERSION 4.1.0
 ============================
-74 automated tests pass (40 backend, 34 frontend) using in-memory SQLite,
+85 automated tests pass (43 backend, 42 frontend) using in-memory SQLite,
 simulated Firebase/Classroom responses, and execution of the actual frontend
 script in a DOM test harness. No real Google Classroom assignment was created
 or modified by these tests.
+
+New in 4.1.0: email + password accounts (verified only), locked account types,
+teacher-only routes refusing students, Classroom requiring a linked Google
+account, closing removed code-only classes, the login and sign-up pages, the
+confirm-your-email step, menus for each role, clean page addresses, choosing
+which Classroom classes to import, resync, and removing classes.
+
+An end-to-end run used the real Worker and all migrations on SQLite with
+Google sign-in and Classroom simulated: homepage, Log in, Google sign-up as a
+teacher, choosing classes to import, resync, adding and removing classes,
+building and posting a Hex Space, sharing, Shared links, Sign out, resuming a
+private page after login, a student creating an email account from a class
+code, confirming the email and joining, a student blocked from teacher pages,
+and an old # Classroom link forwarding. No API errors or page problems.
 
 New in 4.0.0: folder-tree validation (depth, cycles, missing parents); code-only
 class posting, joining, turn-in, reclaim and grading without Classroom; closed
