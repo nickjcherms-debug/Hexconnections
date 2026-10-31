@@ -1,14 +1,11 @@
-VERIFICATION — VERSION 4.6.0
+VERIFICATION — VERSION 4.6.1
 ============================
 108 automated tests pass (52 backend, 56 frontend) using in-memory SQLite,
 simulated Firebase/Classroom responses, and execution of the actual frontend
 script in a DOM test harness. No real Google Classroom assignment was created
 or modified by these tests.
 
-New in 4.6.0: AI-suggested rubric scores (backend: model/caps/errors/parsing, no
-names sent, teacher-owner only; frontend: suggestions fill only unscored rows, are
-tagged until the teacher decides, nothing saved until Save; e2e with a fake AI:
-tags, misconception flag, auto-suggest on next student, phone layout). 112 tests.
+New in 4.6.1: AI-suggested scores (4.6) removed for now; vocabulary generation unchanged.
 New in 4.5.0: feedback scores/comments/revision and student view; progress for
 Present mode (owner only); data export; account deletion cascading through
 postings, submissions, groups, shares and workspace. End-to-end: a teacher

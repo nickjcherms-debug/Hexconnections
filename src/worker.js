@@ -4,7 +4,6 @@ import { generateVocabulary } from './vocabulary.js';
 import {handleShareRoutes} from './shares.js';
 import {handlePostingRoutes,assertStarted,isLate} from './postings.js';
 import {handleTeachingRoutes} from './teaching.js';
-import {handleAiGradeRoutes} from './aigrade.js';
 // Cloudflare Worker. Firebase verifies accounts; every SQL query enforces ownership.
 // Google access tokens are used only for the current request and never persisted.
 const NOW = () => new Date().toISOString();
@@ -222,7 +221,6 @@ export async function handle(request, env, net = fetch) {
     const shareRoute=await handleShareRoutes(context);if(shareRoute)return shareRoute;
     const postingRoute=await handlePostingRoutes(context);if(postingRoute)return postingRoute;
     const teachingRoute=await handleTeachingRoutes(context);if(teachingRoute)return teachingRoute;
-    const aiGradeRoute=await handleAiGradeRoutes({...context,env});if(aiGradeRoute)return aiGradeRoute;
     const dashboard=await handleDashboardRoutes(context);if(dashboard)return dashboard;
     const groupRoute=await handleGroupRoutes(context);if(groupRoute)return groupRoute;
     if (path==='/api/me' && request.method==='GET') return json({profile});

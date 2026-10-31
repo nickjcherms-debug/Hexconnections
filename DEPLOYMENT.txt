@@ -245,10 +245,6 @@ If you originally created tables manually in the D1 Console, do not blindly run
 all migrations over those tables. Apply the idempotent 0002, 0003 and 0004 files listed above.
 New EMPTY databases can use npm run db:migrate to install all migrations.
 
-AI-suggested scores (4.6) use the same AI binding and the ai_daily_usage table
-from 0002; nothing new to migrate. Optional vars: AI_GRADING_MODEL,
-AI_GRADING_TEACHER_LIMIT, AI_GRADING_SITE_LIMIT (see README.txt).
-
 No external AI API key is required. The selected model uses Cloudflare's free
 AI allowance. This allowance is shared across the account and is finite; Workers
 Paid can bill overages. Keep the Workers Free plan if you require Cloudflare's
