@@ -697,3 +697,22 @@ test('one connected board: on by default for new postings, enforced at turn-in, 
  // Editing another switch on an older posting doesn't turn the rule on.
  const ed=await h.call('teacher','posts/'+on.body.id+'/edit',{options:{defs:false}},{access:false});assert.equal(ed.body.options.flow,false);
 });
+test('gallery assignments: each student sees a fixed rotation of boards and the teacher sees comment counts',async()=>{
+ const h=harness(),id=await manualSetup(h);
+ const kids=['k1','k2','k3','k4','k5'];
+ for(const k of kids){await kidJoin(h,k,'CLUB23');assert.equal((await h.call(k,'posts/'+id+'/submit',{draft:h.draft},{access:false})).status,200)}
+ const o=await h.call('teacher','posts/'+id+'/gallery/open',{open:true,visits:2,minComments:2},{access:false});assert.deepEqual([o.body.visits,o.body.minComments],[2,2]);
+ const seen={};
+ for(const k of kids){const g=(await h.call(k,'posts/'+id+'/gallery',undefined,{access:false})).body;assert.equal(g.boards.length,3,'own board + 2 assigned');assert.deepEqual(g.settings,{visits:2,minComments:2});assert.equal(g.myComments,0);
+  for(const b of g.boards.filter(b=>!b.mine))seen[b.board]=(seen[b.board]||0)+1}
+ assert.ok(Object.values(seen).every(n=>n===2),'every board gets exactly two visitors');
+ const g1=(await h.call('k1','posts/'+id+'/gallery',undefined,{access:false})).body;const other=g1.boards.find(b=>!b.mine);
+ assert.equal((await h.call('k1','posts/'+id+'/gallery/comment',{board:other.board,kind:'glow',text:'Nice link here'},{access:false})).status,201);
+ const all=(await h.call('teacher','posts/'+id+'/gallery',undefined,{access:false})).body;assert.equal(all.boards.length,5);
+ const unassigned=all.boards.find(b=>!g1.boards.some(x=>x.board===b.board));
+ assert.equal((await h.call('k1','posts/'+id+'/gallery/comment',{board:unassigned.board,kind:'glow',text:'Sneaky visit'},{access:false})).body.code,'gallery-not-assigned');
+ assert.equal(all.progress.find(p=>p.name==='Name k1').comments,1);assert.equal(all.progress[0].comments,0);
+ assert.equal((await h.call('k1','posts/'+id+'/gallery',undefined,{access:false})).body.myComments,1);
+ // reopening without settings keeps them
+ await h.call('teacher','posts/'+id+'/gallery/open',{open:false},{access:false});const re=await h.call('teacher','posts/'+id+'/gallery/open',{open:true},{access:false});assert.equal(re.body.visits,2);
+});

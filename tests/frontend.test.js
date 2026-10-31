@@ -33,6 +33,7 @@ function make(){
  getData(){return DATA},setData(w){DATA=w},setView(fn){viewSubmission=fn},
  setWork(w){TW=w;TS.rows={};TS.sel=w.activities[0].id},setRenderTeacher(fn){renderTeacher=fn},
  setApi(fn){platformApi=fn},setTeacher(fn){startTeacher=fn;teacherDashboard=fn},
+ v412:{leastConnected,reteachCallout,openGalleryDialog},
  v410:{flowGroups,flowState,setChecker(fn){checkReady=fn},getChecker(){return checkReady}},
  v49:{mergeInto,reconcileLocal,renderDirectory,blockPaste,graderExtras:(p)=>graderExtras(p,[],0),SYNC,dirFolderId},
  v48:{assignMenu,assignNudge:a=>assignNudgeBody(a),assignTo},
@@ -716,4 +717,15 @@ test('grades CSV includes version, paste attempts and reflections',()=>{
  const {h}=make();let file=null;h.v4.setDownload((name,text)=>{file={name,text}});
  h.v4.exportGrades({title:'U'},[{name:'Ava',connections:[],_status:'TURNED_IN',version:'Support',pasteAttempts:3,reflection:{proud:'C1',hard:'C2'},_feedback:{overall:'ok'}}]);
  const [head,row]=file.text.split('\r\n');assert.match(head,/Version,Paste attempts blocked,Reflection: proudest,Reflection: hardest,Overall feedback$/);assert.match(row,/,Support,3,C1,C2,ok$/);
+});
+test('least-connected terms are flagged for reteaching; the gallery dialog sends visits and a comment goal',async()=>{
+ const t=make();const {h,text}=t;
+ const d={started:10,terms:[{term:'A',n:9},{term:'B',n:2},{term:'C',n:0},{term:'D',n:6}]};
+ assert.deepEqual(JSON.parse(JSON.stringify(h.v412.leastConnected(d).map(x=>x.term))),['C','B']);
+ const node=h.v412.reteachCallout(d);assert.match(kids(node).map(n=>n.textContent).join(''),/C \(0 of 10\).*B \(2 of 10\)/);
+ assert.equal(h.v412.reteachCallout({started:0,terms:[]}),null);
+ let sent=null;h.setApi(async(path,body)=>{sent=[path,body];return {open:true}});
+ h.v412.openGalleryDialog('p1');everything(t).find(n=>n.attrs?.id==='gw-visits').value='3';everything(t).find(n=>n.attrs?.id==='gw-min').value='2';
+ everything(t).find(n=>n.tagName==='button'&&n.textContent==='Open gallery walk').listeners.click({});await settle();
+ assert.equal(sent[0],'posts/p1/gallery/open');assert.equal(JSON.stringify(sent[1]),JSON.stringify({open:true,visits:3,minComments:2}));
 });

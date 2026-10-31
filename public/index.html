@@ -700,6 +700,12 @@ h2,h3,.brand h1,.aitem b,.act-head h2,.modal h3{overflow-wrap:anywhere}
  .subs-row>[data-label]{font-size:.86rem;color:var(--muted)}.subs-row>[data-label]::before{content:attr(data-label) ': ';font-weight:700}
  .subs-act{grid-column:2;grid-row:1/span 2;align-self:center}}
 @media (pointer:coarse){.gr-keys{display:none}}
+.gal-goal{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.gal-progress{display:flex;flex-wrap:wrap;gap:6px}
+.gal-prog{border-radius:999px;padding:3px 10px;background:var(--t2);font-size:.88rem}
+.gal-prog.ok{background:var(--teal-soft);color:var(--teal)}
+.reteach{background:var(--honey-soft);color:var(--honey-ink);border-radius:12px;padding:8px 12px;font-size:.95rem}
+.reteach.big{font-size:clamp(1.05rem,1.6vw,1.4rem)}
 </style>
 <div id="root"></div>
 <script type="application/json" id="hx-data">{"version":4,"classes":[],"activities":[]}</script>
@@ -4493,6 +4499,7 @@ function openInsights(a){
     openModal([el('div',{class:'eyebrow',text:'Class insights'}),el('h3',{style:'font-size:1.3rem',text:a.title}),
       el('div',{class:'ins-stats'},
         stat(d.total,'joined'),stat(d.started,'started'),stat(d.done,'turned in'),stat(d.avg,'words per reason'),stat(d.short,'reasons under 6 words')),
+      reteachCallout(d),
       el('div',{class:'ins-grid'},
         el('div',{class:'panel stack'},el('h3',{text:'How many students used each term'}),
           el('ul',{class:'bars'},d.terms.slice().sort(function(x,y){return x.n-y.n}).map(function(t){return el('li',null,el('span',{class:'bar-label',text:t.term}),el('span',{class:'bar'},el('span',{class:'bar-fill',style:'width:'+Math.round(t.n/most*100)+'%'})),el('b',{text:t.n}))})),
@@ -4542,6 +4549,7 @@ function openPresent(a){
       fill(body,
         el('div',{class:'present-stats'},
           stat(d.total,'students joined'),stat(all,'placed every term'),stat(d.reasons.length,'connections made'),stat(d.done,'turned in')),
+        reteachCallout(d,true),
         el('div',{class:'present-net'},networkSVG(d),el('p',{class:'hint',text:'Thicker lines = more students made that connection. Updates every 15 seconds.'})));
       PRESENT.timer=setTimeout(load,15000);
     }).catch(function(e){fill(body,el('p',{class:'err',text:e.message}));PRESENT.timer=setTimeout(load,30000);});
@@ -4907,7 +4915,7 @@ function drawGallery(body,id,r,teacher){
   add(body,el('div',{class:'panel stack',style:'gap:6px'},el('h3',{text:r.title}),
     el('p',{style:'margin:0',text:teacher?'Students see every turned-in board labelled Board A, B, C… without names. They leave a Glow (something strong) or a Grow (an idea to improve). You see who wrote each comment and can hide any of them.':'Look closely at your classmates’ boards. Leave a Glow ✨ for something strong and a Grow 🌱 for an idea to make it better. Be specific and kind. Names are hidden.'}),
     teacher?el('div',{class:'row'},el('span',{class:'chip',text:r.open?'Open to students':'Closed to students'}),
-      el('button',{class:'btn sm',onclick:function(){platformApi('posts/'+id+'/gallery/open',{open:!r.open}).then(function(){toast(r.open?'Gallery walk closed.':'Gallery walk opened.');renderGallery(id)}).catch(platformError)},text:r.open?'Close gallery walk':'Open gallery walk'})):null));
+      el('button',{class:'btn sm',onclick:function(){if(!r.open){openGalleryDialog(id,function(){renderGallery(id)});return;}platformApi('posts/'+id+'/gallery/open',{open:!r.open}).then(function(){toast(r.open?'Gallery walk closed.':'Gallery walk opened.');renderGallery(id)}).catch(platformError)},text:r.open?'Close gallery walk':'Open gallery walk'})):null));
   if(!r.boards.length){dashboardMessage(body,'No turned-in boards yet.');return;}
   var grid=el('div',{class:'gallery-grid'});add(body,grid);
   var mineFirst=r.boards.slice().sort(function(x,y){return (y.mine?1:0)-(x.mine?1:0)});
@@ -4957,7 +4965,7 @@ function postExtras(postId,a){
       el('button',{class:'btn ghost sm',text:'Change',onclick:function(){openPostDialog(act||{id:a.activityId,title:a.title,terms:[]},a)}})),
     el('div',{class:'row'},
       o.gallery===false?el('span',{class:'hint',text:'Gallery walk is switched off for this posting.'}):[
-        el('button',{class:a.gallery?'btn':'btn honey',text:a.gallery?'Close gallery walk':'Open gallery walk',onclick:function(e){var btn=e.currentTarget||e.target;btn.disabled=true;platformApi('posts/'+postId+'/gallery/open',{open:!a.gallery}).then(function(){toast(a.gallery?'Gallery walk closed.':'Gallery walk opened. Students who turned in can visit it from their board.');route()}).catch(function(err){btn.disabled=false;platformError(err)})}}),
+        el('button',{class:a.gallery?'btn':'btn honey',text:a.gallery?'Close gallery walk':'Open gallery walk…',onclick:function(e){if(!a.gallery){openGalleryDialog(postId,function(){route()});return;}var btn=e.currentTarget||e.target;btn.disabled=true;platformApi('posts/'+postId+'/gallery/open',{open:!a.gallery}).then(function(){toast(a.gallery?'Gallery walk closed.':'Gallery walk opened. Students who turned in can visit it from their board.');route()}).catch(function(err){btn.disabled=false;platformError(err)})}}),
         el('a',{class:'btn ghost',href:'#gallery-'+postId,text:'View gallery & comments'})],
       act?el('button',{class:'btn ghost',onclick:function(){printTiles(act)},text:'Print tiles'}):null),
     verBox);
@@ -5652,6 +5660,59 @@ function graderKeys(e){
   else if(k==='ArrowLeft'){var pv=by(/^← Previous$/);if(pv){e.preventDefault();pv.click();}}
 }
 if(document.addEventListener)document.addEventListener('keydown',graderKeys);
+
+
+/* ===================== 4.12b: gallery walk assignments, least-connected terms ===================== */
+function openGalleryDialog(postId,done){
+  var visits=el('select',{id:'gw-visits'},[[0,'Every turned-in board'],[2,'2 classmates’ boards'],[3,'3 classmates’ boards'],[4,'4 classmates’ boards']].map(function(o){return el('option',{value:o[0],text:o[1],selected:o[0]===2||null})}));
+  var min=el('select',{id:'gw-min'},[[0,'No minimum'],[1,'At least 1 comment'],[2,'At least 2 comments'],[3,'At least 3 comments']].map(function(o){return el('option',{value:o[0],text:o[1],selected:o[0]===2||null})}));
+  var err=el('p',{class:'err',role:'alert'});
+  openModal([el('div',{class:'eyebrow',text:'Gallery walk'}),el('h3',{style:'font-size:1.2rem',text:'Open the gallery walk'}),
+    el('p',{style:'margin:0',text:'Students who have turned in see classmates’ boards without names and leave Glow and Grow comments.'}),
+    el('label',{class:'fld',for:'gw-visits'},'Each student visits',visits,el('span',{class:'hint',text:'With a number, each student gets the next boards in a fixed rotation, so every board gets the same number of visitors.'})),
+    el('label',{class:'fld',for:'gw-min'},'Comments each student should leave',min,el('span',{class:'hint',text:'You’ll see who has met it on the gallery page.'})),
+    err,
+    el('div',{class:'row',style:'justify-content:flex-end'},el('button',{class:'btn ghost',onclick:closeModal,text:'Cancel'}),
+      el('button',{class:'btn honey','data-autofocus':true,onclick:function(e){var b=e&&(e.currentTarget||e.target);if(b)b.disabled=true;
+        platformApi('posts/'+postId+'/gallery/open',{open:true,visits:+visits.value,minComments:+min.value}).then(function(){closeModal();toast('Gallery walk opened. Students who turned in can visit it from their board.');if(done)done();}).catch(function(x){if(b)b.disabled=false;err.textContent=x.message;});},text:'Open gallery walk'}))]);
+}
+var v412DrawGallery=drawGallery;
+drawGallery=function(body,id,r,teacher){
+  v412DrawGallery.apply(this,arguments);
+  var st=r.settings||{},parts=[];
+  if(!teacher&&(st.visits||st.minComments)){
+    var txt=(st.visits?'Visit the '+st.visits+' board'+(st.visits===1?'':'s')+' below':'Visit your classmates’ boards')+(st.minComments?' and leave at least '+st.minComments+' comment'+(st.minComments===1?'':'s'):'')+'.';
+    var mine=el('b',{id:'gal-progress',text:progressText(r)});
+    parts.push(el('div',{class:'banner gal-goal',role:'status'},el('span',{text:txt+' '}),mine));
+  }
+  if(teacher&&r.progress){
+    var need=st.minComments||0;
+    parts.push(el('div',{class:'panel stack',style:'gap:8px'},el('h3',{text:'Comments left by each student'+(need?' (goal: '+need+')':'')}),
+      el('div',{class:'gal-progress'},r.progress.map(function(p){var ok=need?p.comments>=need:p.comments>0;return el('span',{class:'gal-prog'+(ok?' ok':'')},el('b',{text:p.name}),el('span',{text:' '+p.comments+(ok?' ✓':'')}))}))));
+  }
+  var grid=body.querySelector&&body.querySelector('.gallery-grid');
+  parts.forEach(function(n){if(grid&&body.insertBefore)body.insertBefore(n,grid);else add(body,n);});
+};
+function progressText(r){if(r.myComments==null)return '';var need=(r.settings||{}).minComments||0;return 'You’ve left '+r.myComments+(need?' of '+need:'')+'.'+(need&&r.myComments>=need?' ✓ Done':'');}
+var v412Card=galleryCard;
+galleryCard=function(id,r,b,teacher){
+  var card=v412Card.apply(this,arguments);
+  /* Count this student's comments as they post. */
+  var post=card.querySelector&&[].slice.call(card.querySelectorAll?card.querySelectorAll('button'):[]).find(function(x){return x.textContent==='Post'});
+  if(post&&post.addEventListener&&r.myComments!=null){var before=b.comments.length;post.addEventListener('click',function(){var tries=0;(function wait(){if(b.comments.length>before){r.myComments++;var g=document.getElementById('gal-progress');if(g)g.textContent=progressText(r);return;}if(tries++<20)setTimeout(wait,150);})();});}
+  return card;
+};
+/* Terms few students have connected yet: worth reteaching. */
+function leastConnected(d){
+  var base=Math.max(1,d.started);
+  return d.terms.filter(function(t){return t.n<base*0.5}).sort(function(x,y){return x.n-y.n}).slice(0,4);
+}
+function reteachCallout(d,big){
+  var list=leastConnected(d);if(!list.length||!d.started)return null;
+  return el('div',{class:'reteach'+(big?' big':''),role:'note'},el('b',{text:'Least connected so far: '}),
+    list.map(function(t,i){return el('span',{class:'reteach-term'},(i?' · ':''),t.term+' ('+t.n+' of '+d.started+')')}),
+    big?null:el('span',{class:'hint',text:' Worth a quick reteach or a class discussion.'}));
+}
 
 /* The homepage is the starting page: a visit to the bare site address opens it,
    signed in or not. In-app links to "#" still go to the student dashboard. */

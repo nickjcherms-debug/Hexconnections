@@ -147,9 +147,12 @@ export async function handleClassToolRoutes(c){
       if(!mine)fail(404,'Assignment not found.');
       const b=await input(request);
       if(b.open===true&&cleanOptions(info.asg?.options,info.act).gallery===false)fail(400,'The gallery walk is switched off for this posting. Turn it on in the posting’s student supports first.','gallery-off');
-      info.asg={...(info.asg||{}),gallery:{open:b.open===true,openedAt:b.open===true?NOW():(info.asg?.gallery?.openedAt||null)}};
+      const prev=info.asg?.gallery||{};
+      const visits=b.visits===undefined?(prev.visits||0):Math.max(0,Math.min(6,Number(b.visits)||0));
+      const minComments=b.minComments===undefined?(prev.minComments||0):Math.max(0,Math.min(6,Number(b.minComments)||0));
+      info.asg={...(info.asg||{}),gallery:{open:b.open===true,openedAt:b.open===true?NOW():(prev.openedAt||null),visits,minComments}};
       await run(db,'UPDATE posts SET body=? WHERE id=? AND owner_uid=?',JSON.stringify(info),id,user.uid);
-      return json({open:b.open===true});
+      return json({open:b.open===true,visits,minComments});
     }
     if(action==='hide'&&method==='POST'){
       if(!mine)fail(404,'Assignment not found.');
@@ -169,11 +172,18 @@ export async function handleClassToolRoutes(c){
     const keyed=[];for(const r of list)keyed.push({...r,key:await boardKey(id,r.uid)});
     keyed.sort((a,b)=>a.key<b.key?-1:1);
     const byKey=new Map(keyed.map((r,i)=>[r.key,{...r,label:'Board '+(i<26?String.fromCharCode(65+i):String.fromCharCode(65+Math.floor(i/26)-1)+String.fromCharCode(65+i%26))}]));
+    const gs=info.asg?.gallery||{},visits=Number(gs.visits)||0,minComments=Number(gs.minComments)||0;
+    // Each student visits the next few boards after their own (a fixed, fair rotation).
+    const ordered=[...byKey.values()],myIdx=mine?-1:ordered.findIndex(r=>r.uid===user.uid);
+    const assigned=new Set();
+    if(!mine&&visits>0&&myIdx>=0)for(let k=1;k<=Math.min(visits,ordered.length-1);k++)assigned.add(ordered[(myIdx+k)%ordered.length].key);
+    const canSee=r=>mine||visits===0||r.uid===user.uid||assigned.has(r.key);
     if(action==='comment'&&method==='POST'){
       if(mine)fail(403,'Teachers leave feedback in the grader.');
       const b=await input(request),target=byKey.get(String(b.board||''));
       if(!target)fail(404,'Board not found.');
       if(target.uid===user.uid)fail(400,'Leave comments on classmates’ boards.');
+      if(!canSee(target))fail(403,'Comment on the boards assigned to you.','gallery-not-assigned');
       if(!['glow','grow'].includes(b.kind))fail(400,'Choose Glow or Grow.');
       const body=text(b.text,280);
       if(body.length<3)fail(400,'Write a few words.');
@@ -185,14 +195,17 @@ export async function handleClassToolRoutes(c){
     }
     if(action||method!=='GET')fail(405,'Unsupported method.');
     const comments=await rows(db,'SELECT c.*,u.name AS author FROM peer_comments c LEFT JOIN users u ON u.uid=c.author_uid WHERE c.post_id=? ORDER BY c.created_at',id);
-    const boards=[...byKey.values()].map(r=>{
+    const boards=[...byKey.values()].filter(canSee).map(r=>{
       const p=parse(r.payload)||{},own=r.uid===user.uid;
       const cs=comments.filter(x=>x.target_uid===r.uid&&(mine||!x.hidden)).map(x=>({id:x.id,kind:x.kind,text:x.body,mine:x.author_uid===user.uid,...(mine?{author:x.author||'Removed account',hidden:!!x.hidden}:{})}));
       return {board:r.key,label:r.label,mine:own,...(mine?{name:r.name,studentUid:r.uid}:{}),placements:p.placements||{},connections:(p.connections||[]).map(x=>({num:x.num,a:x.a,b:x.b,why:x.why})),comments:cs};
     });
     const showDefs=mine||cleanOptions(info.asg?.options,info.act).defs;
     const act=showDefs?info.act:{...info.act,terms:(info.act?.terms||[]).map(t=>({...t,def:''}))};
-    return json({open,act,boards:boards.slice(0,80),title:info.act?.title||''});
+    const settings={visits,minComments};
+    const mineCount=mine?null:comments.filter(c=>c.author_uid===user.uid).length;
+    const progress=mine?ordered.map(r=>({name:r.name,label:r.label,comments:comments.filter(c=>c.author_uid===r.uid).length})).sort((x,y)=>x.comments-y.comments||String(x.name).localeCompare(String(y.name))):undefined;
+    return json({open,act,boards:boards.slice(0,80),title:info.act?.title||'',settings,...(mine?{progress}:{myComments:mineCount})});
   }
 
   /* ---- public library ---- */
