@@ -33,6 +33,7 @@ function make(){
  getData(){return DATA},setData(w){DATA=w},setView(fn){viewSubmission=fn},
  setWork(w){TW=w;TS.rows={};TS.sel=w.activities[0].id},setRenderTeacher(fn){renderTeacher=fn},
  setApi(fn){platformApi=fn},setTeacher(fn){startTeacher=fn;teacherDashboard=fn},
+ v48:{assignMenu,assignNudge:a=>assignNudgeBody(a),assignTo},
  v47:{supportsEditor,versionsEditor,printTileHTML,replayStates,startersFor,recordHistory,graderExtras,drawGallery,studentTools,writingHelps,hexMap,TR,CFG,renderLogin:()=>renderLogin(),getST(){return ST}},
  v4:{openGrader,insightsData,exportGrades,setDownload(fn){downloadBlob=fn},setPostState(v){PX.postState=v},accountItems:(r)=>accountItems(r,false),folderPicker:a=>folderPicker(a),deleteHexSpace:a=>deleteHexSpace(a),publishNow:()=>publishNow(),setTeacherData(v){PX.teacherData=v},openPostDialog,studentCard:a=>studentAssignmentCard(a),setPosts(v){PX.posts=v},keyToPath,pathToKey,navItems:()=>navItems(),startPage,renderHome,hexSpaceSidebar,newFolder,deleteFolder,moveActivity,folderById,childFolders,folderActs,canMoveFolder,syncClassroomClasses,importClassroomClasses,sharePreview,copyShared,postManual,codesPane,TS,getTW(){return TW},startTeacher(){startTeacher()},renderTeacher(){renderTeacher()},setSave(fn){saveWorkspaceCloud=fn},setTS(o){Object.assign(TS,o)}}};`;
  vm.runInContext(script.replace(/startPage\(\);\nroute\(\);\nbootGoogle\(\);\n\}\)\(\);\s*$/,hooks+'})();'),context);
@@ -617,4 +618,17 @@ test('Microsoft sign-in appears only when the site owner turns it on',()=>{
  const t=make();const {h,text,location}=t;h.GA.ready=true;h.GA.auth={};location.hash='#signin';h.renderGoogleGate();
  assert.doesNotMatch(text(),/Continue with Microsoft/);
  h.v47.CFG.microsoft=true;h.renderGoogleGate();assert.match(text(),/Continue with Microsoft/);
+});
+
+// ---------------- 4.8 ----------------
+test('a finished Hex Space can be assigned to a chosen class from the Hex Space itself',()=>{
+ const t=make();const {h,text}=t;teacher2(h);const v=h.v4;v.setPosts([]);const a=v.getTW().activities[0];
+ const menu=h.v48.assignMenu(a);const items=kids(menu).filter(n=>String(n.attrs?.class||'').includes('menu-item')).map(n=>n.textContent);
+ assert.deepEqual(items,['Period 2 · Classroom','Period 4 · code','Science club · code','Several classes…']);
+ kids(menu).find(n=>n.textContent==='Period 4 · code').listeners.click({});
+ assert.match(text(),/Post a Hex Space|Post “Cells”/);
+ const box=id=>everything(t).find(n=>n.attrs?.id===id);assert.equal(box('pd-c-p4').checked,true);assert.ok(!box('pd-c-club').checked);
+ assert.ok(h.v48.assignNudge(a),'nudge for a ready, unassigned Hex Space');
+ v.setPosts([{activityId:'a1'}]);assert.equal(h.v48.assignNudge(a),null);
+ assert.equal(h.v48.assignNudge({title:'',terms:[]}),null);
 });

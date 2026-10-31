@@ -1,10 +1,12 @@
-VERIFICATION — VERSION 4.7.0
+VERIFICATION — VERSION 4.8.0
 ============================
 108 automated tests pass (52 backend, 56 frontend) using in-memory SQLite,
 simulated Firebase/Classroom responses, and execution of the actual frontend
 script in a DOM test harness. No real Google Classroom assignment was created
 or modified by these tests.
 
+New in 4.8.0: Assign to class menu and Ready-to-assign bar (unit test plus Chromium run:
+new Hex Space → Assign to class → Period 4 preselected → posted → bar disappears). 124 tests.
 New in 4.7.0: 123 automated tests. Backend: versions (trimmed boards, teacher-only
 moves, version names hidden), student supports (definitions stripped server-side,
 later changes), gallery (anonymous boards, turn-in required, own-board comments

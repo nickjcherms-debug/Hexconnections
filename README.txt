@@ -116,6 +116,12 @@ Tiles and text retain their original size, and zoom/scroll remain available.
 A hexagon still has six sides: extra space supports more arrangements, not more
 than six simultaneous neighboring tiles per hexagon.
 
+ASSIGN TO CLASS (4.8)
+Every Hex Space has an "Assign to class" button beside Share. Pick one class
+(or several) and the Post dialog opens with that class ticked, ready for dates
+and student supports. A Hex Space with a title and terms that hasn't been
+assigned yet also shows a "Ready to assign?" bar with one button per class.
+
 CLASSROOM TOOLS (4.7)
 - Student supports, chosen each time you post (Post dialog > Student supports),
   and changeable later from the posting page: show definitions, sentence
