@@ -647,7 +647,7 @@ test('student supports chosen when posting: definitions are removed for students
  assert.equal((await h.call('teacher','posts/'+id,undefined,{access:false})).body.assignment.act.terms[0].def,'Control center','teacher still sees them');
  assert.equal((await h.call('teacher','posts/'+id+'/gallery/open',{open:true},{access:false})).body.code,'gallery-off');
  const ed=await h.call('teacher','posts/'+id+'/edit',{options:{defs:true,gallery:true}},{access:false});
- assert.deepEqual(ed.body.options,{defs:true,starters:false,readAloud:true,translate:true,reflect:true,gallery:true,noPaste:false});
+ assert.deepEqual(ed.body.options,{defs:true,starters:false,readAloud:true,translate:true,reflect:true,gallery:true,noPaste:false,flow:true});
  a=(await h.call('kid','posts/'+id,undefined,{access:false})).body.assignment.act;assert.equal(a.terms[0].def,'Control center');
  assert.equal((await h.call('teacher','posts/'+id+'/gallery/open',{open:true},{access:false})).status,200);
  assert.equal((await h.call('kid','posts/'+id+'/submit',{draft:{name:'',place:{1:[0,0],2:[1,0],3:[0,1]},conns:{'1-2':{why:'Two words.',at:1},'1-3':{why:'Two more.',at:2}},view:{}}},{access:false})).status,200);
@@ -663,4 +663,37 @@ test('paste blocking: Hex Space default, posting override, and blocked attempts 
  const board={name:'',place:{1:[0,0],2:[1,0],3:[0,1]},conns:{'1-2':{why:'Two words.',at:1},'1-3':{why:'Two more.',at:2}},view:{},pasteBlocked:3};
  assert.equal((await h.call('kid','posts/'+p1.body.id+'/submit',{draft:board},{access:false})).status,200);
  const sub=(await h.call('teacher','submissions?postId='+p1.body.id,undefined,{access:false})).body.submissions[0];assert.equal(sub.pasteAttempts,3);
+});
+test('one connected board: on by default for new postings, enforced at turn-in, off for older postings',async()=>{
+ const h=harness();await h.call('teacher','profile',{role:'teacher'});await h.call('teacher','workspace',{workspace:threeTerms(),revision:0});
+ const p=await h.call('teacher','posts/new',{activityId:'act-m',classId:'club',tz:'UTC'},{access:false});
+ await kidJoin(h,'kid',p.body.code);
+ assert.equal((await h.call('kid','posts/'+p.body.id,undefined,{access:false})).body.assignment.act.flow,true);
+ // Three terms placed in a line but only one pair explained: two groups.
+ const split={name:'',place:{1:[0,0],2:[1,0],3:[2,0]},conns:{'1-2':{why:'Two words.',at:1}},view:{}};
+ const ws=threeTerms();ws.activities[0].minTerms=2;
+ assert.equal((await h.call('teacher','workspace',{workspace:ws,revision:1})).status,200);
+ const p2=await h.call('teacher','posts/new',{activityId:'act-m',classId:'club',tz:'UTC'},{access:false});await kidJoin(h,'kid',p2.body.code);
+ const r=await h.call('kid','posts/'+p2.body.id+'/submit',{draft:split},{access:false});assert.equal(r.status,400);assert.equal(r.body.code,'flow-broken');
+ split.conns['2-3']={why:'Two more.',at:2};
+ assert.equal((await h.call('kid','posts/'+p2.body.id+'/submit',{draft:split},{access:false})).status,200);
+ // A D&C hexagon can bridge two terms.
+ const ws3=threeTerms();ws3.activities[0].minTerms=2;ws3.activities[0].dcOn=true;ws3.activities[0].dc=['patterns'];
+ await h.call('teacher','workspace',{workspace:ws3,revision:2});
+ const p3=await h.call('teacher','posts/new',{activityId:'act-m',classId:'club',tz:'UTC'},{access:false});await kidJoin(h,'kid',p3.body.code);
+ const bridge={name:'',place:{1:[0,0],1003:[1,0],2:[2,0]},conns:{'1-1003':{why:'Two words.',at:1},'2-1003':{why:'Two more.',at:2}},view:{}};
+ assert.equal((await h.call('kid','posts/'+p3.body.id+'/submit',{draft:bridge},{access:false})).status,200);
+ // Switched off for this posting: separate groups are fine. Older postings (no setting) are unaffected.
+ const lone={name:'',place:{1:[0,0],2:[1,0],3:[0,1]},conns:{'1-2':{why:'Two words.',at:1}},view:{}};
+ const ws4=threeTerms();ws4.activities[0].minTerms=2;await h.call('teacher','workspace',{workspace:ws4,revision:3});
+ const off=await h.call('teacher','posts/new',{activityId:'act-m',classId:'club',tz:'UTC',options:{flow:false}},{access:false});await kidJoin(h,'kid',off.body.code);
+ assert.equal((await h.call('kid','posts/'+off.body.id+'/submit',{draft:lone},{access:false})).status,200);
+ const on=await h.call('teacher','posts/new',{activityId:'act-m',classId:'club',tz:'UTC'},{access:false});await kidJoin(h,'kid',on.body.code);
+ assert.equal((await h.call('kid','posts/'+on.body.id+'/submit',{draft:lone},{access:false})).body.code,'flow-broken');
+ // A posting saved before this setting existed keeps the old rules.
+ const old=JSON.parse(h.sql.prepare('SELECT body FROM posts WHERE id=?').get(on.body.id).body);delete old.asg.options.flow;h.sql.prepare('UPDATE posts SET body=? WHERE id=?').run(JSON.stringify(old),on.body.id);
+ assert.equal((await h.call('kid','posts/'+on.body.id,undefined,{access:false})).body.assignment.act.flow,false);
+ assert.equal((await h.call('kid','posts/'+on.body.id+'/submit',{draft:lone},{access:false})).status,200);
+ // Editing another switch on an older posting doesn't turn the rule on.
+ const ed=await h.call('teacher','posts/'+on.body.id+'/edit',{options:{defs:false}},{access:false});assert.equal(ed.body.options.flow,false);
 });

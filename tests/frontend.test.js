@@ -33,6 +33,7 @@ function make(){
  getData(){return DATA},setData(w){DATA=w},setView(fn){viewSubmission=fn},
  setWork(w){TW=w;TS.rows={};TS.sel=w.activities[0].id},setRenderTeacher(fn){renderTeacher=fn},
  setApi(fn){platformApi=fn},setTeacher(fn){startTeacher=fn;teacherDashboard=fn},
+ v410:{flowGroups,flowState,setChecker(fn){checkReady=fn},getChecker(){return checkReady}},
  v49:{mergeInto,reconcileLocal,renderDirectory,blockPaste,graderExtras:(p)=>graderExtras(p,[],0),SYNC,dirFolderId},
  v48:{assignMenu,assignNudge:a=>assignNudgeBody(a),assignTo},
  v47:{supportsEditor,versionsEditor,printTileHTML,replayStates,startersFor,recordHistory,graderExtras,drawGallery,studentTools,writingHelps,hexMap,TR,CFG,renderLogin:()=>renderLogin(),getST(){return ST}},
@@ -562,7 +563,7 @@ test('student supports in the Post dialog start from the Hex Space and are sent 
  byId('pd-c-club').checked=true;byId('pd-c-club').listeners.change();
  everything(t).find(n=>n.tagName==='button'&&n.textContent==='Post').listeners.click();await settle();
  assert.equal(sent.length,1);
- assert.deepEqual(JSON.parse(JSON.stringify(sent[0].options)),{defs:false,starters:false,readAloud:true,translate:false,reflect:true,gallery:true,noPaste:false});
+ assert.deepEqual(JSON.parse(JSON.stringify(sent[0].options)),{defs:false,starters:false,readAloud:true,translate:false,reflect:true,gallery:true,noPaste:false,flow:true});
  assert.deepEqual(JSON.parse(JSON.stringify(sent[0].versions.map(x=>x.terms))),[[1,2],[1]]);
 });
 test('a version with no terms is caught before posting',()=>{
@@ -668,4 +669,19 @@ test('paste blocking stops paste and drop, tells the student, and counts attempt
  h.v49.blockPaste(ta);let prevented=0;ta.listeners.paste({preventDefault(){prevented++}});ta.listeners.drop({preventDefault(){prevented++}});ta.listeners.beforeinput({inputType:'insertText',preventDefault(){prevented++}});
  assert.equal(prevented,2);assert.equal(d.pasteBlocked,2);assert.equal(wrap.children[0].hidden,false);
  const g=h.v49.graderExtras({pasteAttempts:2});assert.match(kids(g).map(x=>x.textContent).join(' '),/2 paste attempts blocked/);
+});
+
+// ---------------- 4.10 ----------------
+test('one connected board: groups are joined only by explained, touching connections, and turn-in waits for one group',()=>{
+ const t=make();const {h}=t;const g=h.v410.flowGroups;
+ const place={1:[0,0],2:[1,0],3:[2,0],1003:[0,1]};
+ assert.equal(JSON.stringify(g(place,{'1-2':{why:'x'},'2-3':{why:''}})),JSON.stringify([[1,2],[3],[1003]]),'an empty explanation does not join');
+ assert.equal(g(place,{'1-2':{why:'x'},'2-3':{why:'y'},'1-1003':{why:'z'}}).length,1,'a D&C hexagon is part of the flow');
+ assert.equal(g({1:[0,0],2:[3,0]},{'1-2':{why:'not touching'}}).length,2,'hexagons that are apart are not joined');
+ const terms=[{n:1,id:1,term:'Nucleus'},{n:2,id:2,term:'Membrane'},{n:3,id:3,term:'Ribosome'}];
+ const d={name:'Ava',place:{1:[0,0],2:[1,0],3:[3,0]},conns:{'1-2':{why:'x'}}};
+ h.setStudent({act:{flow:true,minTerms:2,terms},H:{1:{name:'Nucleus'},2:{name:'Membrane'},3:{name:'Ribosome'}},d});
+ const check=h.v410.getChecker();assert.equal(check(),false);assert.match(t.text(),/Not linked to the rest yet: Ribosome/);
+ d.place[3]=[2,0];d.conns['2-3']={why:'y'};assert.equal(check(),true);
+ h.setStudent({act:{minTerms:2,terms},H:{},d:{name:'Ava',place:{1:[0,0],2:[1,0],3:[3,0]},conns:{'1-2':{why:'x'}}}});assert.equal(check(),true,'rule off: separate groups are fine');
 });

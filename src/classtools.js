@@ -22,19 +22,30 @@ export const boardKey=(postId,uid)=>sha(postId+':'+uid).then(h=>h.slice(0,12));
 
 /* ---------- student supports chosen when posting ----------
    Each switch defaults to on (or to the Hex Space's own setting) and can be changed later. */
-export const OPTION_KEYS=['defs','starters','readAloud','translate','reflect','gallery','noPaste'];
+export const OPTION_KEYS=['defs','starters','readAloud','translate','reflect','gallery','noPaste','flow'];
 export function cleanOptions(o,act){
   const src=o&&typeof o==='object'?o:{},out={};
-  const dflt={starters:act?.starters!==false,reflect:act?.reflect!==false,noPaste:act?.noPaste===true};
+  const dflt={starters:act?.starters!==false,reflect:act?.reflect!==false,noPaste:act?.noPaste===true,flow:act?.flow!==false};
   for(const k of OPTION_KEYS)out[k]=typeof src[k]==='boolean'?src[k]:(k in dflt?dflt[k]:true);
   return out;
 }
 // What a student's browser receives: their version, with switched-off supports removed.
 export function studentAct(info,variant){
   const act=variantAct(info,variant),o=cleanOptions(info?.asg?.options,info?.act);
-  const out={...act,starters:act.starters!==false&&o.starters,reflect:act.reflect!==false&&o.reflect,readAloud:o.readAloud,translate:o.translate,gallery:o.gallery,showDefs:o.defs,noPaste:o.noPaste};
+  const out={...act,starters:act.starters!==false&&o.starters,reflect:act.reflect!==false&&o.reflect,readAloud:o.readAloud,translate:o.translate,gallery:o.gallery,showDefs:o.defs,noPaste:o.noPaste,flow:flowRequired(info)};
   if(!o.defs)out.terms=(act.terms||[]).map(t=>({...t,def:''}));
   return out;
+}
+
+// One connected board: only postings that chose it (postings from before 4.10 never did).
+export function flowRequired(info){return info?.asg?.options?.flow===true}
+// Groups of placed hexagons joined by explained, touching connections.
+export function flowGroups(placeIds,conns){
+  const parent=new Map(placeIds.map(id=>[String(id),String(id)]));
+  const find=x=>{while(parent.get(x)!==x){parent.set(x,parent.get(parent.get(x)));x=parent.get(x)}return x};
+  for(const c of conns){const a=String(c.a),b=String(c.b);if(parent.has(a)&&parent.has(b))parent.set(find(a),find(b))}
+  const groups=new Map();for(const id of parent.keys()){const r=find(id);if(!groups.has(r))groups.set(r,[]);groups.get(r).push(id)}
+  return [...groups.values()].sort((x,y)=>y.length-x.length);
 }
 
 /* ---------- versions ---------- */

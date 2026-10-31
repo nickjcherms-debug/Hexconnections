@@ -1,10 +1,17 @@
-VERIFICATION — VERSION 4.9.0
+VERIFICATION — VERSION 4.10.0
 ============================
 108 automated tests pass (52 backend, 56 frontend) using in-memory SQLite,
 simulated Firebase/Classroom responses, and execution of the actual frontend
 script in a DOM test harness. No real Google Classroom assignment was created
 or modified by these tests.
 
+New in 4.10.0: 131 tests. One connected board: default on for new postings,
+turn-in refused with code flow-broken when explained connections leave separate
+groups, a D&C hexagon bridges terms, switched off per posting, older postings
+and edits of their other switches unaffected; client grouping ignores empty
+reasons and non-touching pairs; Submit message names the unlinked terms.
+Chromium: Setup and Post dialog default on; a two-group board shows the count,
+red outlines and the turn-in message.
 New in 4.9.0: 129 tests. Three-way merge (folders, moves, edits, deletes; open
 editor object kept), merging an earlier visit's unsaved folders on login, the
 directory (top level, inside a folder, search by term), paste blocking and the

@@ -116,6 +116,16 @@ Tiles and text retain their original size, and zoom/scroll remain available.
 A hexagon still has six sides: extra space supports more arrangements, not more
 than six simultaneous neighboring tiles per hexagon.
 
+ONE CONNECTED BOARD (4.10)
+By default every hexagon a student places must link into a single group through
+explained (locked-in) connections: no separate islands. Depth & Complexity icon
+hexagons count and can bridge terms. The board shows "one connected board" or
+"N separate groups", outlines hexagons outside the main group in red, and Submit
+explains what still needs joining. The server checks it again at turn-in.
+Turn it off per Hex Space (Setup > Student supports > Require one connected
+board) or per posting (Post dialog > Student supports > One connected board).
+Postings made before 4.10 keep their old rules.
+
 HEX SPACE DIRECTORY, AUTO-SAVE AND PASTE BLOCKING (4.9)
 - Menu > Hex Spaces opens a directory instead of the last Hex Space: folder
   cards (open, rename, move, new subfolder, delete), then Hex Space rows with

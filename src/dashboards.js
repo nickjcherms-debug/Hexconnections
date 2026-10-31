@@ -14,7 +14,7 @@ export async function handleDashboardRoutes(c){
   const posts=await rows(db,`SELECT p.*,COUNT(s.payload) AS submission_count,
    SUM(CASE WHEN s.status IN ('TURNED_IN','GRADED') THEN 1 ELSE 0 END) AS turned_in_count
    FROM posts p LEFT JOIN submissions s ON s.post_id=p.id WHERE p.owner_uid=? GROUP BY p.id ORDER BY p.created_at DESC`,user.uid);
-  return json({assignments:posts.map(p=>{const i=parse(p.body);return card(p,{options:cleanOptions(i.asg.options,i.act),versions:(i.asg.versions||[]).map(v=>({name:v.name,terms:v.terms,starters:v.starters!==false})),gallery:!!i.asg.gallery?.open})})});
+  return json({assignments:posts.map(p=>{const i=parse(p.body);return card(p,{options:{...cleanOptions(i.asg.options,i.act),flow:i.asg.options?.flow===true},versions:(i.asg.versions||[]).map(v=>({name:v.name,terms:v.terms,starters:v.starters!==false})),gallery:!!i.asg.gallery?.open})})});
  }
  if(url.pathname!=='/api/student/dashboard')return null;
  let posts;
