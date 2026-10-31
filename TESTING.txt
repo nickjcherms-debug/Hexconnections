@@ -1,10 +1,18 @@
-VERIFICATION — VERSION 4.17.0
+VERIFICATION — VERSION 4.18.0
 ============================
 108 automated tests pass (52 backend, 56 frontend) using in-memory SQLite,
 simulated Firebase/Classroom responses, and execution of the actual frontend
 script in a DOM test harness. No real Google Classroom assignment was created
 or modified by these tests.
 
+New in 4.18: 165 tests (Hex Party: unique nicknames, one-row "unchanged" replies,
+word filter with science words allowed, anonymous ballots, no self-votes, Link
+Lightning/Hex Bluff/Odd Hex Out/Head-to-head scoring, hidden answers earn nothing,
+class score, grader points, host/joiner access rules, games from a Hex Space).
+Chromium: a teacher hosts on a 1920 projector view; students join from Games on a
+Chromebook and from /party on a phone plus three API students; four rounds (one of
+each kind) auto-advance when everyone has answered/voted; reveal, scores and final
+screen; class goal reached; phone has no sideways scroll.
 New in 4.17: full system check. 158 tests (access-control matrix across 28 posting
 routes for another teacher and an outsider; no account-row writes while polling;
 version plan not sent to students; debate tallies counted once). Live: deployed

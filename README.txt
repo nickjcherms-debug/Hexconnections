@@ -116,6 +116,32 @@ Tiles and text retain their original size, and zoom/scroll remain available.
 A hexagon still has six sides: extra space supports more arrangements, not more
 than six simultaneous neighboring tiles per hexagon.
 
+HEX PARTY: A WHOLE-CLASS GAME SHOW (4.18)
+- Menu > Games > Start a class game. Terms come from an assignment (points then
+  show in the grader and grades CSV) or any Hex Space. Pick round types, number of
+  rounds, answer/vote timers and a class goal.
+- The teacher's screen is the host for the projector (/teacher/party/<id>): room
+  code, lobby, prompts, countdowns, answer/vote counts, results and scores.
+  Students join at /party (or the box on Menu > Games) with the 5-letter code and
+  play on their own devices (/party/<CODE>); they must be signed in.
+- Rounds: Link Lightning (explain a connection; class votes), Hex Bluff (write a
+  fake definition; spot the real one), Odd Hex Out (pick the term that doesn't
+  belong and why; vote on reasons), Head-to-head (pairs of answers duel on the
+  projector). Each voter sees up to six answers so big classes stay readable.
+- Points: +50 for answering, +25 for voting, +100 per vote received (+100 sweep in
+  a duel), +200 for spotting the real definition, +100 per classmate fooled. All
+  points add up to one class score with a goal; each student sees their own.
+- Safety: names never appear on the projector (fun nicknames), a whole-word filter
+  blocks unkind answers (science words stay allowed), and the teacher can hide any
+  answer with one tap; hidden answers earn nothing.
+- Rounds move on by themselves when time's up or everyone has answered/voted while
+  the host screen is open; the teacher can also move them on.
+- Free-tier friendly: student screens check in every 2 seconds and get a one-row
+  "nothing changed" reply unless the round moved on; results are tallied once.
+  Verified sign-ins are now remembered for up to 2 minutes per Worker instance, so
+  frequent check-ins don't call Google's account API each time (Classroom requests
+  always re-check).
+
 SYSTEM CHECK FIXES (4.17)
 - Each API request used to rewrite the user's account row. It's now written only
   when the account is new or its name/email changed, so polling (game bars,

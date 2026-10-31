@@ -34,6 +34,7 @@ function make(){
  setWork(w){TW=w;TS.rows={};TS.sel=w.activities[0].id},setRenderTeacher(fn){renderTeacher=fn},
  setApi(fn){platformApi=fn},setTeacher(fn){startTeacher=fn;teacherDashboard=fn},
  v414:{graderBoard,rosterPanel,termPictureButton,hexList},
+ v418:{renderPartyHost,renderPartyPlay,renderPartyJoin,openPartySetup,classMeter},
  v416:{studentAssignmentCard,saveAndFinishLater,GUIDE_IMG,renderGuide},
  v415:{gameScore,renderGames,renderGameConsole,renderPlay,drawHud,GS,GAME_CACHE,graderExtras,keyToPath,pathToKey,GUIDE,saveDraft,setST(v){ST=v},getST(){return ST}},
  v413:{duplicateHexSpace,firstSteps},
@@ -840,4 +841,28 @@ test('Save & finish later saves online and confirms; the guide has pictures',asy
  assert.ok(Object.keys(h.v416.GUIDE_IMG).length>=12);
  h.GA.ready=true;t.location.hash='#guide';h.route();
  assert.ok(everything(t).some(n=>n.tagName==='img'&&/^\/guide\/s-save\.webp$/.test(n.attrs?.src||'')),'guide shows the save picture');
+});
+
+/* ---------- 4.18 Hex Party ---------- */
+test('Hex Party has its own addresses, a guide section and a class score meter',()=>{
+ const t=make(),{h}=t;
+ assert.equal(h.v415.keyToPath('#party'),'/party');assert.equal(h.v415.keyToPath('party-bcdfg'),'/party/BCDFG');assert.equal(h.v415.pathToKey('/party/bcdfg'),'#party-BCDFG');
+ assert.equal(h.v415.pathToKey('/teacher/party/3f2a'),'#teacher/party-3f2a');
+ assert.ok(h.v415.GUIDE.some(g=>g.id==='party')&&h.v415.GUIDE.some(g=>g.id==='s-party'));
+ const m=h.v418.classMeter(6000,5000,true);const all=[m];(function w(n){(n.children||[]).forEach(x=>{all.push(x);w(x)})})(m);
+ assert.ok(all.some(n=>/Goal reached/.test(n.textContent||'')));
+});
+test('a student joins Hex Party with a room code and sees the answer screen',async()=>{
+ const t=make(),{h}=t;const calls=[];h.GA.user={uid:'s1',getIdToken:async()=>'tok'};
+ const later=new Date(Date.now()+60000).toISOString();
+ h.setApi(async(path,body)=>{calls.push([path,body]);
+  if(path==='party/join')return {code:'BCDFG',nick:'Keen Gecko'};
+  if(path.startsWith('party/BCDFG'))return {code:'BCDFG',title:'Cells',status:'OPEN',rev:3,now:new Date().toISOString(),me:{nick:'Keen Gecko',points:50},state:{phase:'answer',n:1,rounds:4,kind:'link',kindName:'Link Lightning',prompt:{kind:'link',a:'Nucleus',b:'Ribosome'},endsAt:later,duel:0,duels:0,classPoints:300,goal:1000}};
+  return {};});
+ h.v418.renderPartyJoin('');const inp=everything(t).find(n=>n.attrs?.id==='pt-join');inp.value='bcdfg';
+ everything(t).find(n=>n.textContent==='Join'&&n.tagName==='button').listeners.click();await settle();
+ assert.equal(JSON.stringify(calls[0]),JSON.stringify(['party/join',{code:'bcdfg'}]));
+ h.v418.renderPartyPlay('BCDFG');await settle();
+ const txt=everything(t).map(n=>n.textContent||'').join(' ');
+ assert.match(txt,/Keen Gecko/);assert.match(txt,/Nucleus/);assert.match(txt,/Ribosome/);assert.match(txt,/Lock it in/);assert.match(txt,/300 \/ 1,000|300 \/ 1000/);
 });

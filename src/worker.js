@@ -1,4 +1,5 @@
 import {handleGameRoutes} from './games.js';
+import {handlePartyRoutes} from './party.js';
 import {handleGroupRoutes,groupForUser} from './groups.js';
 import {handleDashboardRoutes} from './dashboards.js';
 import { generateVocabulary } from './vocabulary.js';
@@ -52,9 +53,22 @@ async function googleResponse(response) {
   }
   return data;
 }
+// Verified tokens are remembered for up to two minutes per Worker instance, so screens that
+// check in every couple of seconds (class games) don't call Google's account API every time.
+const AUTH_CACHE = new WeakMap();
 async function authenticate(request, env, net) {
   const token = request.headers.get('Authorization')?.match(/^Bearer (\S+)$/)?.[1];
   if (!token) fail(401, 'Sign in with Google first.', 'sign-in');
+  let cache = AUTH_CACHE.get(net); if (!cache) { cache = new Map(); AUTH_CACHE.set(net, cache); }
+  // Classroom requests always re-check, so a just-linked Google account is seen immediately.
+  const hit = request.headers.get('X-Classroom-Token') ? null : cache.get(token);
+  if (hit && hit.until > Date.now()) return hit.user;
+  const user = await verifyAccount(token, env, net);
+  if (cache.size > 500) cache.delete(cache.keys().next().value);
+  cache.set(token, { user, until: Math.min(user._exp * 1000, Date.now() + 120000) });
+  return user;
+}
+async function verifyAccount(token, env, net) {
   // accounts:lookup validates the Firebase ID token with Firebase, including its signature.
   const res = await net('https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=' + enc(env.FIREBASE_API_KEY), {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken: token })
@@ -75,7 +89,7 @@ async function authenticate(request, env, net) {
   const password = providers.find(p => p.providerId === 'password');
   if (!google?.rawId && !password && !microsoft?.rawId) fail(403, 'Sign in with Google, Microsoft or your email and password.');
   // googleSub is empty for email-only accounts until they connect a Google account.
-  return { uid: account.localId, email: account.email || '', name: account.displayName || account.email || '', googleSub: google?.rawId || '' };
+  return { uid: account.localId, email: account.email || '', name: account.displayName || account.email || '', googleSub: google?.rawId || '', _exp: claims.exp };
 }
 async function classroomContext(request, user, net) {
   const token = request.headers.get('X-Classroom-Token');
@@ -249,6 +263,7 @@ export async function handle(request, env, net = fetch) {
     const toolRoute=await handleClassToolRoutes({...context,env});if(toolRoute)return toolRoute;
     const imgRoute=await handleImageRoutes(context);if(imgRoute)return imgRoute;
     const gameRoute=await handleGameRoutes(context);if(gameRoute)return gameRoute;
+    const partyRoute=await handlePartyRoutes(context);if(partyRoute)return partyRoute;
     if (path==='/api/me' && request.method==='GET') return json({profile,owner:isOwner(env,user)});
     if(path==='/api/register' && request.method==='POST'){
       const {role}=await input(request);

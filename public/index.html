@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Hexagonal thinking boards for classrooms: students arrange vocabulary hexagons and explain every connection, with optional Depth and Complexity icons.">
-<meta name="hex-connections-build" content="4.17.0">
+<meta name="hex-connections-build" content="4.18.0">
 <title>Hex Connections</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0F6E6E">
@@ -816,6 +816,85 @@ h2,h3,.brand h1,.aitem b,.act-head h2,.modal h3{overflow-wrap:anywhere}
 .guide-fig img{width:100%;height:auto;border-radius:12px;border:1px solid var(--line);box-shadow:0 8px 22px var(--shadow);background:var(--paper)}
 .guide-fig figcaption{font-size:.86rem;color:var(--muted)}
 .guide{max-width:1040px}
+/* 4.18 Hex Party */
+.party-host{display:flex;flex-direction:column;gap:18px;padding-bottom:40px;max-width:1240px;margin:0 auto}
+.pt-topbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:10px 16px}
+.pt-brand{font-family:var(--f-display);font-weight:800;font-size:1.1rem}
+.pt-round{font-weight:700;color:var(--muted)}
+.pt-codechip{margin-left:auto;font-size:1rem;color:var(--muted)}
+.pt-codechip b{font-family:var(--f-display);font-size:1.6rem;color:var(--ink);letter-spacing:.12em}
+.pt-count{font-weight:800}
+.pt-lobby{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;padding:10px 0}
+.pt-url{font-family:var(--f-display);font-size:clamp(1.4rem,3vw,2.2rem);font-weight:800}
+.pt-code{font-family:var(--f-display);font-size:clamp(4rem,12vw,8rem);font-weight:800;letter-spacing:.14em;line-height:1;color:var(--blue)}
+.pt-ask{font-size:1.15rem;color:var(--muted);font-weight:600}
+.pt-ask.center,.pt-h.center{text-align:center}
+.pt-players{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:900px;margin:12px 0}
+.pt-chip{display:inline-flex;align-items:center;padding:6px 14px;border-radius:999px;background:var(--panel);border:1px solid var(--line);font-weight:700}
+.pt-chip.sm{padding:2px 10px;font-size:.85rem}
+.pt-kindrow{display:flex;flex-wrap:wrap;gap:6px}
+.btn.pt-go{min-height:52px;padding:12px 26px;font-size:1.15rem}
+.pt-prompt{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px}
+.pt-prompt.big{padding:28px}
+.pt-pair{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:center}
+.pt-term{font-family:var(--f-display);font-size:clamp(1.4rem,3.5vw,2.6rem);background:var(--t1);color:var(--ink);padding:10px 22px;border-radius:16px}
+.pt-pair .pt-term:last-child{background:var(--t2)}
+.pt-prompt:not(.big) .pt-term{font-size:1.3rem}
+.pt-link{font-size:1.6rem;color:var(--teal)}
+.pt-four{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.pt-four .pt-chip{font-size:1.4rem;padding:10px 20px}
+.pt-prompt:not(.big) .pt-four .pt-chip{font-size:1rem;padding:6px 12px}
+.pt-status{display:flex;align-items:center;gap:18px;justify-content:center;flex-wrap:wrap}
+.pt-status .pt-bar{max-width:320px}
+.pt-big{font-family:var(--f-display);font-size:3rem;font-weight:800;font-variant-numeric:tabular-nums}
+.pt-big.sm{font-size:1.4rem}
+.pt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.pt-ans{position:relative;display:flex;flex-direction:column;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 16px;font-size:1.15rem;line-height:1.4}
+.pt-ans p{margin:0}
+.pt-ans.win{border-color:var(--honey);background:var(--honey-soft);color:var(--ink)}
+.pt-ans.hidden{opacity:.45;text-decoration:line-through}
+.pt-hide{position:absolute;top:6px;right:6px}
+.pt-ans:has(.pt-hide) p{padding-right:56px}
+.pt-votes{font-size:1rem}
+.pt-duel{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.pt-side{display:flex;flex-direction:column;gap:8px;background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:20px;font-size:1.4rem;line-height:1.35}
+.pt-side p{margin:0}
+.pt-side.win{border-color:var(--honey);background:var(--honey-soft);color:var(--ink)}
+.pt-duel.sm .pt-side{font-size:1.05rem;padding:12px}
+.pt-ab{font-family:var(--f-display);font-size:2rem;color:var(--blue)}
+.pt-real{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;background:var(--teal-soft);color:var(--ink);border-radius:18px;padding:18px}
+.pt-real p{margin:0;font-size:1.5rem;font-weight:700}
+.pt-picks{display:flex;flex-direction:column;gap:8px;max-width:640px;width:100%;margin:0 auto}
+.pt-pick{display:grid;grid-template-columns:160px 1fr 40px;gap:10px;align-items:center}
+.pt-gain{font-family:var(--f-display);font-size:2rem;font-weight:800;text-align:center;color:var(--teal)}
+.pt-meter{display:flex;flex-direction:column;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 16px}
+.pt-meter.big{font-size:1.2rem;max-width:760px;width:100%;margin:0 auto}
+.pt-meter.big .pt-bar{height:18px}
+.pt-score{font-family:var(--f-display);font-weight:800;font-size:1.3rem;font-variant-numeric:tabular-nums}
+.pt-meter.big .pt-score{font-size:2rem}
+.pt-meter .gm-bar,.pt-status .gm-bar{flex:none;width:100%;height:12px}
+.pt-meter.big .gm-bar{height:18px}
+.pt-status .gm-bar{width:280px}
+.pt-goal{font-weight:800;color:var(--teal);font-size:1.2rem}
+.pt-top{max-width:640px;width:100%;margin:0 auto}
+.pt-top li{font-size:1.2rem}
+.pt-confetti{text-align:center;font-size:3rem}
+.pt-foot{justify-content:space-between}
+.party-play{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:12px;padding-bottom:30px}
+.pt-joinbox{display:flex;flex-direction:column;gap:10px;align-items:stretch}
+#pt-join{font-family:var(--f-display);font-size:2.4rem;text-align:center;letter-spacing:.2em;text-transform:uppercase;padding:10px}
+.pt-me{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:8px 16px}
+.pt-mypts{margin-left:auto;font-weight:800}
+.pt-wait{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+.pt-emoji{font-size:3rem}
+.pt-choices{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pt-choices.col{grid-template-columns:1fr}
+.btn.pt-choice{min-height:56px;white-space:normal;text-align:left;justify-content:flex-start;line-height:1.35;padding:10px 14px}
+.btn.pt-choice.big{flex-direction:column;align-items:flex-start;gap:4px}
+.pt-locked{margin:0;font-weight:800;color:var(--teal)}
+.pt-kinds{border:1px solid var(--line);border-radius:12px;padding:8px 12px;display:flex;flex-direction:column;gap:6px;margin:0}
+.pt-kinds legend{font-weight:700;padding:0 4px}
+@media (max-width:700px){.pt-duel{grid-template-columns:1fr}.pt-big{font-size:2.2rem}.pt-pick{grid-template-columns:110px 1fr 30px}.pt-codechip{margin-left:0}}
 </style>
 <div id="root"></div>
 <script type="application/json" id="hx-data">{"version":4,"classes":[],"activities":[]}</script>
@@ -6023,7 +6102,7 @@ function gameTick(){
   if(!document.querySelectorAll)return;
   [].slice.call(document.querySelectorAll('[data-ends]')).forEach(function(n){var left=Date.parse(n.getAttribute('data-ends'))-gameNow();n.textContent=left>0?mmss(left):(n.getAttribute('data-done')||'Time’s up');if(n.classList)n.classList.toggle('low',left>0&&left<=15000);});
 }
-function startGameClock(){if(!GAME_CLOCK.timer)GAME_CLOCK.timer=setInterval(gameTick,1000);}
+function startGameClock(){if(!GAME_CLOCK.timer&&typeof setInterval==='function')GAME_CLOCK.timer=setInterval(gameTick,1000);}
 function setGameSkew(nowIso){var t=Date.parse(nowIso);if(t)GAME_CLOCK.skew=t-Date.now();}
 function countdown(endsAt,done){return el('span',{class:'gm-cd','data-ends':endsAt,'data-done':done||'Time’s up',text:mmss(Date.parse(endsAt)-gameNow())});}
 function badgeChip(k,on){var b=BADGE_INFO[k];if(!b)return null;return el('span',{class:'gm-badge'+(on?' on':''),title:b[1]+': '+b[2]},el('span',{'aria-hidden':'true',text:b[0]}),' ',b[1]);}
@@ -6445,13 +6524,15 @@ var v415GraderExtras=graderExtras;
 graderExtras=function(p,list,index){
   var base=v415GraderExtras.apply(this,arguments),box=el('div',{class:'gm-grader',style:'display:none'});
   if(p&&p._postId)gameFor(p._postId).then(function(g){
-    if(!g||!g.game||!(g.game.on||g.debate.on||(g.game.rounds||[]).length||(g.teams||[]).length))return;
+    var party=g&&g.party&&g.party[p._studentUid];
+    if(!g||!g.game||!(g.game.on||g.debate.on||(g.game.rounds||[]).length||(g.teams||[]).length||party!=null))return;
     var s=(g.standings||[]).find(function(x){return x.uid===p._studentUid});if(!s)return;
     var amt=el('input',{type:'number',min:0,max:100,step:1,value:5,id:'gm-bonus','aria-label':'Bonus points'});
     fill(box,el('div',{class:'row',style:'gap:8px;align-items:center'},el('b',{text:'🎮 Game'}),
       el('span',{text:s.points+' pts · Level '+s.level+' '+s.levelName+' · #'+s.rank+' of '+g.standings.length}),
       s.badges.length?el('span',{class:'gm-icons',title:s.badges.map(function(b){return BADGE_INFO[b][1]}).join(', '),text:s.badges.map(function(b){return BADGE_INFO[b][0]}).join(' ')}):null,
-      s.debate.wins||s.debate.votes||s.debate.cast?el('span',{class:'hint',text:'Debate: '+s.debate.wins+' win'+(s.debate.wins===1?'':'s')+', '+s.debate.votes+' votes received'}):null),
+      s.debate.wins||s.debate.votes||s.debate.cast?el('span',{class:'hint',text:'Debate: '+s.debate.wins+' win'+(s.debate.wins===1?'':'s')+', '+s.debate.votes+' votes received'}):null,
+      party!=null?el('span',{class:'hint',text:'🎉 Hex Party: '+party+' pts'}):null),
       el('div',{class:'row',style:'gap:6px;align-items:center'},el('label',{for:'gm-bonus',class:'hint',text:'Bonus'}),amt,
         el('button',{type:'button',class:'btn sm',onclick:function(){var gi=document.getElementById('gr-grade');if(!gi)return;var max=Number(gi.getAttribute?gi.getAttribute('max'):gi.max)||100,cur=Number(gi.value)||0,add=Number(amt.value)||0;
           gi.value=String(Math.min(max,Math.round((cur+add)*100)/100));if(gi.dispatchEvent&&typeof Event==='function')gi.dispatchEvent(new Event('input'));toast('Added '+add+' bonus point'+(add===1?'':'s')+'. Save to keep it.');},text:'Add to grade'}),
@@ -6466,14 +6547,17 @@ exportGrades=function(a,subs){
   if(c&&!c.done){c.p.then(function(){exportGrades(a,subs)});return;}
   (function(g){
     var on=g&&(g.game.on||g.debate.on||(g.game.rounds||[]).length),by={};if(on)(g.standings||[]).forEach(function(s){by[s.uid]=s});
+    var party=g&&g.party&&Object.keys(g.party).length?g.party:null;
     var head=['Student','Email','Status','Terms used','Connections','Average words per reason','Strong (2)','Partly (1)','Needs work (0)','Grade','Out of','Late','Submitted','Version','Paste attempts blocked','Reflection: proudest','Reflection: hardest'];
     if(on)head=head.concat(['Game points','Game level','Badges','Debate wins','Debate votes received']);
+    if(party)head=head.concat(['Hex Party points']);
     var rows=[head.concat(['Overall feedback'])];
     subs.forEach(function(p){
       var cl=p.connections||[],fb=p._feedback||{},sc=fb.scores||{},cnt=[0,0,0];for(var k in sc)cnt[sc[k]]++;
       var avg=cl.length?Math.round(cl.reduce(function(n,c){return n+words(c.why)},0)/cl.length*10)/10:0;
       var row=[p.name,p.email||'',({TURNED_IN:'Turned in',GRADED:'Graded',DRAFT:'Unsubmitted'}[p._status]||p._status||''),p.termsUsed==null?'':p.termsUsed,cl.length,avg,cnt[2],cnt[1],cnt[0],p._grade==null?'':p._grade,p._maxPoints||'',p.late?'Yes':'No',p.submittedAt||'',p.version||'',p.pasteAttempts||0,(p.reflection&&p.reflection.proud)||'',(p.reflection&&p.reflection.hard)||''];
       if(on){var s=by[p._studentUid];row=row.concat(s?[s.points,s.level+' '+s.levelName,s.badges.map(function(b){return BADGE_INFO[b]?BADGE_INFO[b][1]:b}).join('; '),s.debate.wins,s.debate.votes]:['','','','','']);}
+      if(party)row=row.concat([party[p._studentUid]!=null?party[p._studentUid]:'']);
       rows.push(row.concat([fb.overall||'']));
     });
     var name=(a.title||'assignment').replace(/[^\w\- ]+/g,'').trim().replace(/\s+/g,'-').slice(0,60)||'grades';
@@ -6600,7 +6684,7 @@ studentAssignmentCard=function(a){
   return card;
 };
 
-var GUIDE_IMG={"start":[960,591],"build":[960,591],"assign":[560,714],"folders":[960,591],"s-join":[960,591],"s-build":[960,591],"s-save":[560,308],"review":[960,327],"grade":[960,752],"print":[960,672],"insights":[960,591],"gallery":[960,591],"games":[960,591],"debate":[624,696],"s-games":[960,414]};
+var GUIDE_IMG={"start":[960,591],"build":[960,591],"assign":[560,714],"folders":[960,591],"s-join":[960,591],"s-build":[960,591],"s-save":[560,308],"review":[960,327],"grade":[960,752],"print":[960,672],"insights":[960,591],"gallery":[960,591],"games":[960,591],"debate":[624,696],"s-games":[960,414],"party":[960,561],"s-party":[390,640]};
 /* ===================== 4.16: a friendlier guide with pictures ===================== */
 GUIDE.length=0;
 [
@@ -6717,6 +6801,268 @@ renderGuide=function(section){
     role==='student'?[sPart,tPart]:[tPart,sPart],
     el('footer',{class:'foot'},el('span',null,'Wondering about privacy? ',el('a',{href:'#privacy',text:'Here’s how student data is handled'}),'.'))));
   if(section)setTimeout(function(){scrollToId('g-'+section)},50);
+};
+
+/* ===================== 4.18: Hex Party, a Jackbox-style class game ===================== */
+var PARTY_KINDS={link:['⚡','Link Lightning','Explain how the two terms connect. The class votes for the best answer.'],
+  bluff:['🎭','Hex Bluff','Write a fake definition that sounds real. Then spot the real one.'],
+  odd:['🔍','Odd Hex Out','Pick the term that doesn’t belong and say why.'],
+  h2h:['🥊','Head-to-head','Two answers face off on the big screen. Everyone picks a winner.']};
+var PARTY_PTS={answer:50,vote:25,perVote:100,sweep:100,guessReal:200,fooled:100};
+function partyJoinUrl(){return (location.host||'hexconnections.com')+'/party';}
+function classMeter(points,goal,big){
+  var pct=goal?Math.min(100,Math.round(points/goal*100)):0;
+  return el('div',{class:'pt-meter'+(big?' big':'')},
+    el('div',{class:'row',style:'justify-content:space-between;align-items:baseline'},el('b',{text:'Class score'}),el('span',{class:'pt-score',text:points.toLocaleString()+(goal?' / '+goal.toLocaleString():'')})),
+    goal?el('span',{class:'gm-bar pt-bar',role:'progressbar','aria-label':'Class score toward the goal','aria-valuemin':'0','aria-valuemax':'100','aria-valuenow':String(pct)},el('span',{style:'width:'+pct+'%'})):null,
+    goal&&points>=goal?el('div',{class:'pt-goal',text:'🎉 Goal reached!'}):null);
+}
+function partyPrompt(st,big){
+  var p=st.prompt;if(!p)return null;
+  if(p.kind==='bluff')return el('div',{class:'pt-prompt'+(big?' big':'')},el('span',{class:'pt-ask',text:'Write a fake definition for'}),el('b',{class:'pt-term',text:p.term}));
+  if(p.kind==='odd')return el('div',{class:'pt-prompt'+(big?' big':'')},el('span',{class:'pt-ask',text:'Which one doesn’t belong, and why?'}),el('div',{class:'pt-four'},p.four.map(function(t){return el('span',{class:'pt-chip',text:t.term})})));
+  return el('div',{class:'pt-prompt'+(big?' big':'')},el('span',{class:'pt-ask',text:p.kind==='h2h'?'Head-to-head: how are these connected?':'How are these connected?'}),el('div',{class:'pt-pair'},el('b',{class:'pt-term',text:p.a}),el('span',{class:'pt-link','aria-hidden':'true',text:'⬡⬡'}),el('b',{class:'pt-term',text:p.b})));
+}
+function roundLabel(st){var k=PARTY_KINDS[st.kind];return 'Round '+st.n+' of '+st.rounds+(k?' · '+k[0]+' '+k[1]:'');}
+
+/* ---------- teacher: start a game ---------- */
+function openPartySetup(){
+  var choices=el('select',{id:'pt-src','aria-label':'Terms come from'},el('option',{value:'',text:'Loading…'}));
+  var kinds={};Object.keys(PARTY_KINDS).forEach(function(k){kinds[k]=el('input',{type:'checkbox',id:'pt-k-'+k,checked:true})});
+  var rounds=el('select',{id:'pt-rounds'},[4,6,8,10,12].map(function(n){return el('option',{value:n,text:n+' rounds',selected:n===6||null})}));
+  var ans=el('select',{id:'pt-ans'},[[45,'45 seconds'],[60,'1 minute'],[90,'1½ minutes'],[120,'2 minutes']].map(function(o){return el('option',{value:o[0],text:o[1],selected:o[0]===60||null})}));
+  var vote=el('select',{id:'pt-vote'},[[20,'20 seconds'],[30,'30 seconds'],[45,'45 seconds']].map(function(o){return el('option',{value:o[0],text:o[1],selected:o[0]===30||null})}));
+  var goal=el('input',{type:'number',id:'pt-goal',min:0,step:500,value:5000});
+  var err=el('p',{class:'err',role:'alert'}),srcs=[];
+  openModal([el('div',{class:'eyebrow',text:'Hex Party'}),el('h3',{style:'font-size:1.3rem;margin:0',text:'Start a class game'}),
+    el('p',{class:'hint',style:'margin:0',text:'Your screen becomes the game show on the projector. Students join on their own devices with a room code.'}),
+    el('label',{class:'fld',for:'pt-src'},'Terms come from',choices),
+    el('fieldset',{class:'pt-kinds'},el('legend',{text:'Rounds to play (they take turns)'}),Object.keys(PARTY_KINDS).map(function(k){var d=PARTY_KINDS[k];return el('label',{class:'row',for:'pt-k-'+k},kinds[k],el('span',null,el('b',{text:d[0]+' '+d[1]}),el('span',{class:'hint',text:' '+d[2]})))})),
+    el('div',{class:'row',style:'gap:10px;align-items:flex-end'},el('label',{class:'fld',for:'pt-rounds'},'How many',rounds),el('label',{class:'fld',for:'pt-ans'},'Time to answer',ans),el('label',{class:'fld',for:'pt-vote'},'Time to vote',vote),el('label',{class:'fld',for:'pt-goal'},'Class goal (points)',goal)),
+    el('p',{class:'hint',style:'margin:0',text:'Everyone earns points for answering and voting, plus bonus points when classmates vote for their answer. All points add up to the class score.'}),
+    err,
+    el('div',{class:'row',style:'justify-content:flex-end'},el('button',{class:'btn ghost',onclick:closeModal,text:'Cancel'}),el('button',{class:'btn primary',id:'pt-create',onclick:function(){
+      var picked=Object.keys(kinds).filter(function(k){return kinds[k].checked});if(!picked.length){err.textContent='Pick at least one kind of round.';return;}
+      var src=srcs[+choices.value];if(!src){err.textContent='Choose where the terms come from.';return;}
+      var playlist=[];for(var i=0;i<+rounds.value;i++)playlist.push(picked[i%picked.length]);
+      var body={playlist:playlist,answerSecs:+ans.value,voteSecs:+vote.value,goal:+goal.value||0,title:src.title};
+      if(src.postId)body.postId=src.postId;else body.terms=src.terms;
+      platformApi('party',body).then(function(r){closeModal();NAV.hash='teacher/party-'+r.id;}).catch(function(e){err.textContent=e.message});
+    },text:'Open the lobby'}))],{wide:true});
+  Promise.all([platformApi('teacher/dashboard').catch(function(){return {assignments:[]}}),platformApi('workspace').catch(function(){return {workspace:{activities:[]}}})]).then(function(r){
+    (r[0].assignments||[]).filter(function(a){return a.status==='PUBLISHED'}).forEach(function(a){srcs.push({postId:a.id,title:a.title,label:a.title+' · '+a.className+' (points show in the grader)'})});
+    ((r[1].workspace||{}).activities||[]).filter(function(a){return (a.terms||[]).filter(function(t){return String(t.term||'').trim()}).length>=2}).forEach(function(a){srcs.push({title:a.title||'Hex Space',terms:(a.terms||[]).map(function(t,i){return {id:t.id||t.n||i+1,term:t.term,def:t.def||''}}),label:'Hex Space: '+(a.title||'Untitled')})});
+    fill(choices,srcs.length?srcs.map(function(x,i){return el('option',{value:i,text:x.label})}):el('option',{value:'',text:'Make a Hex Space with at least two terms first'}));
+  });
+}
+
+/* ---------- teacher: host screen (projector) ---------- */
+function renderPartyHost(id){
+  var seq=++PX.routeId;ST=null;caps.teacher=false;
+  var S={d:null,busy:false,adv:'',showAns:false};
+  var main=el('main',{class:'party-host'},el('p',{class:'muted',role:'status',text:'Opening the game…'}));
+  fill(root,topBar(),main);startGameClock();
+  function alive(){return seq===PX.routeId}
+  function load(){if(!alive())return;return platformApi('party/host/'+id).then(function(r){if(!alive())return;setGameSkew(r.now);S.d=r;draw();auto();}).catch(function(e){if(alive()&&!S.d)fill(main,el('p',{class:'err',text:e.message}),el('a',{class:'btn',href:'#games',text:'← Games'}))});}
+  function step(action,extra){if(S.busy)return;S.busy=true;platformApi('party/host/'+id+'/next',Object.assign({action:action},extra||{})).catch(platformError).then(function(){S.busy=false;load()});}
+  function hide(key,hidden){platformApi('party/host/'+id+'/hide',{key:key,hidden:hidden}).then(load).catch(platformError);}
+  function poll(){if(!alive())return;if(!document.hidden)load();setTimeout(poll,2000);}
+  function auto(){
+    var d=S.d,st=d.state,now=gameNow(),over=st.endsAt&&Date.parse(st.endsAt)<now-800,players=d.players.length,key=st.n+st.phase+st.duel;
+    if(S.adv===key||d.status!=='OPEN')return;
+    if(st.phase==='answer'&&(over||(players>0&&d.answered>=players))){S.adv=key;step('vote');}
+    else if(st.phase==='vote'){
+      var need=st.kind==='h2h'?Math.max(0,players-2):players;
+      if(over||(need>0&&d.voted>=need)){S.adv=key;step(st.kind==='h2h'?'next-duel':'reveal');}
+    }
+  }
+  function answerCard(a,showVotes){
+    return el('div',{class:'pt-ans'+(a.hidden?' hidden':'')},el('p',{text:a.text}),a.pick?el('span',{class:'pt-chip sm',text:'Picked: '+((S.d.state.prompt&&S.d.state.prompt.four||[]).find(function(t){return String(t.id)===String(a.pick)})||{}).term}):null,
+      showVotes!=null?el('b',{class:'pt-votes',text:showVotes+' vote'+(showVotes===1?'':'s')}):null,
+      a.key?el('button',{class:'btn ghost sm pt-hide',onclick:function(){hide(a.key,!a.hidden)},title:'Hide this answer from everyone',text:a.hidden?'Show':'Hide'}):null);
+  }
+  function draw(){
+    var d=S.d,st=d.state,parts=[];
+    var bar=el('div',{class:'pt-topbar'},el('span',{class:'pt-brand',text:'🎉 Hex Party · '+d.title}),st.n?el('span',{class:'pt-round',text:roundLabel(st)}):null,
+      el('span',{class:'pt-codechip'},'Join: '+partyJoinUrl()+'  ',el('b',{text:d.code})),el('span',{class:'pt-count',text:'👥 '+d.players.length}));
+    parts.push(bar);
+    if(d.status!=='OPEN'&&st.phase!=='end')parts.push(el('p',{class:'banner',text:'This game has ended.'}));
+    if(st.phase==='lobby'){
+      parts.push(el('div',{class:'pt-lobby'},el('p',{class:'pt-ask',text:'Go to'}),el('div',{class:'pt-url',text:partyJoinUrl()}),el('p',{class:'pt-ask',text:'and enter the room code'}),el('div',{class:'pt-code',text:d.code}),
+        el('div',{class:'pt-players'},d.players.length?d.players.map(function(p){return el('span',{class:'pt-chip',text:p.nick})}):el('span',{class:'muted',text:'Waiting for players…'})),
+        el('div',{class:'row',style:'justify-content:center;gap:10px'},el('button',{class:'btn primary pt-go',disabled:!d.players.length,onclick:function(){step('round')},text:'Start round 1 →'})),
+        el('p',{class:'hint',text:d.settings.playlist.length+' rounds: '+d.settings.playlist.map(function(k){return PARTY_KINDS[k][1]}).join(', ')})));
+    }else if(st.phase==='answer'){
+      parts.push(partyPrompt(st,true),el('div',{class:'pt-status'},el('span',{class:'pt-big'},countdown(st.endsAt,'Time’s up')),el('span',{class:'pt-ask',text:d.answered+' of '+d.players.length+' answered'}),
+        el('span',{class:'gm-bar pt-bar'},el('span',{style:'width:'+(d.players.length?Math.round(d.answered/d.players.length*100):0)+'%'}))),
+        el('div',{class:'row',style:'gap:8px;justify-content:center'},el('button',{class:'btn primary',onclick:function(){step('vote')},text:'Start voting now'}),
+          el('button',{class:'btn ghost',onclick:function(){S.showAns=!S.showAns;draw()},'aria-pressed':S.showAns?'true':'false',text:S.showAns?'Hide answers from the screen':'Check answers (shows on screen)'})),
+        S.showAns?el('div',{class:'pt-grid'},d.answers.map(function(a){return answerCard(a)})):null);
+    }else if(st.phase==='vote'){
+      if(st.kind==='h2h'&&d.duel){
+        parts.push(el('p',{class:'pt-ask center',text:'Duel '+(st.duel+1)+' of '+st.duels+': which answer is better? Vote on your device!'}),
+          el('div',{class:'pt-duel'},d.duel.map(function(x,i){return el('div',{class:'pt-side'},el('b',{class:'pt-ab',text:i?'B':'A'}),el('p',{text:x.text}))})),
+          el('div',{class:'pt-status'},el('span',{class:'pt-big'},countdown(st.endsAt,'Time’s up')),el('span',{class:'pt-ask',text:d.voted+' voted'}),el('button',{class:'btn',onclick:function(){step('next-duel')},text:st.duel+1<st.duels?'Next duel →':'Show results →'})));
+      }else{
+        parts.push(el('p',{class:'pt-ask center',text:st.kind==='bluff'?'Which one is the REAL definition of “'+st.prompt.term+'”? Vote on your device!':'Vote for the best answer on your device! (You can’t vote for your own.)'}),
+          el('div',{class:'pt-grid'},(d.ballot||[]).map(function(a){return answerCard(a)}).concat(st.kind==='bluff'&&d.real?[el('div',{class:'pt-ans'},el('p',{text:d.real}))]:[])),
+          el('div',{class:'pt-status'},el('span',{class:'pt-big'},countdown(st.endsAt,'Time’s up')),el('span',{class:'pt-ask',text:d.voted+' of '+d.players.length+' voted'}),el('button',{class:'btn',onclick:function(){step('reveal')},text:'Show results →'})));
+      }
+    }else if(st.phase==='reveal'&&d.reveal){
+      var rv=d.reveal;
+      parts.push(el('h2',{class:'pt-h center',text:'Results'}));
+      if(st.kind==='bluff')parts.push(el('div',{class:'pt-real'},el('span',{class:'pt-ask',text:'The real definition of “'+st.prompt.term+'”'}),el('p',{text:rv.real}),el('span',{class:'hint',text:rv.guessedReal+' found the real one'})),
+        rv.top.length&&rv.top[0].votes?el('div',{class:'pt-ans win'},el('span',{class:'pt-ask',text:'🎭 Most convincing fake (fooled '+rv.top[0].votes+')'}),el('p',{text:rv.top[0].text})):null);
+      else if(st.kind==='h2h')parts.push(el('div',{class:'stack',style:'gap:10px'},(rv.duels||[]).map(function(dl){var w=dl[0].votes===dl[1].votes?-1:dl[0].votes>dl[1].votes?0:1;
+        return el('div',{class:'pt-duel sm'},dl.map(function(x,i){return el('div',{class:'pt-side'+(i===w?' win':'')},el('p',{text:x.text}),el('b',{text:(i===w?'🏆 ':'')+x.votes+' vote'+(x.votes===1?'':'s')}))}))})));
+      else{
+        if(st.kind==='odd'&&rv.picks){var tot=0;for(var k in rv.picks)tot+=rv.picks[k];
+          parts.push(el('div',{class:'pt-picks'},(st.prompt.four||[]).map(function(t){var n=rv.picks[t.id]||0;return el('div',{class:'pt-pick'},el('b',{text:t.term}),el('span',{class:'gm-bar'},el('span',{style:'width:'+(tot?Math.round(n/tot*100):0)+'%'})),el('span',{text:String(n)}))})));}
+        parts.push(el('div',{class:'pt-grid'},rv.top.map(function(a,i){return el('div',{class:'pt-ans'+(i===0&&a.votes?' win':'')},el('p',{text:(i===0&&a.votes?'🏆 ':'')+a.text}),el('b',{class:'pt-votes',text:a.votes+' vote'+(a.votes===1?'':'s')}))})));
+      }
+      parts.push(el('div',{class:'pt-gain',text:'+'+rv.roundPoints.toLocaleString()+' points for the class!'}),classMeter(st.classPoints,st.goal,true),
+        el('div',{class:'row',style:'justify-content:center;gap:10px'},el('button',{class:'btn',onclick:function(){step('scores')},text:'Scores'}),
+          st.n<st.rounds?el('button',{class:'btn primary pt-go',onclick:function(){step('round')},text:'Next round →'}):el('button',{class:'btn primary pt-go',onclick:function(){step('end')},text:'Finish the game'})));
+    }else if(st.phase==='scores'||st.phase==='end'){
+      parts.push(el('h2',{class:'pt-h center',text:st.phase==='end'?'Final scores':'Scores after round '+st.n}),classMeter(st.classPoints,st.goal,true),
+        st.phase==='end'&&st.goal&&st.classPoints>=st.goal?el('div',{class:'pt-confetti','aria-hidden':'true',text:'🎉 🎊 🎉 🎊 🎉'}):null,
+        el('ol',{class:'gm-plist pt-top'},d.top.map(function(t){return el('li',null,el('span',{class:'gm-rank',text:String(t.rank)}),el('b',{text:t.nick}),el('span',{class:'gm-pts',text:t.points.toLocaleString()+' pts'}))})),
+        st.phase==='end'?el('div',{class:'row',style:'justify-content:center;gap:10px'},el('a',{class:'btn',href:'#games',text:'Back to Games'}),el('button',{class:'btn primary',onclick:openPartySetup,text:'Play again'}))
+        :el('div',{class:'row',style:'justify-content:center;gap:10px'},st.n<st.rounds?el('button',{class:'btn primary pt-go',onclick:function(){step('round')},text:'Next round →'}):null,el('button',{class:'btn',onclick:function(){step('end')},text:'End game'})));
+    }
+    if(st.phase!=='lobby'&&st.phase!=='end'&&st.phase!=='scores'&&st.phase!=='reveal')parts.push(classMeter(st.classPoints,st.goal));
+    if(st.phase!=='end'&&d.status==='OPEN')parts.push(el('div',{class:'row pt-foot'},el('a',{class:'btn ghost sm',href:'#games',text:'← Games'}),el('button',{class:'btn ghost sm',onclick:function(){openModal([el('h3',{style:'margin:0',text:'End this game for everyone?'}),el('p',{style:'margin:0',text:'Points so far are kept.'}),el('div',{class:'row',style:'justify-content:flex-end'},el('button',{class:'btn ghost',onclick:closeModal,text:'Keep playing'}),el('button',{class:'btn primary',onclick:function(){closeModal();step('end')},text:'End game'}))])},text:'End game'})));
+    fill(main,parts);gameTick();
+  }
+  load();setTimeout(poll,2000);
+}
+
+/* ---------- students: join and play ---------- */
+function renderPartyJoin(prefill){
+  PX.routeId++;ST=null;caps.teacher=false;
+  var input=el('input',{type:'text',id:'pt-join',maxlength:5,autocomplete:'off',autocapitalize:'characters',spellcheck:'false',placeholder:'ABCDE','aria-label':'Room code',value:prefill||''});
+  var err=el('p',{class:'err',role:'alert'});
+  function go(){err.textContent='';platformApi('party/join',{code:input.value}).then(function(r){NAV.hash='party-'+r.code}).catch(function(e){err.textContent=e.message});}
+  input.addEventListener('keydown',function(e){if(e.key==='Enter')go()});
+  fill(root,topBar(),el('main',{class:'party-play'},el('div',{class:'panel pt-joinbox'},el('div',{class:'eyebrow',text:'🎉 Hex Party'}),el('h2',{style:'margin:0',text:'Join the class game'}),
+    el('p',{class:'muted',style:'margin:0',text:'Type the room code from the big screen.'}),input,err,el('button',{class:'btn primary pt-go',onclick:go,text:'Join'}))));
+  if(input.focus)setTimeout(function(){input.focus()},50);
+}
+function renderPartyPlay(code){
+  var seq=++PX.routeId;ST=null;caps.teacher=false;
+  var S={d:null,rev:null,draft:'',pick:'',sending:false,lastKey:''};
+  var main=el('main',{class:'party-play'},el('p',{class:'muted',role:'status',text:'Joining…'}));
+  fill(root,topBar(),main);startGameClock();
+  function alive(){return seq===PX.routeId}
+  function load(force){
+    if(!alive())return Promise.resolve();
+    return platformApi('party/'+code+(S.rev!=null&&!force?'?rev='+S.rev:'')).then(function(r){if(!alive()||r.same)return;setGameSkew(r.now);S.rev=r.rev;S.d=r;
+      var key=r.state.n+r.state.phase+r.state.duel;if(key!==S.lastKey){S.lastKey=key;S.draft='';S.pick='';}
+      var ae=document.activeElement;if(ae&&ae.tagName==='TEXTAREA'&&main.contains&&main.contains(ae)&&r.state.phase==='answer')return;draw();})
+      .catch(function(e){if(!alive())return;if(e.code==='party-join'){platformApi('party/join',{code:code}).then(function(){load(true)}).catch(function(x){fill(main,el('p',{class:'err',text:x.message}),el('a',{class:'btn',href:'#party',text:'Try another code'}))});return;}
+        if(!S.d)fill(main,el('p',{class:'err',text:e.message}),el('a',{class:'btn',href:'#party',text:'Try another code'}));});
+  }
+  function poll(){if(!alive())return;if(!document.hidden)load();setTimeout(poll,2000);}
+  function send(path,body,ok){if(S.sending)return;S.sending=true;platformApi('party/'+code+'/'+path,body).then(function(){if(ok)toast(ok);return load(true)}).catch(platformError).then(function(){S.sending=false});}
+  function draw(){
+    var d=S.d,st=d.state,me=d.me,parts=[el('div',{class:'pt-me'},el('span',{text:'You are '}),el('b',{text:me.nick}),el('span',{class:'pt-mypts',text:me.points.toLocaleString()+' pts'}))];
+    if(d.status!=='OPEN'&&st.phase!=='end'){parts.push(el('div',{class:'panel'},el('p',{text:'This game has ended. Thanks for playing!'})));fill(main,parts);return;}
+    if(st.n&&st.phase!=='lobby')parts.push(el('div',{class:'eyebrow',text:roundLabel(st)}));
+    if(st.phase==='lobby')parts.push(el('div',{class:'panel pt-wait'},el('div',{class:'pt-emoji','aria-hidden':'true',text:'🎉'}),el('h2',{style:'margin:0',text:'You’re in!'}),el('p',{style:'margin:0',text:'Watch the big screen. The game starts soon.'})));
+    else if(st.phase==='answer'){
+      var a=me.answer,max=st.kind==='bluff'?160:140;
+      var ta=el('textarea',{id:'pt-text',rows:3,maxlength:max,placeholder:st.kind==='bluff'?'Make up a definition that sounds real…':st.kind==='odd'?'Why doesn’t it belong?':'They connect because…','aria-label':'Your answer',value:S.draft||(a?a.text:'')});
+      var cnt=el('span',{class:'hint',text:''});function c(){cnt.textContent=(max-String(ta.value).length)+' characters left'}ta.addEventListener('input',function(){S.draft=ta.value;c()});c();
+      parts.push(st.kind==='odd'?el('div',{class:'pt-prompt'},el('span',{class:'pt-ask',text:'Which one doesn’t belong? Tap it, then say why.'})):partyPrompt(st));
+      if(st.kind==='odd')parts.push(el('div',{class:'pt-choices',role:'radiogroup','aria-label':'Pick the odd one out'},st.prompt.four.map(function(t){var on=String(S.pick||(a&&a.pick)||'')===String(t.id);
+        return el('button',{class:'btn pt-choice'+(on?' primary':''),role:'radio','aria-checked':on?'true':'false',onclick:function(){S.pick=String(t.id);S.draft=ta.value;draw()},text:t.term})})));
+      parts.push(el('label',{class:'fld',for:'pt-text'},a?'Your answer (you can change it until time’s up)':'Your answer',ta),el('div',{class:'row',style:'justify-content:space-between'},cnt,el('span',{class:'pt-big sm'},countdown(st.endsAt,'Time’s up'))),
+        el('button',{class:'btn primary pt-go',id:'pt-send',onclick:function(){send('answer',{text:ta.value,pick:S.pick||(a&&a.pick)||undefined},a?'Answer updated.':'Locked in! ✓')},text:a?'Update my answer':'Lock it in'}),
+        a?el('p',{class:'pt-locked',text:'✓ Locked in'+(a.hidden?' (your teacher hid this answer)':'')}):null);
+    }else if(st.phase==='vote'){
+      parts.push(el('div',{class:'row',style:'justify-content:flex-end'},el('span',{class:'pt-big sm'},countdown(st.endsAt,'Time’s up'))));
+      if(st.kind==='h2h'){
+        var duel=d.duel||[],mine=duel.some(function(x){return x.mine});
+        parts.push(el('p',{class:'pt-ask',text:mine?'Your answer is up on the big screen! Sit this one out.':'Which answer is better?'}));
+        if(!mine)parts.push(el('div',{class:'pt-choices'},duel.map(function(x){var on=me.vote===x.side;return el('button',{class:'btn pt-choice big'+(on?' primary':''),'aria-pressed':on?'true':'false',onclick:function(){send('vote',{choice:x.side},'Vote saved.')}},el('b',{text:x.side}),el('span',{text:x.text}))})));
+      }else{
+        parts.push(el('p',{class:'pt-ask',text:st.kind==='bluff'?'Which is the REAL definition of “'+st.prompt.term+'”?':'Vote for the best answer'}));
+        parts.push(el('div',{class:'pt-choices col'},(d.ballot||[]).map(function(x){var on=me.vote===x.key;return el('button',{class:'btn pt-choice'+(on?' primary':''),'aria-pressed':on?'true':'false',onclick:function(){send('vote',{choice:x.key},'Vote saved.')},text:(on?'✓ ':'')+x.text})})));
+        if(!(d.ballot||[]).length)parts.push(el('p',{class:'muted',text:'Nothing to vote on this time.'}));
+      }
+    }else if(st.phase==='reveal'&&d.reveal){
+      var rv=d.reveal;
+      parts.push(el('div',{class:'panel pt-wait'},el('div',{class:'pt-gain',text:'+'+rv.myPoints+' points'}),
+        st.kind==='bluff'?el('p',{style:'margin:0',text:rv.myGuess==='REAL'?'🎯 You found the real definition!':'The real definition: '+rv.real}):null,
+        el('p',{class:'muted',style:'margin:0',text:'Look at the big screen for the results.'})));
+    }else if(st.phase==='scores'||st.phase==='end'){
+      parts.push(el('div',{class:'panel pt-wait'},el('h2',{style:'margin:0',text:st.phase==='end'?'Thanks for playing!':'Scores'}),me.rank?el('p',{style:'margin:0',text:'You’re #'+me.rank+' with '+me.points.toLocaleString()+' points.'}):null));
+    }
+    parts.push(classMeter(st.classPoints,st.goal));
+    fill(main,parts);gameTick();
+  }
+  load(true);setTimeout(poll,2000);
+}
+
+/* ---------- paths, menus, Games page, guide ---------- */
+var v418KeyToPath=keyToPath;
+keyToPath=function(key){var k=String(key||'');if(k.charAt(0)==='#')k=k.slice(1);var m;
+  if(k==='party')return '/party';
+  if((m=k.match(/^party-([A-Za-z]{5})$/)))return '/party/'+m[1].toUpperCase();
+  if((m=k.match(/^teacher\/party-(.+)$/)))return '/teacher/party/'+encSeg(m[1]);
+  return v418KeyToPath(key);};
+var v418PathToKey=pathToKey;
+pathToKey=function(path){var p=(path||'/').replace(/\/+$/,'')||'/',m;
+  if(p==='/party')return '#party';
+  if((m=p.match(/^\/party\/([A-Za-z]{5})$/)))return '#party-'+m[1].toUpperCase();
+  if((m=p.match(/^\/teacher\/party\/([^/]+)$/)))return '#teacher/party-'+decSeg(m[1]);
+  return v418PathToKey(path);};
+var v418Nav=navItems;
+navItems=function(){var items=v418Nav();items.forEach(function(it){if(it&&it.label==='Games')it.match=/^#(games|teacher\/game-|play-|party|teacher\/party-)/});return items;};
+var v418Games=renderGames;
+renderGames=function(){
+  v418Games.apply(this,arguments);
+  var role=profileRole(),main=root.querySelector&&root.querySelector('.games-page');if(!main||!role)return;
+  var box;
+  if(role==='teacher'){
+    var recent=el('div',{class:'stack',style:'gap:6px'});
+    box=el('section',{class:'panel gm-card pt-card'},el('h3',{text:'🎉 Hex Party: a whole-class game show'}),
+      el('p',{style:'margin:0',text:'Like Jackbox, built from your terms. Your screen hosts on the projector; students join on their devices with a room code. Everyone answers, everyone votes, and all the points add up to one class score.'}),
+      el('div',{class:'pt-kindrow'},Object.keys(PARTY_KINDS).map(function(k){var d=PARTY_KINDS[k];return el('span',{class:'pt-chip',title:d[2],text:d[0]+' '+d[1]})})),
+      el('button',{class:'btn primary',id:'pt-start',style:'align-self:flex-start',onclick:openPartySetup,text:'Start a class game'}),recent);
+    platformApi('party/mine').then(function(r){var open=(r.games||[]).filter(function(g){return g.status==='OPEN'});
+      if(open.length)fill(recent,el('span',{class:'hint',text:'Game in progress:'}),open.map(function(g){return el('a',{class:'btn',href:'#teacher/party-'+g.id,text:'Return to “'+g.title+'” · '+g.code+' · '+g.players+' players'})}));}).catch(function(){});
+  }else{
+    var inp=el('input',{type:'text',maxlength:5,id:'pt-code-home',placeholder:'ABCDE','aria-label':'Room code',autocapitalize:'characters'});
+    box=el('section',{class:'panel gm-card pt-card'},el('h3',{text:'🎉 Join a class game'}),el('p',{style:'margin:0',text:'Your teacher will put a room code on the big screen.'}),
+      el('div',{class:'row'},inp,el('button',{class:'btn primary',onclick:function(){platformApi('party/join',{code:inp.value}).then(function(r){NAV.hash='party-'+r.code}).catch(platformError)},text:'Join'})));
+  }
+  var feats=main.querySelector('.gm-feats');if(feats&&feats.parentNode===main)main.insertBefore(box,feats.nextSibling);else add(main,box);
+};
+(function(){
+  var at=GUIDE.findIndex(function(g){return g.id==='debate'})+1;
+  GUIDE.splice(at,0,{id:'party',who:'teacher',t:'Hex Party: a whole-class game show',cap:'The Hex Party lobby on the projector: students join with the room code.',p:[
+    'Menu → Games → Start a class game. Pick an assignment (points then show in your grader) or any Hex Space, the kinds of rounds, the timers and a class goal.',
+    'Your screen turns into the game show. Put it on the projector. Students go to the site, choose Games (or go to /party) and type the room code.',
+    'Each round, everyone answers on their own device, then everyone votes. ⚡ Link Lightning: explain a connection. 🎭 Hex Bluff: write a fake definition, then spot the real one. 🔍 Odd Hex Out: pick the term that doesn’t belong. 🥊 Head-to-head: two answers battle on the big screen.',
+    'Everyone gets points just for answering and voting, plus bonus points when classmates pick their answer. It all adds up to one class score, so the whole class works toward the goal together.',
+    'Names never show on the screen. Students get fun nicknames, a word filter blocks unkind answers, and you can hide any answer with one tap. Rounds move on by themselves when time’s up or everyone’s done.']});
+  var s=GUIDE.findIndex(function(g){return g.id==='s-games'})+1;
+  GUIDE.splice(s,0,{id:'s-party',who:'student',t:'Play Hex Party',cap:'Answering a round on your device.',p:[
+    'When your teacher starts a class game, go to Games and type the room code from the big screen. You’ll get a fun nickname.',
+    'Answer the question on your device before time runs out, then vote for your favorite answer (you can’t vote for your own).',
+    'You get points for answering and voting, and more when classmates vote for you. Everyone’s points add up to the class score. Can your class hit the goal?']});
+})();
+var v418Route=route;
+route=function(){
+  var h=NAV.hash||'',m;
+  if(GA.ready&&GA.user&&PX.loaded&&PX.profile){
+    var role=PX.profile.role;
+    if((m=h.match(/^#teacher\/party-([a-f0-9-]{36})$/))&&role==='teacher'){renderPartyHost(m[1]);return;}
+    if(h==='#party'){if(role==='teacher'){navReplace('games');renderGames();toast('Students join here. Start a class game from Games.');return;}renderPartyJoin('');return;}
+    if((m=h.match(/^#party-([A-Za-z]{5})$/))){if(role==='teacher'){navReplace('games');renderGames();return;}renderPartyPlay(m[1].toUpperCase());return;}
+  }
+  v418Route();
 };
 
 /* The homepage is the starting page: a visit to the bare site address opens it,

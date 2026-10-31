@@ -11,7 +11,7 @@ function harness(){
  sql.exec(readFileSync(new URL('../migrations/0003_group_boards.sql',import.meta.url),'utf8'));
  sql.exec(readFileSync(new URL('../migrations/0004_shares.sql',import.meta.url),'utf8'));
  sql.exec(readFileSync(new URL('../migrations/0005_multiple_posts.sql',import.meta.url),'utf8'));
- sql.exec(readFileSync(new URL('../migrations/0006_feedback.sql',import.meta.url),'utf8'));sql.exec(readFileSync(new URL('../migrations/0007_classroom_tools.sql',import.meta.url),'utf8'));sql.exec(readFileSync(new URL('../migrations/0008_images_roster.sql',import.meta.url),'utf8'));sql.exec(readFileSync(new URL('../migrations/0009_games.sql',import.meta.url),'utf8'));sql.exec(readFileSync(new URL('../migrations/0010_debate_index.sql',import.meta.url),'utf8'));
+ sql.exec(readFileSync(new URL('../migrations/0006_feedback.sql',import.meta.url),'utf8'));sql.exec(readFileSync(new URL('../migrations/0007_classroom_tools.sql',import.meta.url),'utf8'));sql.exec(readFileSync(new URL('../migrations/0008_images_roster.sql',import.meta.url),'utf8'));sql.exec(readFileSync(new URL('../migrations/0009_games.sql',import.meta.url),'utf8'));sql.exec(readFileSync(new URL('../migrations/0010_debate_index.sql',import.meta.url),'utf8'));sql.exec(readFileSync(new URL('../migrations/0011_party.sql',import.meta.url),'utf8'));
  const DB = {
   prepare(query) {
    return {
@@ -900,4 +900,95 @@ test('debate tallies are kept with the posting once results are shown, so later 
  assert.deepEqual([st.wins,st.votes],[2,4],'two wins, four votes, counted once each');
  assert.equal((await h.call('t2','posts/'+id+'/game',undefined,{access:false})).body.me.debate.cast,2);
  const body=JSON.parse(h.sql.prepare('SELECT body FROM posts WHERE id=?').get(id).body);assert.equal(body.asg.debate.stats.t1.wins,2);
+});
+/* ---------- 4.18 Hex Party ---------- */
+async function partySetup(h,kids,playlist,extra={}){
+ const id=await gameSetup(h,kids);
+ const p=await h.call('teacher','party',{postId:id,playlist,answerSecs:60,voteSecs:30,goal:1000,...extra},{access:false});assert.equal(p.status,201);
+ for(const k of kids){const j=await h.call(k,'party/join',{code:p.body.code.toLowerCase()},{access:false});assert.ok(j.status===201,'join '+k);}
+ return {postId:id,gid:p.body.id,code:p.body.code};
+}
+const host=(h,gid,action,extra)=>h.call('teacher','party/host/'+gid+'/next',{action,...extra},{access:false});
+test('Hex Party: Link Lightning round with anonymous ballots, votes, points and a class score',async()=>{
+ const h=harness(),kids=['p1','p2','p3','p4'],{postId,gid,code}=await partySetup(h,kids,['link']);
+ assert.match(code,/^[B-DF-HJ-NP-TV-XZ]{5}$/);
+ let v=(await h.call('p1','party/'+code,undefined,{access:false})).body;assert.equal(v.state.phase,'lobby');assert.match(v.me.nick,/^\w+ \w+$/);
+ const nicks=new Set();for(const k of kids)nicks.add((await h.call(k,'party/'+code,undefined,{access:false})).body.me.nick);assert.equal(nicks.size,4,'unique nicknames');
+ assert.deepEqual((await h.call('p1','party/'+code+'?rev='+v.rev,undefined,{access:false})).body,{same:true,rev:v.rev},'unchanged → tiny reply');
+ await host(h,gid,'round');
+ v=(await h.call('p1','party/'+code,undefined,{access:false})).body;assert.equal(v.state.phase,'answer');assert.ok(v.state.prompt.a&&v.state.prompt.b);
+ assert.equal((await h.call('p1','party/'+code+'/answer',{text:'what the fuck'},{access:false})).body.code,'party-filter');
+ assert.equal((await h.call('p1','party/'+code+'/answer',{text:'Thorny stems protect the sex cells in flowers'},{access:false})).status,200,'science words are fine');
+ for(const k of ['p2','p3','p4'])await h.call(k,'party/'+code+'/answer',{text:'Answer from '+k+' about both terms'},{access:false});
+ assert.equal((await h.call('outsider','party/'+code,undefined,{access:false})).body.code,'party-join');
+ const hv=(await h.call('teacher','party/host/'+gid,undefined,{access:false})).body;assert.equal(hv.answered,4);assert.ok(hv.answers.every(a=>a.name.startsWith('Name ')),'teacher sees who wrote what');
+ await host(h,gid,'vote');
+ const ballots={};for(const k of kids){ballots[k]=(await h.call(k,'party/'+code,undefined,{access:false})).body.ballot;assert.equal(ballots[k].length,3,'everyone else’s answers');assert.ok(ballots[k].every(b=>!('uid' in b)))}
+ const p1key=ballots.p2.find(b=>b.text.startsWith('Thorny')).key;
+ assert.equal((await h.call('p1','party/'+code+'/vote',{choice:p1key},{access:false})).status,400,'no voting for yourself');
+ for(const k of ['p2','p3','p4'])assert.equal((await h.call(k,'party/'+code+'/vote',{choice:p1key},{access:false})).status,200);
+ await h.call('p1','party/'+code+'/vote',{choice:ballots.p1[0].key},{access:false});
+ await host(h,gid,'reveal');await host(h,gid,'reveal').catch(()=>{});
+ const r=(await h.call('p1','party/'+code,undefined,{access:false})).body;
+ assert.equal(r.reveal.myPoints,50+25+300);assert.equal(r.reveal.top[0].votes,3);assert.equal(r.reveal.mine,undefined);
+ assert.equal(r.state.classPoints,4*50+4*25+4*100);
+ await host(h,gid,'scores');const sc=(await h.call('p2','party/'+code,undefined,{access:false})).body;assert.equal(sc.top[0].points,375);assert.ok(sc.top.every(t=>!/Name/.test(t.nick)));
+ assert.equal((await host(h,gid,'round')).body.code,'party-done');
+ const g=(await h.call('teacher','posts/'+postId+'/game',undefined,{access:false})).body;assert.equal(g.party.p1,375,'class-game points reach the grader');
+});
+test('Hex Party: Hex Bluff, Odd Hex Out and Head-to-head rounds',async()=>{
+ const h=harness(),kids=['b1','b2','b3','b4'],{gid,code}=await partySetup(h,kids,['bluff','odd','h2h']);
+ await host(h,gid,'round');let v=(await h.call('b1','party/'+code,undefined,{access:false})).body;assert.equal(v.state.kind,'bluff');assert.equal(v.state.prompt.def,undefined,'real definition stays hidden');
+ const real=(await h.call('teacher','party/host/'+gid,undefined,{access:false})).body.real;
+ assert.equal((await h.call('b1','party/'+code+'/answer',{text:real},{access:false})).body.code,'party-real');
+ for(const k of kids)await h.call(k,'party/'+code+'/answer',{text:'A made-up meaning by '+k},{access:false});
+ await host(h,gid,'vote');
+ const b2=(await h.call('b2','party/'+code,undefined,{access:false})).body.ballot;assert.ok(b2.some(x=>x.key==='REAL'));assert.ok(!b2.some(x=>x.text.endsWith('b2')),'own fake not on your ballot');
+ const fakeB1=b2.find(x=>x.text.endsWith('b1')).key;
+ await h.call('b2','party/'+code+'/vote',{choice:fakeB1},{access:false});await h.call('b3','party/'+code+'/vote',{choice:fakeB1},{access:false});await h.call('b4','party/'+code+'/vote',{choice:'REAL'},{access:false});
+ await host(h,gid,'reveal');
+ let r=(await h.call('b1','party/'+code,undefined,{access:false})).body.reveal;assert.equal(r.myPoints,50+200,'answered + fooled two');assert.equal(r.real,real);
+ assert.equal((await h.call('b4','party/'+code,undefined,{access:false})).body.reveal.myPoints,50+25+200);
+ await host(h,gid,'round');v=(await h.call('b1','party/'+code,undefined,{access:false})).body;assert.equal(v.state.kind,'link','only three terms, so Odd Hex Out plays as Link Lightning');assert.ok(v.state.prompt.a);
+});
+test('Hex Party: head-to-head duels, hiding an answer, and who can host',async()=>{
+ const h=harness(),kids=['h1','h2','h3','h4','h5'],{gid,code}=await partySetup(h,kids,['h2h']);
+ await host(h,gid,'round');
+ for(const k of kids)await h.call(k,'party/'+code+'/answer',{text:'Duel answer from '+k},{access:false});
+ const hv=(await h.call('teacher','party/host/'+gid,undefined,{access:false})).body;
+ await h.call('teacher','party/host/'+gid+'/hide',{key:hv.answers.find(a=>a.text.endsWith('h5')).key},{access:false});
+ await host(h,gid,'vote');
+ let st=(await h.call('teacher','party/host/'+gid,undefined,{access:false})).body;assert.equal(st.state.duels,2,'four shown answers → two duels');
+ const sides=st.duel.map(d=>d.text.slice(-2));
+ const author=sides[0];assert.equal((await h.call(author,'party/'+code+'/vote',{choice:'B'},{access:false})).body.code,'party-own');
+ for(const k of kids.filter(k=>!sides.includes(k)))await h.call(k,'party/'+code+'/vote',{choice:'A'},{access:false});
+ await host(h,gid,'next-duel');await host(h,gid,'next-duel');
+ st=(await h.call('teacher','party/host/'+gid,undefined,{access:false})).body;assert.equal(st.state.phase,'reveal');
+ const winA=st.reveal.duels[0][0];assert.equal(winA.votes,3);
+ assert.equal((await h.call(author,'party/'+code,undefined,{access:false})).body.reveal.myPoints,50+3*100+100,'answer + three votes + sweep');
+ assert.equal((await h.call('h5','party/'+code,undefined,{access:false})).body.reveal.myPoints,25,'hidden answer earns nothing (voted though)');
+ await h.call('other','profile',{role:'teacher'});
+ assert.equal((await h.call('other','party/host/'+gid,undefined,{access:false})).status,404);
+ assert.equal((await h.call('h1','party',{terms:[{term:'A'},{term:'B'}],playlist:['link']},{access:false})).status,403);
+ assert.equal((await h.call('teacher','party/join',{code},{access:false})).body.code,'party-host');
+ await host(h,gid,'end');assert.equal((await h.call('h1','party/join',{code},{access:false})).body.code,'party-not-found');
+});
+test('Hex Party from a Hex Space without a posting',async()=>{
+ const h=harness();await h.call('teacher','profile',{role:'teacher'});await h.call('kid','profile',{role:'student'},{access:false});
+ const p=await h.call('teacher','party',{title:'Quick review',terms:[{id:1,term:'Atom',def:'Smallest unit'},{id:2,term:'Molecule',def:'Atoms bonded'}],playlist:['link','bluff']},{access:false});
+ assert.equal(p.status,201);assert.equal((await h.call('kid','party/join',{code:p.body.code},{access:false})).status,201);
+ assert.equal((await h.call('teacher','party',{terms:[{term:'Lonely'}],playlist:['link']},{access:false})).body.code,'party-terms');
+});
+
+test('Hex Party: Odd Hex Out needs a pick from the four terms',async()=>{
+ const h=harness();await h.call('teacher','profile',{role:'teacher'});for(const k of ['o1','o2'])await h.call(k,'profile',{role:'student'},{access:false});
+ const terms=['Sun','Moon','Mars','Apple','Venus'].map((t,i)=>({id:i+1,term:t,def:'d'+t}));
+ const p=await h.call('teacher','party',{terms,playlist:['odd']},{access:false});for(const k of ['o1','o2'])await h.call(k,'party/join',{code:p.body.code},{access:false});
+ await h.call('teacher','party/host/'+p.body.id+'/next',{action:'round'},{access:false});
+ const v=(await h.call('o1','party/'+p.body.code,undefined,{access:false})).body;assert.equal(v.state.kind,'odd');assert.equal(v.state.prompt.four.length,4);
+ assert.equal((await h.call('o1','party/'+p.body.code+'/answer',{text:'It is not a planet',pick:'99'},{access:false})).status,400);
+ assert.equal((await h.call('o1','party/'+p.body.code+'/answer',{text:'It is not a planet',pick:v.state.prompt.four[0].id},{access:false})).status,200);
+ await h.call('o2','party/'+p.body.code+'/answer',{text:'Different from the rest',pick:v.state.prompt.four[1].id},{access:false});
+ await h.call('teacher','party/host/'+p.body.id+'/next',{action:'reveal'},{access:false});
+ const r=(await h.call('teacher','party/host/'+p.body.id,undefined,{access:false})).body.reveal;assert.equal(Object.values(r.picks).reduce((a,b)=>a+b,0),2);
 });
