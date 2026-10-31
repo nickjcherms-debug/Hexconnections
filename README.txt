@@ -116,6 +116,28 @@ Tiles and text retain their original size, and zoom/scroll remain available.
 A hexagon still has six sides: extra space supports more arrangements, not more
 than six simultaneous neighboring tiles per hexagon.
 
+GAMES AND DEFEND THE LINK (4.15)
+Menu > Games (/games) lists the teacher's assignments; Open game console
+(/teacher/games/<posting>) runs everything for one posting:
+- Game mode: students see points, level (every 150 points), streak and badges
+  above their board. Points come only from the board (terms placed, explained
+  touching connections, detailed reasons, D&C links, streaks, one connected
+  board, every term used); repeated or under-3-word reasons don't score. The
+  scoring lives in src/gamescore.js and is mirrored in index.html.
+- Timed challenge round: target + time; a countdown shows on every board.
+  Connections first explained inside the window earn extra points (the browser
+  sends its clock so the server corrects for clock differences).
+- Team race: Make teams puts students who opened it onto shared group boards.
+  A student's points are their own board plus their team's board.
+- Leaderboard: students see nicknames, first name + last initial, or only their
+  own points; Project leaderboard is a full-screen view for the projector.
+- Defend the link: groups of 2-6, live (timed phases, auto-advanced while the
+  console is open) or self-paced (a group votes once everyone has defended).
+  Students defend one of their connections or a pair the teacher picks, then vote
+  anonymously (not for themselves); only the winner's name is revealed.
+- Grader and CSV show game results; Add to grade adds an optional bonus.
+Students: Menu > Games and /student/games/<posting> (debate, badges, leaderboard).
+
 GRADING, GALLERY, CONVENIENCES AND PICTURES (4.12–4.14)
 - Submissions is a table: one row per student, including students still
   working (Peek shows their last-saved board; they can't tell you looked).

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Hexagonal thinking boards for classrooms: students arrange vocabulary hexagons and explain every connection, with optional Depth and Complexity icons.">
-<meta name="hex-connections-build" content="4.14.0">
+<meta name="hex-connections-build" content="4.15.0">
 <title>Hex Connections</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0F6E6E">
@@ -729,6 +729,79 @@ h2,h3,.brand h1,.aitem b,.act-head h2,.modal h3{overflow-wrap:anywhere}
 .board-svg .badge.hl circle{fill:var(--honey);stroke:var(--ink);stroke-width:2}
 .gr-row.flash{box-shadow:0 0 0 3px var(--honey)}
 @media (pointer:coarse){.gb-hint{display:none}}
+/* 4.15 games */
+@media (max-width:1500px){.nav-link{padding:6px 9px}.nav{gap:2px}.top{gap:12px 14px}}
+.games-page{max-width:1180px;display:flex;flex-direction:column;gap:14px;padding-bottom:40px}
+.games-page.play{max-width:860px}
+.gm-feats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.gm-feat{display:flex;flex-direction:column;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 16px;line-height:1.45}
+.gm-feat-i{font-size:1.6rem}
+.gm-row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 16px}
+.gm-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:14px;align-items:start}
+@media (max-width:900px){.gm-grid{grid-template-columns:1fr}}
+.gm-card{display:flex;flex-direction:column;gap:10px}
+.gm-card h3{margin:0;font-size:1.15rem}
+.gm-live{display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:var(--honey-soft);border-radius:14px;padding:12px 16px;color:var(--ink)}
+.gm-big{font-family:var(--f-display);font-size:2.4rem;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.gm-big.sm{font-size:1.25rem;margin-left:auto}
+.gm-cd.low{color:var(--danger)}
+.gm-how summary{cursor:pointer;font-weight:700;color:var(--blue)}
+.gm-how-t{border-collapse:collapse;margin-top:6px;font-size:.92rem}
+.gm-how-t td{padding:3px 10px 3px 0;border-bottom:1px solid var(--line)}
+.gm-how-t td:last-child{text-align:right;font-weight:700;white-space:nowrap}
+.gm-table{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow-x:auto}
+.gm-tr{display:grid;grid-template-columns:26px minmax(110px,1.5fr) 52px minmax(84px,1fr) minmax(56px,.8fr) 50px 58px minmax(70px,.9fr);gap:8px;align-items:center;padding:8px 10px;border-top:1px solid var(--line);font-size:.88rem;min-width:600px}
+.gm-th{border-top:0;background:var(--paper);font-weight:800;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.gm-rank{font-weight:800;font-variant-numeric:tabular-nums}
+.gm-icons{letter-spacing:2px}
+@media (max-width:700px){.gm-th{display:none}.gm-tr{grid-template-columns:30px 1fr 1fr;min-width:0}.gm-tr [data-label]:before{content:attr(data-label) ': ';color:var(--muted);font-weight:700}}
+.gm-bar{display:inline-block;position:relative;height:10px;min-width:90px;flex:1;border-radius:6px;background:var(--cell);overflow:hidden}
+.gm-bar>span{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,var(--teal),var(--blue));border-radius:6px}
+.gm-level{display:flex;flex-direction:column;gap:4px;min-width:150px;flex:1;max-width:260px;font-size:.9rem}
+.gm-teams{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+.gm-team{display:flex;flex-direction:column;gap:5px;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.gm-team.win{border-color:var(--honey);background:var(--honey-soft);color:var(--ink)}
+.gm-steps{display:flex;gap:4px;margin:0;padding:0;list-style:none}
+.gm-steps li{padding:4px 10px;border-radius:999px;background:var(--cell);font-weight:700;font-size:.85rem;color:var(--muted)}
+.gm-steps li.on{background:var(--blue);color:var(--on-blue)}
+.gm-steps li.done{background:var(--teal-soft);color:var(--teal)}
+.gm-prompt{margin:0;font-weight:700;font-size:1.05rem}
+.gm-dgroups{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.gm-dgroup{display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.gm-members{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:2px}
+.gm-win{display:flex;flex-direction:column;gap:4px;background:var(--honey-soft);color:var(--ink);border-radius:10px;padding:8px 10px}
+.gm-badges{display:flex;flex-wrap:wrap;gap:6px}
+.gm-badge{display:inline-flex;align-items:center;gap:2px;padding:5px 10px;border-radius:999px;border:1px dashed var(--line);color:var(--muted);font-size:.88rem;opacity:.65}
+.gm-badge.on{border-style:solid;border-color:var(--honey);background:var(--honey-soft);color:var(--ink);opacity:1;font-weight:700}
+.gm-plist{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.gm-plist li{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:12px;background:var(--paper)}
+.gm-plist li.mine{outline:2px solid var(--blue)}
+.gm-plist .gm-pts{margin-left:auto;font-weight:800;font-variant-numeric:tabular-nums}
+.gm-ballot{display:flex;flex-direction:column;gap:10px}
+.gm-entry{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:12px;padding:12px 14px;line-height:1.5}
+.gm-entry.on{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue)}
+.gm-entry.mine{background:var(--paper)}
+.gm-entry.win{border-color:var(--honey);background:var(--honey-soft);color:var(--ink)}
+.gm-entry .btn,.gm-entry .chip{align-self:flex-start}
+.games-page>.gm-card,.games-page>.panel{align-self:stretch;box-sizing:border-box}
+.gm-won{font-weight:800}
+.gm-pair{margin:0;font-size:1.05rem}
+.game-hud{display:flex;flex-direction:column;gap:8px;margin:0 0 12px}
+.gm-hud-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px 14px}
+.gm-pts-big b{font-family:var(--f-display);font-size:1.6rem;font-variant-numeric:tabular-nums}
+.gm-hud-row .btn{margin-left:auto}
+.gm-round{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--honey-soft);color:var(--ink);border-radius:14px;padding:8px 14px}
+.gm-round.debate{background:var(--t4)}
+.gm-grader{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:8px 12px;display:flex;flex-direction:column;gap:6px}
+.gm-grader input[type=number]{width:70px}
+.gm-project{position:fixed;inset:0;z-index:60;background:var(--paper);color:var(--ink);padding:28px 40px;overflow:auto;display:flex;flex-direction:column;gap:18px}
+.gm-project h2{margin:0;font-size:clamp(1.6rem,3vw,2.6rem)}
+.gm-code{font-family:var(--f-display);font-size:1.6rem;font-weight:800;margin-right:12px}
+.gm-pbanner{font-size:1.5rem;font-weight:800;background:var(--honey-soft);border-radius:16px;padding:12px 20px}
+.gm-pgrid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:24px}
+@media (max-width:800px){.gm-pgrid{grid-template-columns:1fr}.gm-project{padding:16px}}
+.gm-project .gm-plist li{font-size:1.35rem;padding:12px 18px;background:var(--panel);border:1px solid var(--line)}
+.gm-pwins{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;font-size:1.15rem}
 </style>
 <div id="root"></div>
 <script type="application/json" id="hx-data">{"version":4,"classes":[],"activities":[]}</script>
@@ -5877,6 +5950,560 @@ function graderBoard(a,p,conns){
     scroller,
     el('p',{class:'hint gb-hint',style:'margin:0',text:'Tap a C-number on the board to jump to its reason; point at a reason to find it on the board.'}));
 }
+
+/* ===================== 4.15: games — points, timed rounds, team race, leaderboard, Defend the link ===================== */
+/* Scoring mirrors src/gamescore.js so students see the same points the teacher sees. */
+var GAME_LEVELS=['Explorer','Connector','Builder','Weaver','Architect','Mastermind','Sage','Visionary','Legend','Hex Hero'],GAME_STEP=150;
+var GAME_PTS={place:10,link:20,detail:10,dc:15,streak:5,board:50,allin:50,round:10,roundHit:50,debateWin:30,debateVote:5,debateCast:5};
+var BADGE_INFO={first:['🔗','First link','Explained your first connection'],wordsmith:['✍️','Wordsmith','Wrote a reason of 25 words or more'],hub:['🕸️','Hub','Linked one hexagon to four or more others'],
+  bridge:['🌉','Bridge builder','Linked a term to a Depth & Complexity icon'],roll:['🔥','On a roll','Five detailed reasons in a row'],board:['🧩','One board','Joined every hexagon into one connected board'],
+  allin:['⭐','All in','Used and linked every term'],clock:['⏱️','Beat the clock','Hit the target in a timed round'],race:['🏁','Race winner','Your team finished the board first'],
+  champ:['🏆','Debate champ','Gave the winning defense in a debate round'],judge:['⚖️','Fair judge','Voted in three debate rounds']};
+var BADGE_ORDER=['first','wordsmith','hub','bridge','roll','board','allin','clock','race','champ','judge'];
+function gameScore(act,d,game,extra){
+  var termIds={},nTerms=0;(act&&act.terms||[]).forEach(function(t){termIds[String(t.id||t.n)]=1;nTerms++});
+  var place=d&&d.place||{},conns=d&&d.conns||{},skew=Number(d&&d._skew)||0;
+  var placedIds=Object.keys(place).filter(function(k){return place[k]&&place[k].length===2});
+  var placedTerms=placedIds.filter(function(k){return termIds[k]});
+  var seen={},links=[];
+  function wc(t){return String(t||'').trim().split(/\s+/).filter(Boolean).length}
+  Object.keys(conns).forEach(function(key){
+    var ab=key.split('-'),p=place[ab[0]],q=place[ab[1]],c=conns[key];
+    if(!p||!q||!c)return;
+    if(Math.max(Math.abs(p[0]-q[0]),Math.abs(p[1]-q[1]),Math.abs(p[0]+p[1]-q[0]-q[1]))!==1)return;
+    var w=wc(c.why);if(w<3)return;
+    var norm=String(c.why).toLowerCase().replace(/[^a-z0-9 ]+/g,'').replace(/\s+/g,' ').trim();
+    if(seen[norm])return;seen[norm]=1;
+    links.push({a:ab[0],b:ab[1],w:w,t:Number(c.first)||Number(c.at)||0});
+  });
+  var br={place:placedTerms.length*GAME_PTS.place,link:links.length*GAME_PTS.link,detail:0,dc:0,streak:0,board:0,allin:0,round:0,debate:0};
+  var deg={},wordsmith=false,bridge=false;
+  links.forEach(function(l){if(l.w>=15)br.detail+=GAME_PTS.detail;if(l.w>=25)wordsmith=true;if(Number(l.a)>1000||Number(l.b)>1000){br.dc+=GAME_PTS.dc;bridge=true}deg[l.a]=(deg[l.a]||0)+1;deg[l.b]=(deg[l.b]||0)+1;});
+  var ordered=links.slice().sort(function(x,y){return x.t-y.t}),run=0,best=0;
+  ordered.forEach(function(l){if(l.w>=8){run++;if(run>=3)br.streak+=GAME_PTS.streak}else run=0;best=Math.max(best,run)});
+  var parent={};placedIds.forEach(function(k){parent[k]=k});
+  function find(x){while(parent[x]!==x){parent[x]=parent[parent[x]];x=parent[x]}return x}
+  links.forEach(function(l){if(parent[l.a]!=null&&parent[l.b]!=null)parent[find(l.a)]=find(l.b)});
+  var roots={};placedIds.forEach(function(k){roots[find(k)]=1});
+  var oneBoard=placedIds.length>=3&&Object.keys(roots).length===1;if(oneBoard)br.board=GAME_PTS.board;
+  var linked={};links.forEach(function(l){linked[l.a]=1;linked[l.b]=1});
+  var allIn=nTerms>0&&Object.keys(termIds).every(function(id){return place[id]&&linked[id]});if(allIn)br.allin=GAME_PTS.allin;
+  var rounds=[],list=((game&&game.rounds)||[]).concat(game&&game.round?[game.round]:[]);
+  list.forEach(function(r){var s=Date.parse(r.startedAt),e=Date.parse(r.endsAt);if(!s||!e)return;
+    var n=links.filter(function(l){return l.t&&l.t+skew>=s&&l.t+skew<=e}).length,hit=n>=(Number(r.target)||1);
+    br.round+=n*GAME_PTS.round+(hit?GAME_PTS.roundHit:0);rounds.push({id:r.id,count:n,target:Number(r.target)||1,hit:hit});});
+  var db=extra&&extra.debate||{};br.debate=(db.wins||0)*GAME_PTS.debateWin+(db.votes||0)*GAME_PTS.debateVote+(db.cast||0)*GAME_PTS.debateCast;
+  var points=0;for(var k in br)points+=br[k];
+  var badges=[];if(links.length)badges.push('first');if(wordsmith)badges.push('wordsmith');
+  if(Object.keys(deg).some(function(x){return deg[x]>=4}))badges.push('hub');if(bridge)badges.push('bridge');if(best>=5)badges.push('roll');
+  if(oneBoard)badges.push('board');if(allIn)badges.push('allin');if(rounds.some(function(r){return r.hit}))badges.push('clock');
+  if(extra&&extra.raceWinner)badges.push('race');if((db.wins||0)>0)badges.push('champ');if((db.rounds||0)>=3)badges.push('judge');
+  var level=Math.min(GAME_LEVELS.length,1+Math.floor(points/GAME_STEP));
+  return {points:points,level:level,levelName:GAME_LEVELS[level-1],nextAt:level<GAME_LEVELS.length?level*GAME_STEP:null,badges:badges,streak:run,best:best,links:links.length,placed:placedTerms.length,terms:nTerms,oneBoard:oneBoard,allIn:allIn,rounds:rounds,breakdown:br};
+}
+/* Countdowns: any element with data-ends counts down to that server time. */
+var GAME_CLOCK={skew:0,timer:null};
+function gameNow(){return Date.now()+GAME_CLOCK.skew}
+function mmss(ms){ms=Math.max(0,ms);var s=Math.ceil(ms/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+function gameTick(){
+  if(!document.querySelectorAll)return;
+  [].slice.call(document.querySelectorAll('[data-ends]')).forEach(function(n){var left=Date.parse(n.getAttribute('data-ends'))-gameNow();n.textContent=left>0?mmss(left):(n.getAttribute('data-done')||'Time’s up');if(n.classList)n.classList.toggle('low',left>0&&left<=15000);});
+}
+function startGameClock(){if(!GAME_CLOCK.timer)GAME_CLOCK.timer=setInterval(gameTick,1000);}
+function setGameSkew(nowIso){var t=Date.parse(nowIso);if(t)GAME_CLOCK.skew=t-Date.now();}
+function countdown(endsAt,done){return el('span',{class:'gm-cd','data-ends':endsAt,'data-done':done||'Time’s up',text:mmss(Date.parse(endsAt)-gameNow())});}
+function badgeChip(k,on){var b=BADGE_INFO[k];if(!b)return null;return el('span',{class:'gm-badge'+(on?' on':''),title:b[1]+': '+b[2]},el('span',{'aria-hidden':'true',text:b[0]}),' ',b[1]);}
+function pairLabel(terms,pair){
+  var by={};(terms||[]).forEach(function(t){by[String(t.id)]=t.term});
+  return String(pair||'').split('-').map(function(x){var n=Number(x);if(n>1000){var d=DC[n-1001];return d?d.name:'Icon'}return by[x]||('T'+x)}).join(' ↔ ');
+}
+function levelBar(sc){
+  var base=(sc.level-1)*GAME_STEP,pct=sc.nextAt?Math.round((sc.points-base)/(sc.nextAt-base)*100):100;
+  return el('div',{class:'gm-level',title:sc.nextAt?(sc.nextAt-sc.points)+' points to the next level':'Top level'},
+    el('span',null,el('b',{text:'Level '+sc.level}),' · '+sc.levelName),
+    el('span',{class:'gm-bar',role:'progressbar','aria-valuemin':'0','aria-valuemax':'100','aria-valuenow':String(pct),'aria-label':'Progress to the next level'},el('span',{style:'width:'+pct+'%'})));
+}
+var HOW_POINTS=[['Each term on the board',GAME_PTS.place],['Each explained connection (3+ words)',GAME_PTS.link],['Detailed reason (15+ words)','+'+GAME_PTS.detail],['Link to a Depth & Complexity icon','+'+GAME_PTS.dc],
+  ['Streak: 3rd and later detailed reasons (8+ words) in a row','+'+GAME_PTS.streak+' each'],['One connected board',GAME_PTS.board],['Every term used and linked',GAME_PTS.allin],
+  ['Connection made during a timed round','+'+GAME_PTS.round],['Hit a timed round’s target',GAME_PTS.roundHit],['Win a debate round (most votes in your group)',GAME_PTS.debateWin],['Each debate vote you receive',GAME_PTS.debateVote],['Each debate ballot you cast',GAME_PTS.debateCast]];
+function howPoints(){
+  return el('details',{class:'gm-how'},el('summary',{text:'How points work'}),
+    el('table',{class:'gm-how-t'},HOW_POINTS.map(function(r){return el('tr',null,el('td',{text:r[0]}),el('td',{text:String(r[1])}))})),
+    el('p',{class:'hint',style:'margin:6px 0 0',text:'Every '+GAME_STEP+' points is a new level. Copied or repeated reasons only count once, and reasons under three words don’t score.'}));
+}
+
+/* ---------- paths and menu ---------- */
+var v415KeyToPath=keyToPath;
+keyToPath=function(key){var k=String(key||'');if(k.charAt(0)==='#')k=k.slice(1);var m;
+  if(k==='games')return '/games';
+  if((m=k.match(/^teacher\/game-(.+)$/)))return '/teacher/games/'+encSeg(m[1]);
+  if((m=k.match(/^play-(.+)$/)))return '/student/games/'+encSeg(m[1]);
+  return v415KeyToPath(key);};
+var v415PathToKey=pathToKey;
+pathToKey=function(path){var p=(path||'/').replace(/\/+$/,'')||'/',m;
+  if(p==='/games')return '#games';
+  if((m=p.match(/^\/teacher\/games\/([^/]+)$/)))return '#teacher/game-'+decSeg(m[1]);
+  if((m=p.match(/^\/student\/games\/([^/]+)$/)))return '#play-'+decSeg(m[1]);
+  return v415PathToKey(path);};
+PUBLIC_KEYS=/^(#home|#signin|#signup|#code|#new|#privacy|#games|#guide(-.+)?|#c-.+|#share-.+)$/;
+var v415Nav=navItems;
+navItems=function(){
+  var items=v415Nav(),role=profileRole();
+  if(role==='teacher'||role==='student'){
+    var i=items.findIndex(function(x){return x&&x.label==='How to use'});
+    items.splice(i<0?items.length:i,0,{label:'Games',href:'#games',match:/^#(games|teacher\/game-|play-)/});
+  }
+  return items;
+};
+
+/* ---------- Games page ---------- */
+var GAME_FEATURES=[['🏅','Points, streaks and badges','Students earn points for every term placed and every explained connection, with bonuses for detailed reasons, streaks, one connected board and using every term. Eleven badges and ten levels.'],
+  ['⏱️','Timed challenge rounds','Start a round from the game console (for example: explain 5 new connections in 3 minutes). A countdown appears on every student’s board; hitting the target earns bonus points.'],
+  ['🏁','Team race','Make teams from the students who’ve opened the assignment. Each team builds one shared board; the first team to place and link every term on one connected board wins.'],
+  ['📊','Class leaderboard','Live rankings for the projector. Students see fun nicknames (or first names, if you choose), or only their own points.'],
+  ['🎤','Defend the link','A debate in small groups: everyone defends a connection in writing, the group votes anonymously for the best defense, and the winner is revealed. Run it live with timers or self-paced over a day or two.']];
+function renderGames(){
+  var seq=++PX.routeId;ST=null;caps.teacher=false;
+  var role=profileRole();
+  var list=el('div',{class:'stack',style:'gap:10px'},el('p',{class:'muted',role:'status',text:role?'Loading your assignments…':''}));
+  var intro=role==='student'?'Earn points and badges as you build your board, race your team, and defend your best connections in a class debate.':'Turn any assignment into a game: points and badges on every board, timed rounds, team races, a class leaderboard and a debate where students defend their connections.';
+  fill(root,topBar(),el('main',{class:'games-page'},
+    el('div',{class:'eyebrow',text:'Games'}),el('h2',{class:'guide-title',text:role==='student'?'Your games':'Play with hexagons'}),el('p',{class:'lede',text:intro}),
+    el('div',{class:'gm-feats'},GAME_FEATURES.map(function(f){return el('div',{class:'gm-feat'},el('span',{class:'gm-feat-i','aria-hidden':'true',text:f[0]}),el('b',{text:f[1]}),el('span',{text:f[2]}))})),
+    role?el('h3',{style:'margin:8px 0 0',text:role==='student'?'Assignments with a game':'Your assignments'}):null,
+    role?list:el('div',{class:'row'},el('a',{class:'btn primary',href:'#signin',text:'Log in to play'}),el('a',{class:'btn',href:'#guide-games',text:'Read how games work'})),
+    role==='teacher'?howPoints():null));
+  if(!role)return;
+  if(role==='teacher'){
+    platformApi('teacher/dashboard').then(function(r){
+      if(seq!==PX.routeId)return;
+      var posts=(r.assignments||[]).filter(function(a){return a.status==='PUBLISHED'});
+      if(!posts.length){fill(list,el('div',{class:'panel'},el('p',{style:'margin:0',text:'Assign a Hex Space to a class first; then turn on a game for that assignment here.'}),el('a',{class:'btn primary',href:'#teacher/editor',style:'align-self:flex-start',text:'Go to my Hex Spaces'})));return;}
+      posts.sort(function(x,y){return (y.game||y.debate?1:0)-(x.game||x.debate?1:0)||String(y.createdAt).localeCompare(String(x.createdAt))});
+      fill(list,posts.map(function(a){
+        return el('div',{class:'gm-row'},el('div',{class:'stack',style:'gap:2px;min-width:0'},el('b',{text:a.title}),el('span',{class:'muted',text:a.className+(a.code?' · code '+a.code:'')+' · '+a.submissions+' turned in'})),
+          el('div',{class:'row',style:'gap:6px'},a.game?el('span',{class:'status-pill graded',text:'Game on'}):null,a.debate?el('span',{class:'status-pill needs',text:'Debate on'}):null,
+            el('a',{class:'btn'+(a.game||a.debate?' primary':''),href:'#teacher/game-'+a.id,text:a.game||a.debate?'Open game console':'Set up a game'})));
+      }));
+    }).catch(function(e){if(seq===PX.routeId)fill(list,el('p',{class:'err',text:e.message}))});
+  }else{
+    platformApi('student/dashboard',undefined,classroomReady('student')).then(function(r){
+      if(seq!==PX.routeId)return;
+      var all=(r.active||[]).concat(r.submitted||[]).filter(function(a){return a.game||a.debate});
+      if(!all.length){fill(list,el('div',{class:'panel'},el('p',{style:'margin:0',text:'No games yet. When your teacher turns on a game for one of your assignments, it shows up here.'})));return;}
+      fill(list,all.map(function(a){
+        return el('div',{class:'gm-row'},el('div',{class:'stack',style:'gap:2px;min-width:0'},el('b',{text:a.title}),el('span',{class:'muted',text:a.className})),
+          el('div',{class:'row',style:'gap:6px'},a.game?el('span',{class:'status-pill graded',text:'Points & badges'}):null,a.debate?el('span',{class:'status-pill needs',text:'Debate'}):null,
+            el('a',{class:'btn',href:'#a-'+a.id,text:'My board'}),el('a',{class:'btn primary',href:'#play-'+a.id,text:'Play'})));
+      }));
+    }).catch(function(e){if(seq===PX.routeId)fill(list,el('p',{class:'err',text:e.message}))});
+  }
+}
+
+/* ---------- Teacher game console ---------- */
+function renderGameConsole(postId){
+  var seq=++PX.routeId;ST=null;caps.teacher=false;
+  var S={data:null,form:{target:'5',secs:'180',teamSize:'3',pairMode:'own',a:'',b:'',prompt:'',defSecs:'120',voteSecs:'60',size:'4'},busy:false,advancing:null,project:null};
+  var main=el('main',{class:'games-page console'},el('p',{class:'muted',role:'status',text:'Loading the game…'}));
+  fill(root,topBar(),main);startGameClock();
+  function alive(){return seq===PX.routeId}
+  function load(){
+    if(!alive())return;
+    return platformApi('posts/'+postId+'/game').then(function(r){if(!alive())return;setGameSkew(r.now);S.data=r;
+      var ae=document.activeElement,tag=ae&&ae.tagName;if(S.data&&main.contains&&main.contains(ae)&&(tag==='INPUT'||tag==='SELECT'||tag==='TEXTAREA')){drawProject();return;}
+      draw();drawProject();autoAdvance();})
+      .catch(function(e){if(!alive())return;if(!S.data)fill(main,el('p',{class:'err',text:e.message}),el('a',{class:'btn',href:'#games',text:'← Games'}));});
+  }
+  function act(path,body,msg){
+    if(S.busy)return Promise.resolve();S.busy=true;
+    return platformApi('posts/'+postId+'/'+path,body).then(function(){if(msg)toast(msg);}).catch(platformError).then(function(){S.busy=false;return load();});
+  }
+  function poll(){if(!alive())return;if(!document.hidden)load();setTimeout(poll,4000);}
+  function autoAdvance(){
+    var d=S.data,now=gameNow();
+    if(d.game.round&&Date.parse(d.game.round.endsAt)<now-1500&&S.advancing!=='g'+d.game.round.id){S.advancing='g'+d.game.round.id;act('game/round',{action:'stop'},'Time’s up! The round is over.');return;}
+    var r=d.debate.round;if(!r||d.debate.mode!=='live'||!r.endsAt||Date.parse(r.endsAt)>now-1500)return;
+    var key='d'+r.n+r.phase;if(S.advancing===key)return;S.advancing=key;
+    if(r.phase==='defend')act('debate/round',{action:'vote',seconds:+S.form.voteSecs},'Time’s up: voting is open.');
+    else if(r.phase==='vote')act('debate/round',{action:'results'},'Voting closed: results are in.');
+  }
+  function sel(key,opts,label){
+    var s=el('select',{'aria-label':label},opts.map(function(o){return el('option',{value:o[0],text:o[1],selected:String(S.form[key])===String(o[0])||null})}));
+    s.addEventListener('change',function(){S.form[key]=s.value});return s;
+  }
+  function card(title,sub){var c=el('section',{class:'panel gm-card'},el('h3',{text:title}),sub?el('p',{class:'hint',style:'margin:0',text:sub}):null);for(var i=2;i<arguments.length;i++)add(c,arguments[i]);return c;}
+  function draw(){
+    var d=S.data,g=d.game,deb=d.debate,st=d.standings||[];
+    var head=el('div',{class:'stack',style:'gap:6px'},el('a',{class:'btn ghost sm',href:'#games',style:'align-self:flex-start;margin-left:-8px',text:'← Games'}),
+      el('div',{class:'eyebrow',text:'Game console · '+d.className+(d.code?' · code '+d.code:'')}),el('h2',{style:'margin:0',text:d.title}),
+      el('div',{class:'row',style:'gap:8px'},
+        el('button',{class:'btn primary',onclick:openProject,text:'Project leaderboard'}),
+        el('a',{class:'btn',href:'#teacher/post-'+postId,text:'Submissions'}),
+        el('span',{class:'hint',text:st.length+' student'+(st.length===1?'':'s')+' have opened it · updates every few seconds'})));
+    /* game mode */
+    var lb=el('select',{id:'gm-lb','aria-label':'What students see on the leaderboard'},[['nicknames','Nicknames (Swift Otter…)'],['names','First name and last initial'],['off','Only their own points']].map(function(o){return el('option',{value:o[0],text:o[1],selected:g.leaderboard===o[0]||null})}));
+    lb.addEventListener('change',function(){act('game/settings',{leaderboard:lb.value},'Leaderboard updated.')});
+    var mode=card('Game mode',g.on?'On: students see their points, level, streak and badges on their board.':'Off: students see the normal board. Turn it on to add points, badges and levels.',
+      el('div',{class:'row',style:'gap:10px;align-items:flex-end'},
+        el('button',{class:'btn'+(g.on?'':' primary'),id:'gm-toggle',onclick:function(){act('game/settings',{on:!g.on},g.on?'Game mode is off.':'Game mode is on.')},text:g.on?'Turn off game mode':'Turn on game mode'}),
+        el('label',{class:'fld',for:'gm-lb'},'Leaderboard for students',lb)),howPoints());
+    /* timed round */
+    var r=g.round,roundBox;
+    if(r){var hits=st.filter(function(s){return s.round&&s.round.hit}).length;
+      roundBox=el('div',{class:'gm-live'},el('div',{class:'gm-big'},countdown(r.endsAt,'Round over')),
+        el('div',{class:'stack',style:'gap:4px'},el('b',{text:'Explain '+r.target+' new connection'+(r.target===1?'':'s')}),el('span',{class:'muted',text:hits+' of '+st.length+' students hit the target'})),
+        el('button',{class:'btn',onclick:function(){act('game/round',{action:'stop'},'Round stopped.')},text:'Stop round'}));
+    }else roundBox=el('div',{class:'row',style:'gap:10px;align-items:flex-end'},
+      el('label',{class:'fld'},'Target',sel('target',[['3','3 new connections'],['5','5 new connections'],['8','8 new connections'],['10','10 new connections']],'Target')),
+      el('label',{class:'fld'},'Time',sel('secs',[['120','2 minutes'],['180','3 minutes'],['300','5 minutes'],['600','10 minutes']],'Time')),
+      el('button',{class:'btn primary',disabled:!g.on,onclick:function(){act('game/round',{action:'start',target:+S.form.target,seconds:+S.form.secs},'Round started. Go!')},text:'Start round'}),
+      g.on?null:el('span',{class:'hint',text:'Turn on game mode first.'}));
+    var rounds=card('Timed challenge round','Every connection explained during a round earns +'+GAME_PTS.round+'; hitting the target earns +'+GAME_PTS.roundHit+' and the Beat the clock badge.'+(g.rounds.length?' '+g.rounds.length+' round'+(g.rounds.length===1?'':'s')+' played.':''),roundBox);
+    /* leaderboard */
+    var board=card('Leaderboard','Students see '+({nicknames:'nicknames',names:'first names and last initials',off:'only their own points'}[g.leaderboard])+'. You always see real names.',
+      st.length?el('div',{class:'gm-table',role:'table','aria-label':'Leaderboard'},
+        el('div',{class:'gm-tr gm-th',role:'row'},['#','Student','Points','Level','Badges','Streak',r?'Round':'Team','Debate'].map(function(x){return el('span',{role:'columnheader',text:x})})),
+        st.map(function(s){return el('div',{class:'gm-tr',role:'row'},el('span',{role:'cell',class:'gm-rank',text:String(s.rank)}),
+          el('span',{role:'cell'},el('b',{text:s.name}),el('span',{class:'hint',text:' '+s.nick})),
+          el('span',{role:'cell','data-label':'Points',text:String(s.points)}),el('span',{role:'cell','data-label':'Level',text:s.level+' · '+s.levelName}),
+          el('span',{role:'cell',class:'gm-icons',title:s.badges.map(function(b){return BADGE_INFO[b]?BADGE_INFO[b][1]:b}).join(', ')},s.badges.map(function(b){return BADGE_INFO[b]?BADGE_INFO[b][0]:''}).join(' ')||'—'),
+          el('span',{role:'cell','data-label':'Streak',text:s.streak?'🔥 '+s.streak:'—'}),
+          el('span',{role:'cell','data-label':r?'Round':'Team',text:r?(s.round?s.round.count+'/'+r.target+(s.round.hit?' ✓':''):'0/'+r.target):(s.team||'—')}),
+          el('span',{role:'cell','data-label':'Debate',text:s.debate.wins||s.debate.votes?s.debate.wins+' win'+(s.debate.wins===1?'':'s')+' · '+s.debate.votes+' vote'+(s.debate.votes===1?'':'s'):'—'}));})):
+      el('p',{class:'muted',style:'margin:0',text:'Students appear here once they open the assignment.'}));
+    /* team race */
+    var teams=d.teams||[];
+    var race=card('Team race','Each team builds one shared board. The first team to place and link every term on one connected board wins the 🏁 badge.',
+      el('div',{class:'row',style:'gap:10px;align-items:flex-end'},
+        el('label',{class:'fld'},'Team size',sel('teamSize',[['2','2'],['3','3'],['4','4'],['5','5']],'Team size')),
+        el('button',{class:'btn',onclick:function(){act('game/teams',{size:+S.form.teamSize},'Teams made. Students switch to their team’s shared board.')},text:teams.length?'Make teams for students not on one yet':'Make teams'}),
+        el('span',{class:'hint',text:'Uses students who have opened the assignment. Students on a team work on the team’s shared board.'})),
+      teams.length?el('ol',{class:'gm-teams'},teams.map(function(t){var pct=Math.round((t.placed+t.links)/Math.max(1,t.terms*2)*100);
+        return el('li',{class:'gm-team'+(t.winner?' win':'')},el('div',{class:'row',style:'justify-content:space-between'},el('b',{text:(t.winner?'🏁 ':'')+t.name}),el('span',{class:'muted',text:t.complete?'Finished'+(t.finishedAt?' '+fmtTime(t.finishedAt):''):t.placed+'/'+t.terms+' terms · '+t.links+' links'})),
+          el('span',{class:'gm-bar'},el('span',{style:'width:'+Math.min(100,pct)+'%'})),el('span',{class:'hint',text:t.members.join(', ')}));})):null);
+    fill(main,head,el('div',{class:'gm-grid'},el('div',{class:'stack',style:'gap:14px'},mode,rounds,race),el('div',{class:'stack',style:'gap:14px'},debateCard(),board)));
+  }
+  function debateCard(){
+    var d=S.data,deb=d.debate,r=deb.round,terms=d.terms||[];
+    var set=el('div',{class:'row',style:'gap:10px;align-items:flex-end'},
+      el('button',{class:'btn'+(deb.on?'':' primary'),id:'db-toggle',onclick:function(){act('debate/settings',{on:!deb.on,mode:deb.mode,size:deb.size},deb.on?'Debate is off.':'Debate is on. Groups made.')},text:deb.on?'Turn off debate':'Turn on debate'}),
+      (function(){var s=el('select',{'aria-label':'How the debate runs',id:'db-mode'},[['live','Live in class (timers)'],['async','Self-paced (over a day or two)']].map(function(o){return el('option',{value:o[0],text:o[1],selected:deb.mode===o[0]||null})}));
+        s.addEventListener('change',function(){act('debate/settings',{mode:s.value},'Debate mode updated.')});return el('label',{class:'fld',for:'db-mode'},'Format',s);})(),
+      (function(){var s=el('select',{'aria-label':'Group size',id:'db-size'},[2,3,4,5,6].map(function(n){return el('option',{value:n,text:n+' per group',selected:deb.size===n||null})}));
+        s.addEventListener('change',function(){act('debate/groups',{size:+s.value},'New groups made.')});return el('label',{class:'fld',for:'db-size'},'Groups',s);})(),
+      deb.on?el('button',{class:'btn ghost',disabled:!!(r&&r.phase!=='results'),onclick:function(){act('debate/groups',{size:deb.size},'Groups shuffled.')},text:'Shuffle groups'}):null,
+      deb.on?el('span',{class:'hint',text:d.debateGroups+' group'+(d.debateGroups===1?'':'s')+'; students who open it later join the smallest group.'}):null);
+    var body=null;
+    if(deb.on&&!r){
+      var aSel=el('select',{'aria-label':'First term'},[el('option',{value:'',text:'First term…'})].concat(terms.map(function(t){return el('option',{value:t.id,text:t.term,selected:String(S.form.a)===String(t.id)||null})})));
+      var bSel=el('select',{'aria-label':'Second term'},[el('option',{value:'',text:'Second term…'})].concat(terms.map(function(t){return el('option',{value:t.id,text:t.term,selected:String(S.form.b)===String(t.id)||null})})));
+      aSel.addEventListener('change',function(){S.form.a=aSel.value});bSel.addEventListener('change',function(){S.form.b=bSel.value});
+      var own=el('input',{type:'radio',name:'db-pm',id:'db-own',checked:S.form.pairMode==='own'}),same=el('input',{type:'radio',name:'db-pm',id:'db-same',checked:S.form.pairMode==='same'});
+      own.addEventListener('change',function(){S.form.pairMode='own';draw()});same.addEventListener('change',function(){S.form.pairMode='same';draw()});
+      var prompt=el('input',{type:'text',maxlength:200,id:'db-prompt',placeholder:'Optional question, e.g. Which link matters most for the cell to survive?',value:S.form.prompt});
+      prompt.addEventListener('input',function(){S.form.prompt=prompt.value});
+      body=el('div',{class:'stack',style:'gap:10px'},
+        el('div',{class:'stack',style:'gap:6px'},el('label',{class:'row',for:'db-own'},own,'Each student defends one of their own connections'),el('label',{class:'row',for:'db-same'},same,'Everyone defends the same pair')),
+        S.form.pairMode==='same'?el('div',{class:'row',style:'gap:8px'},aSel,el('span',{text:'↔'}),bSel,el('button',{class:'btn ghost sm',type:'button',onclick:function(){var ids=terms.map(function(t){return t.id});if(ids.length<2)return;var i=Math.floor(Math.random()*ids.length),j=(i+1+Math.floor(Math.random()*(ids.length-1)))%ids.length;S.form.a=ids[i];S.form.b=ids[j];draw();},text:'🎲 Random pair'})):null,
+        el('label',{class:'fld',for:'db-prompt'},'Question for this round (optional)',prompt),
+        el('div',{class:'row',style:'gap:10px;align-items:flex-end'},
+          deb.mode==='live'?el('label',{class:'fld'},'Time to write',sel('defSecs',[['60','1 minute'],['120','2 minutes'],['180','3 minutes'],['300','5 minutes']],'Time to write')):null,
+          deb.mode==='live'?el('label',{class:'fld'},'Time to vote',sel('voteSecs',[['30','30 seconds'],['60','1 minute'],['120','2 minutes']],'Time to vote')):null,
+          el('button',{class:'btn primary',id:'db-start',onclick:function(){
+            if(S.form.pairMode==='same'&&(!S.form.a||!S.form.b||S.form.a===S.form.b)){toast('Choose two different terms, or use Random pair.');return;}
+            act('debate/round',{action:'start',pairMode:S.form.pairMode,pair:S.form.a+'-'+S.form.b,prompt:S.form.prompt,seconds:+S.form.defSecs},'Round '+((deb.past||0)+1)+' started.');},text:'Start round '+((deb.past||0)+1)})));
+    }else if(deb.on&&r){
+      var steps=[['defend','Defend'],['vote','Vote'],['results','Results']],pi=steps.findIndex(function(x){return x[0]===r.phase});
+      var next=r.phase==='defend'?el('button',{class:'btn primary',onclick:function(){act('debate/round',{action:'vote',seconds:+S.form.voteSecs},'Voting is open.')},text:'Open voting'})
+        :r.phase==='vote'?el('button',{class:'btn primary',onclick:function(){act('debate/round',{action:'results'},'Results are in.')},text:'Show results'})
+        :el('button',{class:'btn primary',onclick:function(){act('debate/round',{action:'end'},'Round '+r.n+' finished.')},text:'Finish round'});
+      var groups=(d.debateView||[]).map(function(gv){
+        var winners=gv.entries.filter(function(e){return e.winner});
+        return el('div',{class:'gm-dgroup'},el('b',{text:'Group '+(gv.grp+1)}),
+          el('ul',{class:'gm-members'},gv.members.map(function(m){return el('li',null,m.name,el('span',{class:'hint',text:' '+(m.defended?'✓ defended':'writing…')+(r.phase!=='defend'||deb.mode==='async'?(m.voted?' · ✓ voted':''):'')}))})),
+          r.phase==='results'?(winners.length?winners.map(function(e){return el('div',{class:'gm-win'},el('b',{text:'🏆 '+e.name+' · '+e.votes+' vote'+(e.votes===1?'':'s')}),el('span',{class:'hint',text:pairLabel(terms,e.pair)}),el('p',{style:'margin:0',text:e.defense}))}):el('p',{class:'hint',style:'margin:0',text:'No votes in this group.'})):
+          (r.phase==='vote'?el('span',{class:'hint',text:gv.entries.length+' defense'+(gv.entries.length===1?'':'s')+' on the ballot'}):null));
+      });
+      body=el('div',{class:'stack',style:'gap:10px'},
+        el('ol',{class:'gm-steps'},steps.map(function(x,i){return el('li',{class:i===pi?'on':i<pi?'done':''},x[1])})),
+        el('div',{class:'row',style:'gap:12px;align-items:center'},el('b',{text:'Round '+r.n+': '+(r.pairMode==='same'?pairLabel(terms,r.pair):'each student’s own connection')}),
+          r.endsAt?el('span',{class:'gm-big sm'},countdown(r.endsAt)):el('span',{class:'hint',text:deb.mode==='async'?'Self-paced: a group can vote once everyone in it has defended.':''})),
+        r.prompt?el('p',{class:'gm-prompt',text:r.prompt}):null,
+        el('div',{class:'row',style:'gap:8px'},next,r.phase!=='results'?el('button',{class:'btn ghost',onclick:function(){act('debate/round',{action:'end'},'Round ended.')},text:'End without results'}):null),
+        el('div',{class:'gm-dgroups'},groups.length?groups:el('p',{class:'muted',style:'margin:0',text:'No groups yet.'})));
+    }
+    return card('Defend the link (debate)','Students defend a connection in writing, then vote anonymously for the best defense in their group. Names are revealed only for the winner. Winners earn +'+GAME_PTS.debateWin+', each vote received +'+GAME_PTS.debateVote+'.',set,body);
+  }
+  function openProject(){
+    var box=el('div',{class:'gm-project',role:'dialog','aria-label':'Leaderboard for the projector'});
+    S.project=box;add(document.body,box);drawProject();
+    function esc(e){if(e.key==='Escape')close()}
+    function close(){if(box.remove)box.remove();S.project=null;document.removeEventListener('keydown',esc)}
+    box._close=close;document.addEventListener('keydown',esc);
+  }
+  function drawProject(){
+    var box=S.project;if(!box||!S.data)return;if(!alive()){if(box._close)box._close();return;}
+    var d=S.data,g=d.game,r=g.round,deb=d.debate,dr=deb.round,showNames=g.leaderboard==='names';
+    var top=(d.standings||[]).slice(0,10);
+    fill(box,el('div',{class:'row',style:'justify-content:space-between;align-items:center'},el('h2',{text:d.title}),el('div',{class:'row'},el('span',{class:'gm-code',text:d.code?'Code '+d.code:''}),el('button',{class:'btn',onclick:function(){box._close()},text:'Close'}))),
+      r?el('div',{class:'gm-pbanner'},'⏱️ Explain '+r.target+' new connections · ',countdown(r.endsAt,'Round over')):null,
+      dr?el('div',{class:'gm-pbanner'},'🎤 Debate round '+dr.n+' · '+({defend:'Write your defense',vote:'Vote for the best defense',results:'Results'}[dr.phase])+(dr.endsAt?' · ':''),dr.endsAt?countdown(dr.endsAt):null):null,
+      el('div',{class:'gm-pgrid'},
+        el('ol',{class:'gm-plist'},top.map(function(s){return el('li',null,el('span',{class:'gm-rank',text:String(s.rank)}),el('b',{text:showNames?shortNameJs(s.name):s.nick}),el('span',{class:'gm-icons',text:s.badges.map(function(b){return BADGE_INFO[b]?BADGE_INFO[b][0]:''}).join('')}),el('span',{class:'gm-pts',text:s.points+' pts'}))})),
+        (d.teams||[]).length?el('div',{class:'stack'},el('h3',{text:'Team race'}),el('ol',{class:'gm-plist'},d.teams.map(function(t){return el('li',null,el('span',{class:'gm-rank',text:String(t.rank)}),el('b',{text:(t.winner?'🏁 ':'')+t.name}),el('span',{class:'gm-pts',text:t.complete?'Finished':t.placed+'/'+t.terms+' terms · '+t.links+' links'}))}))):null),
+      dr&&dr.phase==='results'?el('div',{class:'gm-pwins'},(d.debateView||[]).map(function(gv){return gv.entries.filter(function(e){return e.winner}).map(function(e){return el('div',{class:'gm-win'},el('b',{text:'🏆 Group '+(gv.grp+1)+': '+shortNameJs(e.name)}),el('span',{class:'hint',text:pairLabel(d.terms,e.pair)}),el('p',{style:'margin:0',text:e.defense}))})})):null);
+    gameTick();
+  }
+  load();setTimeout(poll,4000);
+}
+function shortNameJs(n){var p=String(n||'').trim().split(/\s+/).filter(Boolean);return !p.length?'Student':p.length>1?p[0]+' '+p[p.length-1].charAt(0)+'.':p[0]}
+
+/* ---------- Student play page: stats, badges, leaderboard, team race and debate ---------- */
+function renderPlay(postId){
+  var seq=++PX.routeId;ST=null;caps.teacher=false;
+  var S={data:null,board:null,draft:'',pair:'',lastBoard:0,sending:false};
+  var main=el('main',{class:'games-page play'},el('p',{class:'muted',role:'status',text:'Loading…'}));
+  fill(root,topBar(),main);startGameClock();
+  function alive(){return seq===PX.routeId}
+  function load(withBoard){
+    return platformApi('posts/'+postId+'/game'+(withBoard?'?board=1':'')).then(function(r){if(!alive())return;setGameSkew(r.now);
+      if(withBoard){S.board=r;S.lastBoard=Date.now();}
+      var prevKey=S.data&&S.data.round?S.data.round.n+S.data.round.phase:'';S.data=r;
+      var ae=document.activeElement;if(prevKey===(r.round?r.round.n+r.round.phase:'')&&ae&&ae.tagName==='TEXTAREA'&&main.contains&&main.contains(ae)){updateLive();return;}
+      draw();
+    }).catch(function(e){if(!alive())return;if(typeof console!=='undefined')console.error(e);if(!S.data||!main.querySelector||!main.querySelector('h2'))fill(main,el('p',{class:'err',text:e.message}),el('a',{class:'btn',href:'#games',text:'← Games'}));});
+  }
+  function poll(){if(!alive())return;if(!document.hidden)load(Date.now()-S.lastBoard>30000);setTimeout(poll,4000);}
+  function updateLive(){var n=document.getElementById('db-count');if(n&&S.data.round)n.textContent=S.data.round.defended+' of '+S.data.round.groupSize+' in your group have defended';}
+  function draw(){
+    var d=S.data,me=d.me||{},sc=me.score,b=S.board||{};
+    var parts=[el('div',{class:'row',style:'gap:8px'},el('a',{class:'btn ghost sm',href:'#games',text:'← Games'}),el('a',{class:'btn sm',href:'#a-'+postId,text:'My board'})),
+      el('div',{class:'eyebrow',text:d.className}),el('h2',{style:'margin:0',text:d.title})];
+    if(!d.game.on&&!d.debate.on)parts.push(el('div',{class:'panel'},el('p',{style:'margin:0',text:'Your teacher hasn’t turned on a game for this assignment right now.'})));
+    if(d.debate.on)parts.push(debatePanel());
+    if(d.game.on&&sc){
+      parts.push(el('section',{class:'panel gm-card'},el('h3',{text:'Your points'}),
+        el('div',{class:'row',style:'gap:16px;align-items:center'},el('div',{class:'gm-big'},String(sc.points)),levelBar(sc),sc.streak?el('span',{class:'chip',text:'🔥 Streak '+sc.streak}):null,me.team?el('span',{class:'chip',text:'Team: '+me.team}):null),
+        el('p',{class:'hint',style:'margin:0',text:'From your last saved board. Points update on your board as you work.'}),
+        el('div',{class:'gm-badges'},BADGE_ORDER.map(function(k){return badgeChip(k,sc.badges.indexOf(k)>=0)})),howPoints()));
+      if(b.leaderboard)parts.push(el('section',{class:'panel gm-card'},el('h3',{text:'Leaderboard'}),
+        el('ol',{class:'gm-plist sm'},b.leaderboard.top.map(function(s){return el('li',{class:s.mine?'mine':''},el('span',{class:'gm-rank',text:String(s.rank)}),el('b',{text:s.name+(s.mine?' (you)':'')}),el('span',{class:'gm-pts',text:s.points+' pts'}))})),
+        b.leaderboard.myRank>10?el('p',{class:'hint',style:'margin:0',text:'You’re #'+b.leaderboard.myRank+' of '+b.leaderboard.total+' as '+b.leaderboard.myName+'.'}):
+          b.leaderboard.myName&&d.game.leaderboard==='nicknames'?el('p',{class:'hint',style:'margin:0',text:'Your nickname is '+b.leaderboard.myName+'.'}):null));
+      if(b.teams&&b.teams.length)parts.push(el('section',{class:'panel gm-card'},el('h3',{text:'Team race'}),el('ol',{class:'gm-plist sm'},b.teams.map(function(t){return el('li',{class:t.mine?'mine':''},el('span',{class:'gm-rank',text:String(t.rank)}),el('b',{text:(t.winner?'🏁 ':'')+t.name+(t.mine?' (your team)':'')}),el('span',{class:'gm-pts',text:t.complete?'Finished':t.placed+'/'+t.terms+' terms · '+t.links+' links'}))}))));
+    }
+    fill(main,parts);gameTick();
+  }
+  function debatePanel(){
+    var d=S.data,r=d.round,terms=d.terms;
+    var box=el('section',{class:'panel gm-card gm-debate',id:'debate'},el('h3',{text:'🎤 Defend the link'}));
+    function put(){for(var i=0;i<arguments.length;i++)add(box,arguments[i])}
+    if(!r){put(el('p',{class:'muted',style:'margin:0',text:'Waiting for your teacher to start a debate round.'}));return box;}
+    put(el('div',{class:'row',style:'gap:10px;align-items:center'},el('b',{text:'Round '+r.n}),el('ol',{class:'gm-steps'},[['defend','Defend'],['vote','Vote'],['results','Results']].map(function(x){return el('li',{class:x[0]===r.phase?'on':''},x[1])})),r.endsAt&&r.phase!=='results'?el('span',{class:'gm-big sm'},countdown(r.endsAt)):null));
+    if(r.prompt)put(el('p',{class:'gm-prompt',text:r.prompt}));
+    if(r.phase==='defend'&&!(r.voteOpen&&r.myEntry)){
+      var area=el('textarea',{id:'db-def',rows:4,maxlength:600,placeholder:'Explain why this connection is strong. Use evidence and the definitions.','aria-label':'Your defense',value:S.draft||(r.myEntry&&r.myEntry.defense)||''});
+      var cnt=el('span',{class:'hint',text:''});
+      function count(){var n=String(area.value).trim().split(/\s+/).filter(Boolean).length;cnt.textContent=n+' word'+(n===1?'':'s')+(n<5?' · at least 5':'');}
+      area.addEventListener('input',function(){S.draft=area.value;count()});count();
+      if(r.noPaste){area.addEventListener('paste',function(e){if(e.preventDefault)e.preventDefault();toast('Pasting is turned off. Type your defense in your own words.')});area.addEventListener('drop',function(e){if(e.preventDefault)e.preventDefault()});}
+      var pick=null;
+      if(r.pairMode==='same')put(el('p',{class:'gm-pair'},'Defend this connection: ',el('b',{text:pairLabel(terms,r.pair)})));
+      else{
+        var links=r.myLinks||[];
+        if(!S.pair)S.pair=(r.myEntry&&r.myEntry.pair)||(links[0]&&links[0].pair)||'';
+        pick=el('select',{id:'db-pair','aria-label':'Connection to defend'},links.map(function(l){return el('option',{value:l.pair,text:pairLabel(terms,l.pair),selected:S.pair===l.pair||null})}));
+        pick.addEventListener('change',function(){S.pair=pick.value;draw()});
+        var mine=links.find(function(l){return l.pair===S.pair});
+        put(links.length?el('div',{class:'stack',style:'gap:6px'},el('label',{class:'fld',for:'db-pair'},'Choose one of your connections to defend',pick),mine?el('p',{class:'hint',style:'margin:0',text:'Your reason on the board: '+mine.why}):null)
+          :el('p',{class:'err',style:'margin:0',text:'Explain at least one connection on your board first, then come back.'}));
+      }
+      put(el('label',{class:'fld',for:'db-def'},r.myEntry?'Your defense (you can change it until time’s up)':'Your defense',area),
+        el('div',{class:'row',style:'justify-content:space-between'},el('span',{class:'hint',id:'db-count',text:r.defended+' of '+r.groupSize+' in your group have defended'}),cnt),
+        el('button',{class:'btn primary',id:'db-send',style:'align-self:flex-start',disabled:r.pairMode==='own'&&!(r.myLinks||[]).length,onclick:function(){
+          if(S.sending)return;S.sending=true;
+          platformApi('posts/'+postId+'/debate/defend',{defense:area.value,pair:r.pairMode==='own'?S.pair:undefined}).then(function(){toast(r.myEntry?'Defense updated.':'Defense saved. Wait for voting to open.');S.draft='';return load(false)}).catch(platformError).then(function(){S.sending=false});
+        },text:r.myEntry?'Update my defense':'Submit my defense'}));
+      return box;
+    }
+    if(r.ballot&&(r.phase==='vote'||r.voteOpen)){
+      put(el('p',{style:'margin:0',text:'Read each defense, then vote for the one that explains the connection best. Names stay hidden. You can change your vote until voting closes.'}),
+        el('div',{class:'gm-ballot'},r.ballot.map(function(e){
+          var on=r.myVote===e.label;
+          return el('div',{class:'gm-entry'+(on?' on':'')+(e.mine?' mine':'')},el('div',{class:'row',style:'justify-content:space-between'},el('b',{text:'Defense '+e.label}),el('span',{class:'hint',text:pairLabel(terms,e.pair)})),
+            el('p',{style:'margin:0',text:e.defense}),
+            e.mine?el('span',{class:'chip',text:'Your defense'}):el('button',{class:'btn'+(on?' primary':''),onclick:function(){platformApi('posts/'+postId+'/debate/vote',{label:e.label}).then(function(){toast('Vote saved for Defense '+e.label+'.');return load(false)}).catch(platformError)},'aria-pressed':on?'true':'false',text:on?'✓ Your vote':'Vote for this'}));
+        })));
+      return box;
+    }
+    if(r.phase==='results'&&r.ballot){
+      var sorted=r.ballot.slice().sort(function(x,y){return (y.votes||0)-(x.votes||0)});
+      var iWon=sorted.some(function(e){return e.mine&&e.winner});
+      put(iWon?el('div',{class:'banner gm-won',role:'status',text:'🏆 Your defense won this round! +'+GAME_PTS.debateWin+' points'}):null,
+        el('div',{class:'gm-ballot'},sorted.map(function(e){return el('div',{class:'gm-entry'+(e.winner?' win':'')+(e.mine?' mine':'')},
+          el('div',{class:'row',style:'justify-content:space-between'},el('b',{text:(e.winner?'🏆 '+(e.name||'')+' · ':'')+'Defense '+e.label+(e.mine?' (yours)':'')}),el('span',{class:'hint',text:(e.votes||0)+' vote'+(e.votes===1?'':'s')})),
+          el('span',{class:'hint',text:pairLabel(terms,e.pair)}),el('p',{style:'margin:0',text:e.defense}))})));
+      return box;
+    }
+    put(el('p',{class:'muted',style:'margin:0',text:r.myEntry?'Your defense is in. Waiting for the rest of your group'+(d.debate.mode==='live'?' and your teacher to open voting.':'.'):'Waiting for your teacher.'}));
+    return box;
+  }
+  load(true);setTimeout(poll,4000);
+}
+
+/* ---------- Student board: points bar, timed round countdown, debate alert ---------- */
+var GS={post:null,data:null,timer:null,prevBadges:null,prevLevel:0,routeId:0};
+function hudBox(){return document.getElementById('game-hud')}
+function drawHud(){
+  var box=hudBox(),d=GS.data;if(!box||!ST||!d)return;
+  if(!d.game.on&&!d.debate.on){fill(box);box.style.display='none';return;}
+  box.style.display='';
+  var parts=[];
+  if(d.game.on){
+    var me=d.me||{},board={place:ST.d.place,conns:ST.d.conns,_skew:GAME_CLOCK.skew},sc;
+    /* On a team the board is the team's shared board; the student's own board still counts (from the server). */
+    if(me.team&&me.ownBoard&&typeof GROUP!=='undefined'&&GROUP.current){
+      var t=gameScore(ST.act,board,d.game,null),o=me.ownBoard,pts=t.points+o.points,lv=Math.min(GAME_LEVELS.length,1+Math.floor(pts/GAME_STEP));
+      sc={points:pts,level:lv,levelName:GAME_LEVELS[lv-1],nextAt:lv<GAME_LEVELS.length?lv*GAME_STEP:null,streak:t.streak,badges:o.badges.concat(t.badges.filter(function(b){return o.badges.indexOf(b)<0})),
+        rounds:t.rounds.map(function(r){var x=(o.rounds||[]).find(function(y){return y.id===r.id});var c=r.count+(x?x.count:0);return {id:r.id,count:c,target:r.target,hit:c>=r.target||r.hit||(x&&x.hit)}})};
+    }else sc=gameScore(ST.act,board,d.game,{debate:me.debate,raceWinner:me.raceWinner});
+    if(GS.prevBadges){sc.badges.forEach(function(b){if(GS.prevBadges.indexOf(b)<0&&BADGE_INFO[b])toast(BADGE_INFO[b][0]+' Badge earned: '+BADGE_INFO[b][1]+'!')});if(sc.level>GS.prevLevel)toast('⬆️ Level '+sc.level+': '+sc.levelName+'!');}
+    GS.prevBadges=sc.badges.slice();GS.prevLevel=sc.level;
+    parts.push(el('div',{class:'gm-hud-row'},el('div',{class:'gm-pts-big',title:'Your points'},el('b',{text:String(sc.points)}),' pts'),levelBar(sc),
+      sc.streak?el('span',{class:'chip',title:'Detailed reasons (8+ words) in a row',text:'🔥 '+sc.streak}):null,
+      el('span',{class:'gm-icons',title:sc.badges.map(function(b){return BADGE_INFO[b][1]}).join(', ')||'No badges yet',text:sc.badges.map(function(b){return BADGE_INFO[b][0]}).join(' ')||'🏅 0 badges'}),
+      me.team?el('span',{class:'chip',text:'Team: '+me.team}):null,
+      el('a',{class:'btn sm',href:'#play-'+GS.post,text:'Leaderboard & badges'})));
+    var r=d.game.round;
+    if(r&&Date.parse(r.endsAt)>gameNow()){var cur=sc.rounds.find(function(x){return x.id===r.id})||{count:0};
+      parts.push(el('div',{class:'gm-round',role:'status'},el('b',{text:'⏱️ Timed round'}),' Explain '+r.target+' new connection'+(r.target===1?'':'s')+': ',el('b',{text:Math.min(cur.count,r.target)+'/'+r.target}),cur.count>=r.target?' ✓ Target hit! +'+GAME_PTS.roundHit:'',el('span',{class:'gm-big sm'},countdown(r.endsAt,'Round over'))));}
+  }
+  var dr=d.debate.on&&d.debate.round;
+  if(dr&&dr.phase!=='results')parts.push(el('div',{class:'gm-round debate',role:'status'},el('b',{text:'🎤 Debate round '+dr.n+': '}),dr.phase==='defend'?'defend a connection':'vote for the best defense',dr.endsAt?el('span',{class:'gm-big sm'},countdown(dr.endsAt)):null,el('a',{class:'btn primary sm',href:'#play-'+GS.post,text:'Go to the debate'})));
+  else if(dr&&dr.phase==='results')parts.push(el('div',{class:'gm-round debate'},el('b',{text:'🎤 Debate round '+dr.n+' results are in. '}),el('a',{class:'btn sm',href:'#play-'+GS.post,text:'See who won'})));
+  fill(box,parts);gameTick();
+}
+function hudPoll(){
+  if(!ST||ST.preview||PX.activePost!==GS.post||GS.routeId!==PX.routeId)return;
+  if(!document.hidden)platformApi('posts/'+GS.post+'/game').then(function(r){if(PX.activePost!==GS.post)return;setGameSkew(r.now);
+    var was=GS.data&&GS.data.debate&&GS.data.debate.round,now=r.debate&&r.debate.round;
+    if(r.debate.on&&now&&(!was||was.n!==now.n||was.phase!==now.phase)&&now.phase!=='results')toast('🎤 Debate round '+now.n+': '+(now.phase==='defend'?'time to defend a connection!':'voting is open!'));
+    if(r.game.round&&(!GS.data||!GS.data.game.round||GS.data.game.round.id!==r.game.round.id))toast('⏱️ Timed round! Explain '+r.game.round.target+' new connections.');
+    GS.data=r;drawHud();}).catch(function(){});
+  GS.timer=setTimeout(hudPoll,GS.data&&(GS.data.game.on||GS.data.debate.on)?6000:20000);
+}
+var v415Shell=renderStudentShell;
+renderStudentShell=function(){
+  v415Shell.apply(this,arguments);
+  if(!ST||ST.preview||!PX.activePost)return;
+  var head=root.querySelector&&root.querySelector('.act-head');if(!head)return;
+  var box=el('div',{class:'game-hud',id:'game-hud',style:'display:none','aria-label':'Game'});
+  if(head.parentNode&&head.parentNode.insertBefore)head.parentNode.insertBefore(box,head.nextSibling);
+  startGameClock();
+  if(GS.post!==PX.activePost){GS.post=PX.activePost;GS.data=null;GS.prevBadges=null;GS.prevLevel=0;}
+  if(GS.data)drawHud();
+  clearTimeout(GS.timer);GS.routeId=PX.routeId;hudPoll();
+};
+var v415Update=updateStudent;
+updateStudent=function(){v415Update.apply(this,arguments);if(GS.data&&ST&&!ST.preview)drawHud();};
+/* Keep when each connection was first explained (edits don't restart it) and send the clock with saves. */
+var v415SaveDraft=saveDraft;
+saveDraft=function(){
+  if(ST&&ST.d&&ST.d.conns){var f=ST._first||(ST._first={}),cs=ST.d.conns;
+    Object.keys(f).forEach(function(k){if(!cs[k])delete f[k]});
+    Object.keys(cs).forEach(function(k){var c=cs[k];if(!c)return;if(!f[k])f[k]=Number(c.first)||Number(c.at)||Date.now();c.first=f[k];});}
+  return v415SaveDraft.apply(this,arguments);
+};
+var v415Queue=queueCloudDraft;
+queueCloudDraft=function(){v415Queue.apply(this,arguments);if(PX.pendingDraft&&PX.pendingDraft.draft)PX.pendingDraft.draft.clock=Date.now();};
+
+/* ---------- Grader and CSV: game results, with an optional bonus ---------- */
+var GAME_CACHE={};
+function gameFor(postId){
+  var c=GAME_CACHE[postId];if(c&&Date.now()-c.at<30000)return c.p;
+  var entry={at:Date.now(),done:false,data:null};
+  entry.p=platformApi('posts/'+postId+'/game').then(function(r){return r&&r.game?r:null}).catch(function(){return null}).then(function(r){entry.done=true;entry.data=r;return r});
+  GAME_CACHE[postId]=entry;return entry.p;
+}
+var v415ToolsRow=postToolsRow;
+postToolsRow=function(a,subs){if(subs&&subs[0]&&subs[0]._postId)gameFor(subs[0]._postId);return v415ToolsRow.apply(this,arguments);};
+var v415GraderExtras=graderExtras;
+graderExtras=function(p,list,index){
+  var base=v415GraderExtras.apply(this,arguments),box=el('div',{class:'gm-grader',style:'display:none'});
+  if(p&&p._postId)gameFor(p._postId).then(function(g){
+    if(!g||!g.game||!(g.game.on||g.debate.on||(g.game.rounds||[]).length||(g.teams||[]).length))return;
+    var s=(g.standings||[]).find(function(x){return x.uid===p._studentUid});if(!s)return;
+    var amt=el('input',{type:'number',min:0,max:100,step:1,value:5,id:'gm-bonus','aria-label':'Bonus points'});
+    fill(box,el('div',{class:'row',style:'gap:8px;align-items:center'},el('b',{text:'🎮 Game'}),
+      el('span',{text:s.points+' pts · Level '+s.level+' '+s.levelName+' · #'+s.rank+' of '+g.standings.length}),
+      s.badges.length?el('span',{class:'gm-icons',title:s.badges.map(function(b){return BADGE_INFO[b][1]}).join(', '),text:s.badges.map(function(b){return BADGE_INFO[b][0]}).join(' ')}):null,
+      s.debate.wins||s.debate.votes||s.debate.cast?el('span',{class:'hint',text:'Debate: '+s.debate.wins+' win'+(s.debate.wins===1?'':'s')+', '+s.debate.votes+' votes received'}):null),
+      el('div',{class:'row',style:'gap:6px;align-items:center'},el('label',{for:'gm-bonus',class:'hint',text:'Bonus'}),amt,
+        el('button',{type:'button',class:'btn sm',onclick:function(){var gi=document.getElementById('gr-grade');if(!gi)return;var max=Number(gi.getAttribute?gi.getAttribute('max'):gi.max)||100,cur=Number(gi.value)||0,add=Number(amt.value)||0;
+          gi.value=String(Math.min(max,Math.round((cur+add)*100)/100));if(gi.dispatchEvent&&typeof Event==='function')gi.dispatchEvent(new Event('input'));toast('Added '+add+' bonus point'+(add===1?'':'s')+'. Save to keep it.');},text:'Add to grade'}),
+        el('span',{class:'hint',text:'Optional: game results don’t change the grade unless you add a bonus.'})));
+    box.style.display='';
+  });
+  return el('div',{class:'stack',style:'gap:8px'},base,box);
+};
+exportGrades=function(a,subs){
+  var postId=subs[0]&&subs[0]._postId,c=postId&&GAME_CACHE[postId];
+  /* Uses the game results loaded with the submissions page; waits for them if they're still loading. */
+  if(c&&!c.done){c.p.then(function(){exportGrades(a,subs)});return;}
+  (function(g){
+    var on=g&&(g.game.on||g.debate.on||(g.game.rounds||[]).length),by={};if(on)(g.standings||[]).forEach(function(s){by[s.uid]=s});
+    var head=['Student','Email','Status','Terms used','Connections','Average words per reason','Strong (2)','Partly (1)','Needs work (0)','Grade','Out of','Late','Submitted','Version','Paste attempts blocked','Reflection: proudest','Reflection: hardest'];
+    if(on)head=head.concat(['Game points','Game level','Badges','Debate wins','Debate votes received']);
+    var rows=[head.concat(['Overall feedback'])];
+    subs.forEach(function(p){
+      var cl=p.connections||[],fb=p._feedback||{},sc=fb.scores||{},cnt=[0,0,0];for(var k in sc)cnt[sc[k]]++;
+      var avg=cl.length?Math.round(cl.reduce(function(n,c){return n+words(c.why)},0)/cl.length*10)/10:0;
+      var row=[p.name,p.email||'',({TURNED_IN:'Turned in',GRADED:'Graded',DRAFT:'Unsubmitted'}[p._status]||p._status||''),p.termsUsed==null?'':p.termsUsed,cl.length,avg,cnt[2],cnt[1],cnt[0],p._grade==null?'':p._grade,p._maxPoints||'',p.late?'Yes':'No',p.submittedAt||'',p.version||'',p.pasteAttempts||0,(p.reflection&&p.reflection.proud)||'',(p.reflection&&p.reflection.hard)||''];
+      if(on){var s=by[p._studentUid];row=row.concat(s?[s.points,s.level+' '+s.levelName,s.badges.map(function(b){return BADGE_INFO[b]?BADGE_INFO[b][1]:b}).join('; '),s.debate.wins,s.debate.votes]:['','','','','']);}
+      rows.push(row.concat([fb.overall||'']));
+    });
+    var name=(a.title||'assignment').replace(/[^\w\- ]+/g,'').trim().replace(/\s+/g,'-').slice(0,60)||'grades';
+    downloadBlob(name+'-grades.csv',toCSV(rows),'text/csv');
+    toast('Downloaded. Open it in Google Sheets (File → Import) or Excel.');
+  })(c&&c.data);
+};
+/* Posting page: a shortcut to the game console. */
+var v415PostExtras=postExtras;
+postExtras=function(postId,a){
+  var base=v415PostExtras.apply(this,arguments);
+  var link=el('a',{class:'btn',href:'#teacher/game-'+postId,text:'🎮 Games & debate'});
+  var row=base&&base.children&&base.children[2];
+  if(row&&row.tagName==='DIV')add(row,link);else if(base)add(base,el('div',{class:'row'},link));
+  return base;
+};
+
+/* ---------- guide and homepage ---------- */
+(function(){
+  var at=GUIDE.findIndex(function(g){return g.id==='gallery'})+1;
+  GUIDE.splice(at,0,
+    {id:'games',who:'teacher',t:'Games: points, timed rounds, team race and leaderboard',p:['Menu → Games lists your assignments. Open game console on one, then Turn on game mode. Students see their points, level, streak and badges above their board.','Points come from the board: each term placed (+'+GAME_PTS.place+'), each explained connection (+'+GAME_PTS.link+'), detailed reasons, Depth & Complexity links, streaks of detailed reasons, one connected board and using every term. Repeated or very short reasons don’t score.','Timed challenge round: choose a target (for example 5 new connections) and a time, then Start round. A countdown appears on every board; connections made during the round earn extra points and hitting the target earns Beat the clock.','Team race: Make teams splits students who have opened the assignment into teams that share one board. The first team to place and link every term on one connected board wins.','Leaderboard: Project leaderboard opens a full-screen view for the projector. Choose what students see: nicknames, first names, or only their own points. You always see real names.','Grading: game results appear in the grader and the grades CSV. They never change a grade unless you choose Add to grade for a bonus.']},
+    {id:'debate',who:'teacher',t:'Defend the link (debate)',p:['In the game console, Turn on debate. Students are put in groups (2–6; choose the size, or Shuffle groups). Students who open the assignment later join the smallest group.','Choose Live in class for timed phases, or Self-paced to run it over a day or two (a group can vote as soon as everyone in it has defended).','Start a round: each student defends one of their own connections, or everyone defends the same pair (pick two terms or use Random pair). Add an optional question.','Defend → Vote → Results. In live mode the phases move on when the timer ends while the console is open; you can also move them on yourself. Votes are anonymous and students can’t vote for themselves.','At Results, the winner’s name and defense are revealed to their group and on the projector. Winners earn points and the Debate champ badge.']});
+  var s=GUIDE.findIndex(function(g){return g.id==='s-turnin'})+1;
+  GUIDE.splice(s,0,{id:'s-games',who:'student',t:'Games and debates',p:['When your teacher turns on a game, a bar above your board shows your points, level, streak and badges. Points grow as you place terms and explain connections; longer, detailed reasons earn more.','During a timed round, a countdown shows how many new connections you’ve explained. Hit the target before time runs out for bonus points.','Menu → Games (or Leaderboard & badges) shows every badge, the class leaderboard and your team’s place in the race.','In a debate, open Go to the debate, write a defense of a connection, then vote for the best defense in your group. Names stay hidden until the winner is revealed.']});
+  HOME_HOWTO.push(['games','Play','Points, badges, timed rounds, team races and a Defend-the-link debate.']);
+})();
+
+var v415Route=route;
+route=function(){
+  var h=NAV.hash||'',m;
+  if(h==='#games'){
+    if(GA.ready&&GA.user&&!(PX.loaded&&PX.profile&&PX.profile.role)){v415Route();return;}
+    if(!GA.ready){fill(root,topBar(),el('div',{class:'gate'},el('div',{class:'panel'},el('p',{class:'muted',role:'status',text:'Opening Hex Connections…'}))));return;}
+    renderGames();return;
+  }
+  if(GA.ready&&GA.user&&PX.loaded&&PX.profile){
+    var role=PX.profile.role;
+    if((m=h.match(/^#teacher\/game-([a-zA-Z0-9-]+)$/))&&role==='teacher'){renderGameConsole(m[1]);return;}
+    if((m=h.match(/^#play-([a-zA-Z0-9-]+)$/))&&role==='student'){renderPlay(m[1]);return;}
+    if(/^#play-/.test(h)&&role==='teacher'){toast('That page is for students. Opening the game console.');navReplace('teacher/game-'+h.slice(6));renderGameConsole(h.slice(6));return;}
+  }
+  v415Route();
+};
 
 /* The homepage is the starting page: a visit to the bare site address opens it,
    signed in or not. In-app links to "#" still go to the student dashboard. */

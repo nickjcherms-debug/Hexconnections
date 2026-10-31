@@ -1,3 +1,4 @@
+import {handleGameRoutes} from './games.js';
 import {handleGroupRoutes,groupForUser} from './groups.js';
 import {handleDashboardRoutes} from './dashboards.js';
 import { generateVocabulary } from './vocabulary.js';
@@ -159,9 +160,12 @@ function boardDraft(value, act) {
   for (const [key,c] of Object.entries(value.conns)) {
     const pair = key.split('-');
     if (pair.length !== 2 || Number(pair[0]) >= Number(pair[1]) || !pair.every(id => allowed.has(id)) || !c || typeof c.why !== 'string' || c.why.length > 600) fail(400, 'Invalid connection.');
-    conns[key] = { why: c.why, at: Number.isFinite(c.at) ? c.at : 0 };
+    conns[key] = { why: c.why, at: Number.isFinite(c.at) ? c.at : 0, ...(Number.isFinite(c.first) && c.first > 0 ? { first: c.first } : {}) };
   }
   const out = { name: String(value.name || '').slice(0,60), place, conns, view: { orient: value.view?.orient === 'flat' ? 'flat' : 'pointy' }, _savedAt: NOW(), submittedAt: value.submittedAt || null };
+  // Games: the browser's clock offset, so timed rounds compare connection times with the server's clock.
+  if (Number.isFinite(value.clock)) out._skew = Math.max(-864e5, Math.min(864e5, Math.round(Date.now() - value.clock)));
+  else if (Number.isFinite(value._skew)) out._skew = value._skew;
   const reflection = cleanReflection(value.reflection); if (reflection) out.reflection = reflection;
   const pastes = Number(value.pasteBlocked); if (Number.isInteger(pastes) && pastes > 0) out.pasteBlocked = Math.min(pastes, 9999);
   const history = cleanHistory(value.history, allowed); if (history.length) { out.history = history; out.startedAt = typeof value.startedAt === 'string' ? value.startedAt.slice(0,40) : null; }
@@ -239,6 +243,7 @@ export async function handle(request, env, net = fetch) {
     const groupRoute=await handleGroupRoutes(context);if(groupRoute)return groupRoute;
     const toolRoute=await handleClassToolRoutes({...context,env});if(toolRoute)return toolRoute;
     const imgRoute=await handleImageRoutes(context);if(imgRoute)return imgRoute;
+    const gameRoute=await handleGameRoutes(context);if(gameRoute)return gameRoute;
     if (path==='/api/me' && request.method==='GET') return json({profile,owner:isOwner(env,user)});
     if(path==='/api/register' && request.method==='POST'){
       const {role}=await input(request);

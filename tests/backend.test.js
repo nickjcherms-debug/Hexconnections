@@ -11,7 +11,7 @@ function harness(){
  sql.exec(readFileSync(new URL('../migrations/0003_group_boards.sql',import.meta.url),'utf8'));
  sql.exec(readFileSync(new URL('../migrations/0004_shares.sql',import.meta.url),'utf8'));
  sql.exec(readFileSync(new URL('../migrations/0005_multiple_posts.sql',import.meta.url),'utf8'));
- sql.exec(readFileSync(new URL('../migrations/0006_feedback.sql',import.meta.url),'utf8'));sql.exec(readFileSync(new URL('../migrations/0007_classroom_tools.sql',import.meta.url),'utf8'));sql.exec(readFileSync(new URL('../migrations/0008_images_roster.sql',import.meta.url),'utf8'));
+ sql.exec(readFileSync(new URL('../migrations/0006_feedback.sql',import.meta.url),'utf8'));sql.exec(readFileSync(new URL('../migrations/0007_classroom_tools.sql',import.meta.url),'utf8'));sql.exec(readFileSync(new URL('../migrations/0008_images_roster.sql',import.meta.url),'utf8'));sql.exec(readFileSync(new URL('../migrations/0009_games.sql',import.meta.url),'utf8'));
  const DB = {
   prepare(query) {
    return {
@@ -756,4 +756,92 @@ test('class roster lists classmates who haven’t opened a posting, and versions
  assert.deepEqual((await h.call('kB','posts/'+p.body.id,undefined,{access:false})).body.assignment.act.terms.map(t=>t.id),[1,2],'planned version applied on first open');
  await kidJoin(h,'kC',p.body.code);assert.equal((await h.call('kC','posts/'+p.body.id,undefined,{access:false})).body.assignment.act.terms.length,3);
  r=(await h.call('teacher','posts/'+p.body.id+'/roster',undefined,{access:false})).body;assert.equal(r.notOpened,0);assert.equal(r.members.find(m=>m.key==='u:kB').variant,1);
+});
+/* ---------- 4.15 games ---------- */
+const gameDraft=(extra={})=>({name:'',place:{1:[0,0],2:[1,0],3:[0,1]},conns:{'1-2':{why:'Both of these parts control the cell in some way',at:Date.now(),first:Date.now()},'1-3':{why:'The nucleus sends instructions to ribosomes',at:Date.now(),first:Date.now()}},view:{},clock:Date.now(),...extra});
+async function gameSetup(h,kids){
+ await h.call('teacher','profile',{role:'teacher'});await h.call('teacher','workspace',{workspace:threeTerms(),revision:0});
+ const p=await h.call('teacher','posts/new',{activityId:'act-m',classId:'club',tz:'UTC'},{access:false});
+ for(const k of kids)await kidJoin(h,k,p.body.code);
+ return p.body.id;
+}
+test('game mode: points, levels, badges, timed rounds and a leaderboard that hides real names',async()=>{
+ const h=harness(),kids=['g1','g2','g3'],id=await gameSetup(h,kids);
+ assert.equal((await h.call('g1','posts/'+id+'/game/settings',{on:true},{access:false})).status,403);
+ assert.equal((await h.call('teacher','posts/'+id+'/game/round',{action:'start'},{access:false})).body.code,'game-off');
+ assert.equal((await h.call('teacher','posts/'+id+'/game/settings',{on:true},{access:false})).body.game.on,true);
+ const r=await h.call('teacher','posts/'+id+'/game/round',{action:'start',target:2,seconds:120},{access:false});assert.equal(r.body.game.round.target,2);
+ assert.equal((await h.call('g1','posts/'+id+'/draft',{draft:gameDraft()},{access:false})).status,200);
+ await h.call('g2','posts/'+id+'/draft',{draft:{name:'',place:{1:[0,0],2:[1,0]},conns:{'1-2':{why:'They are close together',at:1,first:1}},view:{}}},{access:false});
+ const t=(await h.call('teacher','posts/'+id+'/game',undefined,{access:false})).body;
+ const g1=t.standings.find(s=>s.uid==='g1');
+ assert.equal(g1.points,30+40+50+50+2*10+50,'terms, links, one board, all in, round links and round target');
+ assert.deepEqual(g1.round,{count:2,hit:true});assert.ok(g1.badges.includes('clock')&&g1.badges.includes('allin')&&g1.badges.includes('board'));
+ assert.equal(g1.rank,1);assert.equal(t.standings.find(s=>s.uid==='g2').round.hit,false,'a link written before the round does not count');
+ assert.equal(g1.level,2);assert.match(g1.nick,/^\w+ \w+$/);
+ const s=(await h.call('g2','posts/'+id+'/game?board=1',undefined,{access:false})).body;
+ assert.equal(s.leaderboard.top.length,3);assert.ok(s.leaderboard.top.every(x=>!/Name /.test(x.name)),'nicknames, not real names');
+ assert.equal(s.leaderboard.myRank,2);assert.ok(!('standings' in s));assert.equal(new Set(s.leaderboard.top.map(x=>x.name)).size,3);
+ await h.call('teacher','posts/'+id+'/game/settings',{leaderboard:'names'},{access:false});
+ assert.equal((await h.call('g2','posts/'+id+'/game?board=1',undefined,{access:false})).body.leaderboard.top[0].name,'Name g.','first name and last initial');
+ await h.call('teacher','posts/'+id+'/game/settings',{leaderboard:'off'},{access:false});
+ assert.equal((await h.call('g2','posts/'+id+'/game?board=1',undefined,{access:false})).body.leaderboard,undefined);
+ const stop=await h.call('teacher','posts/'+id+'/game/round',{action:'stop'},{access:false});assert.equal(stop.body.game.round,null);assert.equal(stop.body.game.rounds.length,1);
+ assert.equal((await h.call('outsider','posts/'+id+'/game',undefined,{access:false})).status,404);
+});
+test('team race: teams are made from students who opened it and ranked by their shared board',async()=>{
+ const h=harness(),kids=['r1','r2','r3','r4'],id=await gameSetup(h,kids);
+ await h.call('teacher','posts/'+id+'/game/settings',{on:true},{access:false});
+ const made=await h.call('teacher','posts/'+id+'/game/teams',{size:2},{access:false});assert.equal(made.status,201);assert.equal(made.body.teams,2);
+ assert.equal((await h.call('teacher','posts/'+id+'/game/teams',{size:2},{access:false})).body.code,'teams-too-few');
+ const open=(await h.call('r1','posts/'+id,undefined,{access:false})).body;assert.match(open.group.name,/^Team [12]$/);
+ const base={place:{},conns:{}};
+ assert.equal((await h.call('r1','posts/'+id+'/group/draft',{base,draft:gameDraft(),revision:0},{access:false})).status,200);
+ const t=(await h.call('teacher','posts/'+id+'/game',undefined,{access:false})).body;
+ assert.equal(t.teams.length,2);assert.equal(t.teams[0].winner,true);assert.equal(t.teams[0].name,open.group.name);
+ assert.ok(t.standings.find(s=>s.uid==='r1').badges.includes('race'));
+ const s=(await h.call('r1','posts/'+id+'/game?board=1',undefined,{access:false})).body;assert.equal(s.me.team,open.group.name);assert.equal(s.me.raceWinner,true);
+ assert.ok(s.teams.find(x=>x.mine).winner);assert.ok(!('members' in s.teams[0]),'students don’t get other teams’ member names');
+});
+test('debate: defend a connection, vote anonymously for the best defense, winners revealed at results',async()=>{
+ const h=harness(),kids=['d1','d2','d3','d4'],id=await gameSetup(h,kids);
+ assert.equal((await h.call('teacher','posts/'+id+'/debate/round',{action:'start'},{access:false})).body.code,'debate-off');
+ await h.call('teacher','posts/'+id+'/debate/settings',{on:true,mode:'live',size:4},{access:false});
+ for(const k of kids)await h.call(k,'posts/'+id+'/draft',{draft:gameDraft()},{access:false});
+ assert.equal((await h.call('teacher','posts/'+id+'/debate/round',{action:'start',pairMode:'same',pair:'1-9'},{access:false})).status,400);
+ await h.call('teacher','posts/'+id+'/debate/round',{action:'start',pairMode:'own',seconds:120},{access:false});
+ assert.equal((await h.call('d1','posts/'+id+'/debate/defend',{pair:'2-3',defense:'These two connect for many reasons'},{access:false})).body.code,'debate-pair');
+ assert.equal((await h.call('d1','posts/'+id+'/debate/defend',{pair:'1-2',defense:'Too short'},{access:false})).status,400);
+ const lines={d1:'The nucleus controls what the membrane lets in',d2:'Ribosomes need instructions from the nucleus to build',d3:'Without the membrane nothing stays inside the cell',d4:'Both work together so the cell can grow'};
+ for(const k of kids)assert.equal((await h.call(k,'posts/'+id+'/debate/defend',{pair:'1-2',defense:lines[k]},{access:false})).status,200);
+ assert.equal((await h.call('d1','posts/'+id+'/debate/vote',{label:'A'},{access:false})).body.code,'debate-vote-closed','live mode waits for the teacher');
+ let v=(await h.call('d1','posts/'+id+'/game',undefined,{access:false})).body.round;assert.equal(v.defended,4);assert.equal(v.ballot,null);assert.equal(v.myEntry.defense,lines.d1);
+ await h.call('teacher','posts/'+id+'/debate/round',{action:'vote',seconds:60},{access:false});
+ v=(await h.call('d1','posts/'+id+'/game',undefined,{access:false})).body.round;assert.equal(v.ballot.length,4);assert.ok(v.ballot.every(b=>!('name' in b)&&!('votes' in b)),'anonymous while voting');
+ const d2label=(await h.call('d2','posts/'+id+'/game',undefined,{access:false})).body.round.myEntry.label;
+ assert.equal((await h.call('d2','posts/'+id+'/debate/vote',{label:d2label},{access:false})).body.code,'debate-self');
+ for(const k of ['d1','d3','d4'])assert.equal((await h.call(k,'posts/'+id+'/debate/vote',{label:d2label},{access:false})).status,200);
+ const other=v.ballot.find(b=>b.label!==d2label&&!b.mine).label;await h.call('d2','posts/'+id+'/debate/vote',{label:other},{access:false});
+ let t=(await h.call('teacher','posts/'+id+'/game',undefined,{access:false})).body;assert.equal(t.standings.find(s=>s.uid==='d2').debate.wins,0,'not revealed yet');
+ assert.ok(t.debateView[0].members.every(m=>m.defended&&m.voted));
+ await h.call('teacher','posts/'+id+'/debate/round',{action:'results'},{access:false});
+ const res=(await h.call('d3','posts/'+id+'/game',undefined,{access:false})).body.round;
+ const win=res.ballot.find(b=>b.winner);assert.equal(win.name,'Name d.');assert.equal(win.votes,3);assert.ok(res.ballot.filter(b=>!b.winner).every(b=>b.name===null));
+ t=(await h.call('teacher','posts/'+id+'/game',undefined,{access:false})).body;const d2=t.standings.find(s=>s.uid==='d2');
+ assert.deepEqual([d2.debate.wins,d2.debate.votes,d2.debate.cast],[1,3,1]);assert.ok(d2.badges.includes('champ'));
+ assert.equal(d2.breakdown.debate,30+15+5);
+ await h.call('teacher','posts/'+id+'/debate/round',{action:'end'},{access:false});
+ assert.equal((await h.call('d1','posts/'+id+'/debate/defend',{pair:'1-2',defense:'One more defense for the record'},{access:false})).body.code,'debate-no-round');
+});
+test('debate in self-paced mode: a group can vote once everyone in it has defended; late joiners get a group',async()=>{
+ const h=harness(),id=await gameSetup(h,['a1','a2']);
+ await h.call('teacher','posts/'+id+'/debate/settings',{on:true,mode:'async',size:2},{access:false});
+ const st=await h.call('teacher','posts/'+id+'/debate/round',{action:'start',pairMode:'same',pair:'3-1'},{access:false});assert.equal(st.body.debate.round.pair,'1-3');assert.equal(st.body.debate.round.endsAt,null);
+ await h.call('a1','posts/'+id+'/debate/defend',{defense:'The nucleus tells ribosomes what to build'},{access:false});
+ assert.equal((await h.call('a1','posts/'+id+'/debate/vote',{label:'A'},{access:false})).body.code,'debate-vote-closed');
+ await h.call('a2','posts/'+id+'/debate/defend',{defense:'Ribosomes follow the plan from the nucleus'},{access:false});
+ const b=(await h.call('a1','posts/'+id+'/game',undefined,{access:false})).body.round;assert.equal(b.voteOpen,true);
+ assert.equal((await h.call('a1','posts/'+id+'/debate/vote',{label:b.ballot.find(x=>!x.mine).label},{access:false})).status,200);
+ await kidJoin(h,'a3',(await h.call('teacher','teacher/dashboard',undefined,{access:false})).body.assignments[0].code);
+ const late=(await h.call('a3','posts/'+id+'/game',undefined,{access:false})).body.round;assert.equal(late.groupSize,3,'late joiner added to a group');
 });

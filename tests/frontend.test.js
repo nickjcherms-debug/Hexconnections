@@ -34,6 +34,7 @@ function make(){
  setWork(w){TW=w;TS.rows={};TS.sel=w.activities[0].id},setRenderTeacher(fn){renderTeacher=fn},
  setApi(fn){platformApi=fn},setTeacher(fn){startTeacher=fn;teacherDashboard=fn},
  v414:{graderBoard,rosterPanel,termPictureButton,hexList},
+ v415:{gameScore,renderGames,renderGameConsole,renderPlay,drawHud,GS,GAME_CACHE,graderExtras,keyToPath,pathToKey,GUIDE,saveDraft,setST(v){ST=v},getST(){return ST}},
  v413:{duplicateHexSpace,firstSteps},
  v412:{leastConnected,reteachCallout,openGalleryDialog},
  v410:{flowGroups,flowState,setChecker(fn){checkReady=fn},getChecker(){return checkReady}},
@@ -381,8 +382,8 @@ test('logged-out visits to private pages show the homepage and resume after logi
 test('menus share one layout: Home first, then role-specific tabs',()=>{
  const labels=(h)=>h.v4.navItems().map(i=>i.label).join('|');
  let {h}=make();h.GA.ready=true;assert.equal(labels(h),'Home|Depth & Complexity|How to use|Enter a class code|Log in|New Hex Space');
- ({h}=make());h.GA.user={uid:'t'};h.PX.profile={role:'teacher'};assert.equal(labels(h),'Home|Classes|Hex Spaces|Shared links|Library|How to use|+ New Hex Space');
- ({h}=make());h.GA.user={uid:'s'};h.PX.profile={role:'student'};assert.equal(labels(h),'Home|My assignments|How to use|Enter a class code');
+ ({h}=make());h.GA.user={uid:'t'};h.PX.profile={role:'teacher'};assert.equal(labels(h),'Home|Classes|Hex Spaces|Shared links|Library|Games|How to use|+ New Hex Space');
+ ({h}=make());h.GA.user={uid:'s'};h.PX.profile={role:'student'};assert.equal(labels(h),'Home|My assignments|Games|How to use|Enter a class code');
 });
 test('clean page addresses map both ways and old # links still resolve',()=>{
  const {h}=make();const v=h.v4;
@@ -509,7 +510,7 @@ const subAct={id:'a1',title:'Cells',terms:[{n:1,id:1,term:'Nucleus',def:''},{n:2
 const sub=(name,uid,extra={})=>({name,_studentUid:uid,_postId:'p1',_maxPoints:20,_manual:true,_status:'TURNED_IN',activitySnapshot:subAct,placements:{1:[0,0],2:[1,0],3:[1,-1]},connections:[{num:1,a:1,b:2,why:'The membrane surrounds the nucleus area'},{num:2,a:2,b:3,why:'Both are cell parts'}],termsUsed:3,...extra});
 test('the grader scores each connection, fills the grade from the scores and moves to the next student',async()=>{
  const t=make();const {h,text}=t;teacherWork(h);const v=h.v4;
- const calls=[];h.setApi(async(path,body)=>{calls.push([path,JSON.parse(JSON.stringify(body||{}))]);return {}});
+ const calls=[];h.setApi(async(path,body)=>{if(!/\/game$/.test(path))calls.push([path,JSON.parse(JSON.stringify(body||{}))]);return {}});
  const list=[sub('Ava','s1'),sub('Ben','s2')];v.openGrader(list,0);
  assert.match(text(),/1 of 2/);assert.match(text(),/The membrane surrounds the nucleus area/);
  const btn=(label,i=0)=>everything(t).filter(n=>n.tagName==='button'&&n.textContent===label)[i];
@@ -522,7 +523,7 @@ test('the grader scores each connection, fills the grade from the scores and mov
  assert.match(text(),/2 of 2/);assert.match(text(),/Ben/);
 });
 test('returning a code-only board for revision saves feedback without a grade',async()=>{
- const t=make();const {h}=t;teacherWork(h);const v=h.v4;const calls=[];h.setApi(async(path,body)=>{calls.push(path);return {}});
+ const t=make();const {h}=t;teacherWork(h);const v=h.v4;const calls=[];h.setApi(async(path,body)=>{if(!/\/game$/.test(path))calls.push(path);return {}});
  v.openGrader([sub('Ava','s1')],0);everything(t).find(n=>n.attrs?.id==='gr-revise').checked=true;everything(t).find(n=>n.attrs?.id==='gr-grade').value='12';
  everything(t).find(n=>n.textContent==='Save & finish').listeners.click();await settle();
  assert.equal(JSON.stringify(calls.filter(c=>c.startsWith('posts/'))),JSON.stringify(['posts/p1/feedback']));
@@ -767,4 +768,54 @@ test('the roster panel shows who hasn’t opened it and plans versions for them'
  assert.equal(calls[1][0],'posts/p1/version-plan');assert.equal(JSON.stringify(calls[1][1]),JSON.stringify({plan:{'u:b':1}}));
  const sa=kids(root).find(n=>n.tagName==='select'&&n.attrs['aria-label']==='Version for Amy');sa.value='1';sa.listeners.change();await settle();
  assert.equal(calls[2][0],'posts/p1/version');assert.equal(JSON.stringify(calls[2][1]),JSON.stringify({studentUids:['a'],version:1}));
+});
+
+/* ---------- 4.15 games ---------- */
+import {scoreBoard} from '../src/gamescore.js';
+test('game points in the browser match the server’s scoring',()=>{
+ const {h}=make();
+ const act={terms:[{id:1,term:'A'},{id:2,term:'B'},{id:3,term:'C'},{id:4,term:'D'}]};
+ const t0=Date.parse('2026-10-31T10:00:00Z');
+ const d={place:{1:[0,0],2:[1,0],3:[0,1],4:[2,0],1003:[1,1]},conns:{
+  '1-2':{why:'Both ideas describe how the cell controls what happens inside it every day',at:t0+1000,first:t0+1000},
+  '1-3':{why:'They work together in the nucleus to keep things organized and safe',at:t0+2000,first:t0+2000},
+  '2-4':{why:'Linked because one builds the other step by step in order',at:t0+3000,first:t0+3000},
+  '2-1003':{why:'A pattern shows up here',at:t0+4000},'3-4':{why:'not touching so no points',at:1}},_skew:500};
+ const game={rounds:[{id:'r1',target:2,startedAt:'2026-10-31T10:00:01Z',endsAt:'2026-10-31T10:00:03Z'}]};
+ const extra={debate:{wins:1,votes:2,cast:3,rounds:3},raceWinner:true};
+ const a=h.v415.gameScore(act,d,game,extra),b=scoreBoard(act,d,game,extra);
+ for(const k of ['points','level','levelName','streak','best','links','placed','oneBoard','allIn'])assert.equal(a[k],b[k],k);
+ assert.deepEqual(JSON.parse(JSON.stringify(a.badges)),b.badges);assert.deepEqual(JSON.parse(JSON.stringify(a.breakdown)),b.breakdown);
+ assert.equal(a.links,4);assert.ok(a.badges.includes('bridge')&&a.badges.includes('champ')&&a.badges.includes('judge')&&a.badges.includes('race'));
+});
+test('Games is in the menu, has its own address and a public intro',()=>{
+ const t=make(),{h}=t;
+ assert.equal(h.v415.keyToPath('#games'),'/games');assert.equal(h.v415.pathToKey('/teacher/games/p1'),'#teacher/game-p1');assert.equal(h.v415.pathToKey('/student/games/p9'),'#play-p9');assert.equal(h.v415.keyToPath('play-p9'),'/student/games/p9');
+ h.v415.renderGames();const txt=everything(t).map(n=>n.textContent||'').join(' ');
+ assert.match(txt,/Defend the link/);assert.match(txt,/Log in to play/);
+ assert.ok(h.v415.GUIDE.some(g=>g.id==='debate')&&h.v415.GUIDE.some(g=>g.id==='s-games'));
+});
+test('the grader shows game results and Add to grade adds a bonus without saving it',async()=>{
+ const t=make();const {h}=t;teacherWork(h);
+ h.setApi(async(path)=>/\/game$/.test(path)?{game:{on:true,rounds:[]},debate:{on:false},teams:[],standings:[{uid:'s1',name:'Ava',points:240,level:2,levelName:'Connector',rank:1,badges:['first','board'],debate:{wins:1,votes:3,cast:1}}]}:{});
+ h.v4.openGrader([sub('Ava','s1')],0);await settle();
+ const txt=everything(t).map(n=>n.textContent||'').join(' ');assert.match(txt,/240 pts · Level 2 Connector · #1 of 1/);assert.match(txt,/Debate: 1 win, 3 votes received/);
+ const g=everything(t).find(n=>n.attrs?.id==='gr-grade');g.value='10';
+ everything(t).find(n=>n.textContent==='Add to grade').listeners.click();assert.equal(g.value,'15');
+});
+test('a student’s board shows points, the timed round and the debate alert',()=>{
+ const t=make(),{h}=t;
+ const box=new (t.root.constructor)('div');box.attrs={id:'game-hud'};box.style={};t.root.children.push(box);
+ h.v415.setST({act:{terms:[{id:1,term:'A'},{id:2,term:'B'},{id:3,term:'C'}]},d:{place:{1:[0,0],2:[1,0],3:[0,1]},conns:{'1-2':{why:'They are both parts of cells',at:Date.now(),first:Date.now()},'1-3':{why:'One protects the other one',at:Date.now(),first:Date.now()}}},preview:false});
+ const now=new Date().toISOString(),later=new Date(Date.now()+60000).toISOString(),before=new Date(Date.now()-60000).toISOString();
+ h.v415.GS.post='p1';h.v415.GS.data={now,game:{on:true,round:{id:'r1',target:2,startedAt:before,endsAt:later},rounds:[]},debate:{on:true,round:{n:1,phase:'defend',endsAt:later}},me:{debate:{wins:0,votes:0,cast:0},raceWinner:false}};
+ h.v415.drawHud();const txt=everything(t).map(n=>n.textContent||'').join(' ');
+ assert.match(txt,/240/,'30 + 40 + 50 + 50 + round 20 + target 50');assert.match(txt,/Explain 2 new connections/);assert.match(txt,/2\/2/);assert.match(txt,/Debate round 1/);assert.match(txt,/Go to the debate/);
+});
+test('saving keeps when each connection was first explained, even after its reason is edited',()=>{
+ const {h}=make();
+ const st={act:{id:'a',terms:[]},cls:{id:'c'},d:{place:{},conns:{'1-2':{why:'first try',at:111}}},preview:true};h.v415.setST(st);
+ h.v415.saveDraft();assert.equal(st.d.conns['1-2'].first,111);
+ st.d.conns['1-2']={why:'edited reason',at:999};h.v415.saveDraft();assert.equal(st.d.conns['1-2'].first,111);
+ delete st.d.conns['1-2'];h.v415.saveDraft();st.d.conns['1-2']={why:'new again',at:2000};h.v415.saveDraft();assert.equal(st.d.conns['1-2'].first,2000);
 });

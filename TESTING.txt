@@ -1,10 +1,19 @@
-VERIFICATION — VERSION 4.14.0
+VERIFICATION — VERSION 4.15.0
 ============================
 108 automated tests pass (52 backend, 56 frontend) using in-memory SQLite,
 simulated Firebase/Classroom responses, and execution of the actual frontend
 script in a DOM test harness. No real Google Classroom assignment was created
 or modified by these tests.
 
+New in 4.15: 152 tests (game points, levels, badges, timed rounds with clock
+correction, nickname leaderboard and visibility settings, team race, debate in live
+and self-paced modes with anonymous voting and revealed winners, browser scoring
+matching the server, grader bonus, first-explained times kept across edits).
+Chromium run with five students: Games page, console, game mode, timed round on
+the student's board, leaderboard, projector view, teams, a full debate round
+(defend, vote, results), grader panel, CSV columns, student Games and play pages
+on a phone with no sideways scroll, guide, signed-out intro; header stays on one
+line at 1280 and 1440 px.
 New in 4.12–4.14: 143 tests (submissions table, keyboard grading, CSV columns,
 gallery rotation and comment limits, roster and version plan, image upload
 limits and validation, duplicate, checklist, language preset). Chromium run

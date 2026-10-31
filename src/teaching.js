@@ -80,11 +80,13 @@ export async function handleTeachingRoutes(c){
       await run(db,'DELETE FROM project_groups WHERE post_id=?',id);
       await run(db,'DELETE FROM submissions WHERE post_id=?',id);
       try{await run(db,'DELETE FROM peer_comments WHERE post_id=?',id)}catch{}
+      for(const t of ['debate_votes','debate_entries','debate_members'])try{await run(db,'DELETE FROM '+t+' WHERE post_id=?',id)}catch{}
     }
     try{await run(db,'DELETE FROM peer_comments WHERE author_uid=? OR target_uid=?',user.uid,user.uid);
       await run(db,'DELETE FROM library_reports WHERE code IN (SELECT code FROM library WHERE owner_uid=?)',user.uid);
       await run(db,'DELETE FROM library_reports WHERE uid=?',user.uid);
       await run(db,'DELETE FROM library WHERE owner_uid=?',user.uid)}catch{}
+    try{await run(db,'DELETE FROM debate_votes WHERE voter_uid=? OR target_uid=?',user.uid,user.uid);await run(db,'DELETE FROM debate_entries WHERE uid=?',user.uid);await run(db,'DELETE FROM debate_members WHERE uid=?',user.uid)}catch{}
     await run(db,'DELETE FROM project_group_members WHERE uid=?',user.uid);
     await run(db,'DELETE FROM submissions WHERE uid=?',user.uid);
     await run(db,'DELETE FROM posts WHERE owner_uid=?',user.uid);
