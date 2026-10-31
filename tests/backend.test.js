@@ -11,7 +11,7 @@ function harness(){
  sql.exec(readFileSync(new URL('../migrations/0003_group_boards.sql',import.meta.url),'utf8'));
  sql.exec(readFileSync(new URL('../migrations/0004_shares.sql',import.meta.url),'utf8'));
  sql.exec(readFileSync(new URL('../migrations/0005_multiple_posts.sql',import.meta.url),'utf8'));
- sql.exec(readFileSync(new URL('../migrations/0006_feedback.sql',import.meta.url),'utf8'));sql.exec(readFileSync(new URL('../migrations/0007_classroom_tools.sql',import.meta.url),'utf8'));sql.exec(readFileSync(new URL('../migrations/0008_images_roster.sql',import.meta.url),'utf8'));sql.exec(readFileSync(new URL('../migrations/0009_games.sql',import.meta.url),'utf8'));
+ sql.exec(readFileSync(new URL('../migrations/0006_feedback.sql',import.meta.url),'utf8'));sql.exec(readFileSync(new URL('../migrations/0007_classroom_tools.sql',import.meta.url),'utf8'));sql.exec(readFileSync(new URL('../migrations/0008_images_roster.sql',import.meta.url),'utf8'));sql.exec(readFileSync(new URL('../migrations/0009_games.sql',import.meta.url),'utf8'));sql.exec(readFileSync(new URL('../migrations/0010_debate_index.sql',import.meta.url),'utf8'));
  const DB = {
   prepare(query) {
    return {
@@ -852,4 +852,52 @@ test('My assignments shows saved progress so students can pick up where they lef
  d=(await h.call('sp1','student/dashboard',undefined,{access:false})).body;const pr=d.active[0].progress;
  assert.deepEqual([pr.placed,pr.links,pr.terms],[2,1,3]);assert.match(pr.savedAt,/^\d{4}-/);
  assert.deepEqual((await h.call('sp1','posts/'+id,undefined,{access:false})).body.draft.place,{1:[0,0],2:[1,0]},'the board comes back exactly as saved');
+});
+/* ---------- access control matrix: every posting route rejects other teachers and students who never joined ---------- */
+test('every posting route rejects other teachers and students who haven’t joined',async()=>{
+ const h=harness(),id=await gameSetup(h,['in1','in2']);
+ await h.call('teacher','posts/'+id+'/game/settings',{on:true},{access:false});await h.call('teacher','posts/'+id+'/debate/settings',{on:true},{access:false});
+ await h.call('other','profile',{role:'teacher'});await h.call('stranger','profile',{role:'student'},{access:false});
+ const draft={name:'',place:{1:[0,0]},conns:{},view:{}};
+ const routes=[['GET',''],['POST','draft',{draft}],['POST','submit',{draft}],['POST','grade',{studentUid:'in1',grade:5}],['POST','reclaim',{}],['POST','feedback',{studentUid:'in1',scores:{}}],
+  ['GET','progress'],['GET','roster'],['POST','version',{studentUids:['in1'],version:0}],['POST','version-plan',{plan:{}}],['POST','edit',{options:{defs:false}}],
+  ['GET','gallery'],['POST','gallery/open',{open:true}],['POST','gallery/comment',{board:'x',kind:'glow',text:'hello there'}],['POST','gallery/hide',{id:'x'}],
+  ['GET','groups'],['POST','groups',{name:'G',maxMembers:2}],['GET','group'],['POST','group/draft',{base:draft,draft,revision:0}],
+  ['GET','game'],['POST','game/settings',{on:false}],['POST','game/round',{action:'start'}],['POST','game/teams',{size:2}],
+  ['POST','debate/settings',{on:false}],['POST','debate/groups',{size:2}],['POST','debate/round',{action:'start',pairMode:'own'}],['POST','debate/defend',{defense:'one two three four five'}],['POST','debate/vote',{label:'A'}]];
+ const leaks=[];
+ for(const who of ['other','stranger'])for(const [m,r,b] of routes){
+  const res=await h.call(who,'posts/'+id+(r?'/'+r:''),m==='POST'?b:undefined,{access:false});
+  if(res.status<400)leaks.push(who+' '+m+' '+r+' → '+res.status);
+ }
+ assert.deepEqual(leaks,[]);
+ {const r=await h.call('stranger','submissions?postId='+id,undefined,{access:false});assert.ok(r.status>=400||r.body.submissions.length===0)}
+ const sub=await h.call('other','submissions?postId='+id,undefined,{access:false});assert.ok(sub.status>=400||sub.body.submissions.length===0,'other teachers never see this posting’s work');
+});
+test('requests don’t rewrite the account row each time, and students never receive the version plan',async()=>{
+ const h=harness(),id=await gameSetup(h,['vp1']);
+ h.sql.exec("CREATE TABLE user_writes(n INTEGER);CREATE TRIGGER uw AFTER UPDATE ON users BEGIN INSERT INTO user_writes VALUES(1);END;CREATE TRIGGER ui AFTER INSERT ON users BEGIN INSERT INTO user_writes VALUES(1);END;");
+ for(let i=0;i<5;i++)await h.call('vp1','posts/'+id+'/game',undefined,{access:false});
+ assert.equal(h.sql.prepare('SELECT COUNT(*) n FROM user_writes').get().n,0,'polling writes nothing to users');
+ await h.call('teacher','posts/'+id+'/version-plan',{plan:{'u:vp1':0}},{access:false});
+ const a=(await h.call('vp1','posts/'+id,undefined,{access:false})).body.assignment.asg;
+ assert.equal(a.versionPlan,undefined);assert.equal(a.debate,undefined);assert.equal(a.game,undefined);
+});
+test('debate tallies are kept with the posting once results are shown, so later reads stay small',async()=>{
+ const h=harness(),kids=['t1','t2','t3'],id=await gameSetup(h,kids);
+ await h.call('teacher','posts/'+id+'/debate/settings',{on:true,mode:'live',size:3},{access:false});
+ for(let round=1;round<=2;round++){
+  await h.call('teacher','posts/'+id+'/debate/round',{action:'start',pairMode:'same',pair:'1-2'},{access:false});
+  for(const k of kids)await h.call(k,'posts/'+id+'/debate/defend',{defense:'A strong reason number '+round+' from '+k},{access:false});
+  await h.call('teacher','posts/'+id+'/debate/round',{action:'vote'},{access:false});
+  const lab=(await h.call('t2','posts/'+id+'/game',undefined,{access:false})).body.round.ballot.find(b=>!b.mine);
+  const t1lab=(await h.call('t1','posts/'+id+'/game',undefined,{access:false})).body.round.myEntry.label;
+  for(const k of ['t2','t3'])await h.call(k,'posts/'+id+'/debate/vote',{label:t1lab},{access:false});
+  await h.call('teacher','posts/'+id+'/debate/round',{action:'results'},{access:false});
+  await h.call('teacher','posts/'+id+'/debate/round',{action:'results'},{access:false});
+ }
+ const st=(await h.call('teacher','posts/'+id+'/game',undefined,{access:false})).body.standings.find(s=>s.uid==='t1').debate;
+ assert.deepEqual([st.wins,st.votes],[2,4],'two wins, four votes, counted once each');
+ assert.equal((await h.call('t2','posts/'+id+'/game',undefined,{access:false})).body.me.debate.cast,2);
+ const body=JSON.parse(h.sql.prepare('SELECT body FROM posts WHERE id=?').get(id).body);assert.equal(body.asg.debate.stats.t1.wins,2);
 });

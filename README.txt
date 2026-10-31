@@ -116,6 +116,19 @@ Tiles and text retain their original size, and zoom/scroll remain available.
 A hexagon still has six sides: extra space supports more arrangements, not more
 than six simultaneous neighboring tiles per hexagon.
 
+SYSTEM CHECK FIXES (4.17)
+- Each API request used to rewrite the user's account row. It's now written only
+  when the account is new or its name/email changed, so polling (game bars,
+  consoles, group boards) no longer spends D1's free daily write allowance.
+- Debate results are added up once when a round's results are shown (or it ends)
+  and kept with the posting; polling reads only the current round (and only the
+  student's own group), instead of every defense and vote ever cast. New index:
+  migrations/0010_debate_index.sql.
+- Students no longer receive the posting's version plan or game/debate internals
+  with the assignment.
+- New access-control test: every posting route refuses other teachers and
+  students who haven't joined.
+
 SAVE PROGRESS AND A FRIENDLIER GUIDE (4.16)
 - Students' boards already saved to the browser and their account as they work.
   Now that's visible and harder to lose: "💾 Save & finish later" on the board saves

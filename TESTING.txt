@@ -1,10 +1,17 @@
-VERIFICATION — VERSION 4.16.0
+VERIFICATION — VERSION 4.17.0
 ============================
 108 automated tests pass (52 backend, 56 frontend) using in-memory SQLite,
 simulated Firebase/Classroom responses, and execution of the actual frontend
 script in a DOM test harness. No real Google Classroom assignment was created
 or modified by these tests.
 
+New in 4.17: full system check. 158 tests (access-control matrix across 28 posting
+routes for another teacher and an outsider; no account-row writes while polling;
+version plan not sent to students; debate tallies counted once). Live: deployed
+worker matches main, D1 schema matches migrations, no orphaned rows or invalid
+JSON. Chromium: all 50 personas finish every step (one library search found no
+listings yet in the fresh test database, as expected), the 20 sims report no
+flow or page errors, and the 4.12-4.16 feature runs pass.
 New in 4.16: 155 tests (saved progress on the student dashboard, the board
 coming back exactly as saved, Continue/progress card, Save & finish later saving
 and confirming, guide pictures). Chromium: Save & finish later, progress and

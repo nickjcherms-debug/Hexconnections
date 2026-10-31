@@ -24,7 +24,7 @@ export function gameState(info){
 }
 export function debateState(info){
   const d=info?.asg?.debate||{};
-  return {on:d.on===true,mode:d.mode==='async'?'async':'live',size:int(d.size,2,6,4),round:d.round||null,past:Array.isArray(d.past)?d.past:[]};
+  return {on:d.on===true,mode:d.mode==='async'?'async':'live',size:int(d.size,2,6,4),round:d.round||null,past:Array.isArray(d.past)?d.past:[],stats:d.stats&&typeof d.stats==='object'?d.stats:{}};
 }
 function shuffle(list){const a=list.slice();for(let i=a.length-1;i>0;i--){const r=new Uint32Array(1);crypto.getRandomValues(r);const j=r[0]%(i+1);[a[i],a[j]]=[a[j],a[i]]}return a}
 function chunks(list,size){const k=Math.max(1,Math.round(list.length/size)),out=Array.from({length:k},()=>[]);list.forEach((x,i)=>out[i%k].push(x));return out}
@@ -66,29 +66,27 @@ function raceResults(info,game,groups,boards){
   return list;
 }
 
-/* Debate results: who won each revealed round, votes received and ballots cast. */
-async function debateData(db,postId,deb){
-  const entries=await rows(db,'SELECT round,uid,grp,pair,defense,created_at FROM debate_entries WHERE post_id=?',postId);
-  const votes=await rows(db,'SELECT round,voter_uid,target_uid FROM debate_votes WHERE post_id=?',postId);
-  const cur=deb.round,revealed=n=>!cur||n<cur.n||(n===cur.n&&cur.phase==='results');
-  const byUid={},rounds={};
-  const st=u=>byUid[u]||(byUid[u]={wins:0,votes:0,cast:0,rounds:0});
-  for(const e of entries){const r=rounds[e.round]||(rounds[e.round]={});(r[e.grp]||(r[e.grp]=[])).push({...e,votes:0})}
-  const castRounds={};
-  for(const v of votes){
-    castRounds[v.voter_uid]=castRounds[v.voter_uid]||new Set();castRounds[v.voter_uid].add(v.round);st(v.voter_uid).cast++;
-    const r=rounds[v.round];if(!r)continue;
-    for(const list of Object.values(r)){const e=list.find(x=>x.uid===v.target_uid);if(e)e.votes++}
-  }
-  for(const [u,s] of Object.entries(castRounds))st(u).rounds=s.size;
-  for(const [n,r] of Object.entries(rounds)){
-    for(const list of Object.values(r)){
-      const top=Math.max(0,...list.map(e=>e.votes));
-      for(const e of list){e.winner=top>0&&e.votes===top;if(revealed(Number(n))){st(e.uid).votes+=e.votes;if(e.winner)st(e.uid).wins++}}
-    }
-  }
-  return {byUid,rounds,votes};
+/* One round's defenses and votes (optionally just one group), with vote counts and winners. */
+async function roundData(db,postId,n,grp,withVotes){
+  const entries=grp==null?await rows(db,'SELECT uid,grp,pair,defense FROM debate_entries WHERE post_id=? AND round=?',postId,n)
+    :await rows(db,'SELECT uid,grp,pair,defense FROM debate_entries WHERE post_id=? AND round=? AND grp=?',postId,n,grp);
+  const votes=withVotes?await rows(db,'SELECT voter_uid,target_uid FROM debate_votes WHERE post_id=? AND round=?',postId,n):[];
+  const groups={};for(const e of entries)(groups[e.grp]||(groups[e.grp]=[])).push({...e,votes:0});
+  for(const v of votes)for(const list of Object.values(groups)){const e=list.find(x=>x.uid===v.target_uid);if(e)e.votes++}
+  for(const list of Object.values(groups)){const top=Math.max(0,...list.map(e=>e.votes));for(const e of list)e.winner=top>0&&e.votes===top}
+  return {groups,votes};
 }
+// Results are added up once, when a round's results are shown (or the round ends), and kept with
+// the posting, so polling never re-reads every past round (keeps classes within D1's free reads).
+async function tally(db,postId,deb,r,full){
+  if(!r||r.tallied)return;
+  const {groups,votes}=await roundData(db,postId,r.n,null,true);
+  const stats=deb.stats;const st=u=>stats[u]||(stats[u]={wins:0,votes:0,cast:0,rounds:0});
+  for(const v of votes){const x=st(v.voter_uid);x.cast++;x.rounds++}
+  if(full)for(const list of Object.values(groups))for(const e of list){if(e.votes)st(e.uid).votes+=e.votes;if(e.winner)st(e.uid).wins++}
+  r.tallied=true;
+}
+const ZERO={wins:0,votes:0,cast:0,rounds:0};
 async function labelled(postId,n,list){
   const keyed=[];for(const e of list)keyed.push({...e,key:await sha(postId+':'+n+':'+e.uid)});
   keyed.sort((a,b)=>a.key<b.key?-1:1);keyed.forEach((e,i)=>{e.label=LETTERS(i)});return keyed;
@@ -188,15 +186,15 @@ export async function handleGameRoutes(c){
     const until=s=>s?new Date(now+int(s,15,3600,120)*1000).toISOString():null;
     if(b.action==='start'){
       if(!deb.on)fail(400,'Turn on the debate first.','debate-off');
-      if(r)deb.past=[...deb.past,{n:r.n,pairMode:r.pairMode,pair:r.pair,prompt:r.prompt}].slice(-40);
+      if(r){await tally(db,id,deb,r,false);deb.past=[...deb.past,{n:r.n,pairMode:r.pairMode,pair:r.pair,prompt:r.prompt}].slice(-40);}
       const pairMode=b.pairMode==='same'?'same':'own';let pair=null;
       if(pairMode==='same'){const p=String(b.pair||'').split('-');if(p.length!==2||p[0]===p[1]||!p.every(x=>termIds.has(x)))fail(400,'Choose two terms for everyone to connect.');pair=Number(p[0])<Number(p[1])?p[0]+'-'+p[1]:p[1]+'-'+p[0]}
       const last=Math.max(0,...deb.past.map(x=>x.n||0));
       deb.round={n:last+1,phase:'defend',pairMode,pair,prompt:text(b.prompt,200),startedAt:new Date(now).toISOString(),endsAt:deb.mode==='live'?until(b.seconds||120):null};
     }else if(!r)fail(409,'Start a round first.','debate-no-round');
     else if(b.action==='vote'){r.phase='vote';r.endsAt=deb.mode==='live'?until(b.seconds||60):null}
-    else if(b.action==='results'){r.phase='results';r.endsAt=null}
-    else if(b.action==='end'){deb.past=[...deb.past,{n:r.n,pairMode:r.pairMode,pair:r.pair,prompt:r.prompt}].slice(-40);deb.round=null}
+    else if(b.action==='results'){await tally(db,id,deb,r,true);r.phase='results';r.endsAt=null}
+    else if(b.action==='end'){await tally(db,id,deb,r,false);deb.past=[...deb.past,{n:r.n,pairMode:r.pairMode,pair:r.pair,prompt:r.prompt}].slice(-40);deb.round=null}
     else fail(400,'Choose start, vote, results or end.');
     await save();return json({debate:deb,now:NOW()});
   }
@@ -236,26 +234,26 @@ export async function handleGameRoutes(c){
 
   /* ---------- read: teacher console or student view ---------- */
   const publicGame={on:game.on,leaderboard:game.leaderboard,round:game.round,rounds:game.rounds};
-  const publicDebate={on:deb.on,mode:deb.mode,size:deb.size,round:deb.round,past:deb.past.length};
+  const publicDebate={on:deb.on,mode:deb.mode,size:deb.size,round:deb.round?{...deb.round,tallied:undefined}:null,past:deb.past.length};
   const terms=(info.act?.terms||[]).map(t=>({id:t.id||t.n,term:t.term}));
   const head={title:info.act?.title||'',className:info.cls?.name||'',code:info.asg?.code||''};
-  const dd=await debateData(db,id,deb);
+  const statsOf=u=>deb.stats[u]||ZERO;
   if(mine){
     const {students,groups}=await classBoards(db,post,info);
     const race=raceResults(info,game,groups,students),winTeam=race.find(t=>t.winner)?.id;
     const keys=[];for(const s of students)keys.push(await sha(id+':nick:'+s.uid));
     const order=students.map((s,i)=>({s,k:keys[i]})).sort((a,b)=>a.k<b.k?-1:1),nicks=nicknames(order.map(x=>x.k)),nick=new Map(order.map((x,i)=>[x.s.uid,nicks[i]]));
     const standings=students.map(s=>{
-      const sc=studentScore(s.act,s.own,s.teamAct,s.teamDraft,game,{debate:dd.byUid[s.uid],raceWinner:!!s.team&&s.team.id===winTeam});
+      const sc=studentScore(s.act,s.own,s.teamAct,s.teamDraft,game,{debate:statsOf(s.uid),raceWinner:!!s.team&&s.team.id===winTeam});
       const cur=game.round&&sc.rounds.find(r=>r.id===game.round.id);
-      return {uid:s.uid,name:s.name,nick:nick.get(s.uid),points:sc.points,level:sc.level,levelName:sc.levelName,badges:sc.badges,streak:sc.streak,best:sc.best,links:sc.links,placed:sc.placed,terms:sc.terms,team:s.team?.name||null,round:cur?{count:cur.count,hit:cur.hit}:null,debate:dd.byUid[s.uid]||{wins:0,votes:0,cast:0,rounds:0},breakdown:sc.breakdown};
+      return {uid:s.uid,name:s.name,nick:nick.get(s.uid),points:sc.points,level:sc.level,levelName:sc.levelName,badges:sc.badges,streak:sc.streak,best:sc.best,links:sc.links,placed:sc.placed,terms:sc.terms,team:s.team?.name||null,round:cur?{count:cur.count,hit:cur.hit}:null,debate:statsOf(s.uid),breakdown:sc.breakdown};
     }).sort((a,b)=>b.points-a.points||String(a.name).localeCompare(String(b.name)));
     standings.forEach((s,i)=>{s.rank=i+1});
     const names=new Map(students.map(s=>[s.uid,s.name]));
     const members=await rows(db,'SELECT uid,grp FROM debate_members WHERE post_id=? ORDER BY grp',id);
     let debateView=null;
     if(deb.round){
-      const r=deb.round,cur=dd.rounds[r.n]||{},voted=new Set(dd.votes.filter(v=>v.round===r.n).map(v=>v.voter_uid));
+      const r=deb.round,rd=await roundData(db,id,r.n,null,true),cur=rd.groups,voted=new Set(rd.votes.map(v=>v.voter_uid));
       const byGrp={};for(const mm of members)(byGrp[mm.grp]||(byGrp[mm.grp]=[])).push(mm.uid);
       debateView=[];
       for(const [g,uids] of Object.entries(byGrp)){
@@ -267,7 +265,7 @@ export async function handleGameRoutes(c){
     return json({...head,game:publicGame,debate:publicDebate,terms,standings,teams:race,debateGroups:members.length?Math.max(...members.map(x=>x.grp))+1:0,debateView,badges:BADGES,levels:LEVELS,points:POINTS,now:NOW()});
   }
   // Student
-  const out={...head,game:publicGame,debate:publicDebate,terms,badges:BADGES,levels:LEVELS,points:POINTS,now:NOW(),me:{debate:dd.byUid[user.uid]||{wins:0,votes:0,cast:0,rounds:0},raceWinner:false,team:null}};
+  const out={...head,game:publicGame,debate:publicDebate,terms,badges:BADGES,levels:LEVELS,points:POINTS,now:NOW(),me:{debate:statsOf(user.uid),raceWinner:false,team:null}};
   if(game.on||deb.on){
     const vAct=variantAct(info,me.variant),tg=await one(db,'SELECT g.id,g.name,g.draft FROM project_groups g JOIN project_group_members m ON m.group_id=g.id WHERE m.post_id=? AND m.uid=?',id,user.uid).catch(()=>null);
     const myOwn=fitDraft(ownBoard(me),vAct),myTeam=tg?parse(tg.draft):null;
@@ -284,7 +282,7 @@ export async function handleGameRoutes(c){
       if(game.leaderboard!=='off'){
         const keys=[];for(const s of students)keys.push(await sha(id+':nick:'+s.uid));
         const order=students.map((s,i)=>({s,k:keys[i]})).sort((a,b)=>a.k<b.k?-1:1),nicks=nicknames(order.map(x=>x.k)),nick=new Map(order.map((x,i)=>[x.s.uid,nicks[i]]));
-        const all=students.map(s=>({uid:s.uid,name:game.leaderboard==='names'?shortName(s.name):nick.get(s.uid),points:studentScore(s.act,s.own,s.teamAct,s.teamDraft,game,{debate:dd.byUid[s.uid],raceWinner:!!s.team&&s.team.id===winTeam}).points}))
+        const all=students.map(s=>({uid:s.uid,name:game.leaderboard==='names'?shortName(s.name):nick.get(s.uid),points:studentScore(s.act,s.own,s.teamAct,s.teamDraft,game,{debate:statsOf(s.uid),raceWinner:!!s.team&&s.team.id===winTeam}).points}))
           .sort((a,b)=>b.points-a.points||String(a.name).localeCompare(String(b.name)));
         all.forEach((s,i)=>{s.rank=i+1});
         const mineRow=all.find(s=>s.uid===user.uid);
@@ -295,8 +293,8 @@ export async function handleGameRoutes(c){
   if(deb.on&&deb.round){
     const r=deb.round,grp=await ensureMember(db,id,user.uid);
     const size=(await one(db,'SELECT COUNT(*) AS n FROM debate_members WHERE post_id=? AND grp=?',id,grp)).n;
-    const ents=await labelled(id,r.n,(dd.rounds[r.n]||{})[grp]||[]);
-    const myVote=dd.votes.find(v=>v.round===r.n&&v.voter_uid===user.uid);
+    const ents=await labelled(id,r.n,(await roundData(db,id,r.n,grp,r.phase==='results')).groups[grp]||[]);
+    const myVote=await one(db,'SELECT target_uid FROM debate_votes WHERE post_id=? AND round=? AND voter_uid=?',id,r.n,user.uid);
     const voteOpen=r.phase==='vote'||(deb.mode==='async'&&r.phase==='defend'&&ents.length>=size&&size>=2);
     const names=r.phase==='results'?new Map((await rows(db,'SELECT uid,name FROM users WHERE uid IN (SELECT uid FROM debate_entries WHERE post_id=? AND round=? AND grp=?)',id,r.n,grp)).map(u=>[u.uid,u.name])):null;
     const myEntry=ents.find(e=>e.uid===user.uid);
