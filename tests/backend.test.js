@@ -11,7 +11,7 @@ function harness(){
  sql.exec(readFileSync(new URL('../migrations/0003_group_boards.sql',import.meta.url),'utf8'));
  sql.exec(readFileSync(new URL('../migrations/0004_shares.sql',import.meta.url),'utf8'));
  sql.exec(readFileSync(new URL('../migrations/0005_multiple_posts.sql',import.meta.url),'utf8'));
- sql.exec(readFileSync(new URL('../migrations/0006_feedback.sql',import.meta.url),'utf8'));
+ sql.exec(readFileSync(new URL('../migrations/0006_feedback.sql',import.meta.url),'utf8'));sql.exec(readFileSync(new URL('../migrations/0007_classroom_tools.sql',import.meta.url),'utf8'));
  const DB = {
   prepare(query) {
    return {
@@ -34,6 +34,7 @@ function harness(){
    let claims;try{claims=JSON.parse(Buffer.from(body.idToken.split('.')[1],'base64url'))}catch{return Response.json({}, {status:400})}
    if(body.idToken.endsWith('.invalid'))return Response.json({}, {status:400});
    const emailOnly=/^(mail|unverified)/.test(claims.sub);
+   if(claims.sub.startsWith('ms'))return Response.json({users:[{localId:claims.sub,email:claims.sub+'@school.example',displayName:'Name '+claims.sub,emailVerified:false,providerUserInfo:[{providerId:'microsoft.com',rawId:'m-'+claims.sub}]}]});
    return Response.json({users:[{localId:claims.sub,email:claims.sub+'@example.org',displayName:'Name '+claims.sub,emailVerified:!claims.sub.startsWith('unverified'),providerUserInfo:emailOnly?[{providerId:'password',rawId:claims.sub+'@example.org'}]:[{providerId:'google.com',rawId:'g-'+claims.sub}]}]});
   }
   const uid=(options.headers.Authorization||'').replace('Bearer access-','');
@@ -543,4 +544,112 @@ test('users can export their data and delete their account and everything it own
  const del=await h.call('teacher','account/delete',{confirm:'DELETE'},{access:false});assert.equal(del.status,200);assert.equal(del.body.postings,1);
  for(const t of ['posts','submissions','workspaces','shares'])assert.equal(h.sql.prepare('SELECT count(*) n FROM '+t).get().n,0,t);
  assert.equal(h.sql.prepare('SELECT count(*) n FROM users WHERE uid=?').get('teacher').n,0);
+});
+
+// ---------------- 4.7 ----------------
+const threeTerms=()=>manualWorkspace({activities:[{id:'act-m',title:'Cells',terms:[{id:1,term:'Nucleus',def:'Control center'},{id:2,term:'Membrane',def:'Boundary'},{id:3,term:'Ribosome',def:'Builds proteins'}],minWords:2,minTerms:'',starters:true,reflect:true}]});
+const kidJoin=async(h,uid,code)=>{await h.call(uid,'profile',{role:'student'},{access:false});return (await h.call(uid,'resolve',{code},{access:false})).body.id};
+test('differentiated versions: students see their version’s terms, teachers move students, and work is trimmed to fit',async()=>{
+ const h=harness();await h.call('teacher','profile',{role:'teacher'});await h.call('teacher','workspace',{workspace:threeTerms(),revision:0});
+ assert.equal((await h.call('teacher','posts/new',{activityId:'act-m',classId:'club',tz:'UTC',versions:[{name:'Core',terms:[1,2,3]},{name:'Support',terms:[]}]},{access:false})).status,400);
+ const p=await h.call('teacher','posts/new',{activityId:'act-m',classId:'club',tz:'UTC',versions:[{name:'Core',terms:[1,2,3]},{name:'Support',terms:[1,2,99],starters:true,minWords:1}]},{access:false});
+ assert.equal(p.status,201);const id=p.body.id;
+ await kidJoin(h,'kid',p.body.code);
+ let v=(await h.call('kid','posts/'+id,undefined,{access:false})).body;
+ assert.equal(v.assignment.act.terms.length,3);assert.equal(v.assignment.asg.versions,undefined,'version names stay with the teacher');
+ assert.equal((await h.call('kid','posts/'+id+'/version',{studentUid:'kid',version:1},{access:false})).status,403);
+ const mv=await h.call('teacher','posts/'+id+'/version',{studentUids:['kid'],version:1},{access:false});assert.equal(mv.body.changed,1);assert.equal(mv.body.name,'Support');
+ v=(await h.call('kid','posts/'+id,undefined,{access:false})).body;
+ assert.deepEqual(v.assignment.act.terms.map(t=>t.id),[1,2]);assert.equal(v.assignment.act.minWords,1);
+ const board={name:'x',place:{1:[0,0],2:[1,0],3:[0,1]},conns:{'1-2':{why:'Boundary protects control.',at:1},'1-3':{why:'Both inside cell.',at:2}},view:{},
+  reflection:{proud:'  The membrane link  ',hard:'Ribosomes'},history:[[0,1,0,0],[900,2,1,0],[1500,'1-2'],[2000,3,0,1],[2100,'bad'],['x',1,0,0],[2500,2,null,null],[2600,2,1,0]],startedAt:'2026-10-30T10:00:00Z'};
+ assert.equal((await h.call('kid','posts/'+id+'/submit',{draft:board},{access:false})).status,200);
+ const sub=(await h.call('teacher','submissions?postId='+id,undefined,{access:false})).body.submissions[0];
+ assert.deepEqual(Object.keys(sub.placements),['1','2'],'term 3 is not in this version');
+ assert.equal(sub.connections.length,1);assert.equal(sub.version,'Support');
+ assert.deepEqual(sub.reflection,{proud:'The membrane link',hard:'Ribosomes'});
+ assert.deepEqual(sub.history,[[0,1,0,0],[900,2,1,0],[1500,'1-2'],[2500,2,null,null],[2600,2,1,0]]);
+ const pr=(await h.call('teacher','posts/'+id+'/progress',undefined,{access:false})).body;
+ assert.equal(pr.students[0].variant,1);assert.deepEqual(pr.versions,[{name:'Core',terms:3},{name:'Support',terms:2}]);
+ const ed=await h.call('teacher','posts/'+id+'/edit',{versions:null},{access:false});assert.equal(ed.status,200);assert.equal(ed.body.versions,null);
+ assert.equal((await h.call('kid','posts/'+id,undefined,{access:false})).body.assignment.act.terms.length,3);
+});
+test('gallery walk: anonymous boards for students who turned in, glow/grow comments, teacher moderation',async()=>{
+ const h=harness(),id=await manualSetup(h);
+ for(const k of ['kidA','kidB','kidC'])await kidJoin(h,k,'CLUB23');
+ for(const k of ['kidA','kidB'])assert.equal((await h.call(k,'posts/'+id+'/submit',{draft:h.draft},{access:false})).status,200);
+ assert.equal((await h.call('kidA','posts/'+id+'/gallery',undefined,{access:false})).body.code,'gallery-closed');
+ assert.equal((await h.call('kidA','posts/'+id+'/gallery/open',{open:true},{access:false})).status,404);
+ assert.equal((await h.call('teacher','posts/'+id+'/gallery/open',{open:true},{access:false})).body.open,true);
+ assert.equal((await h.call('kidC','posts/'+id+'/gallery',undefined,{access:false})).body.code,'gallery-turn-in');
+ assert.equal((await h.call('stranger','posts/'+id+'/gallery',undefined,{access:false})).status,404);
+ const g=await h.call('kidA','posts/'+id+'/gallery',undefined,{access:false});assert.equal(g.status,200);
+ const raw=JSON.stringify(g.body);for(const leak of ['kidA','kidB','Name ','example.org'])assert.ok(!raw.includes(leak),'gallery leaks '+leak);
+ assert.deepEqual(g.body.boards.map(b=>b.label),['Board A','Board B']);
+ const own=g.body.boards.find(b=>b.mine),other=g.body.boards.find(b=>!b.mine);
+ assert.equal((await h.call('kidA','posts/'+id+'/gallery/comment',{board:own.board,kind:'glow',text:'Nice work here'},{access:false})).status,400);
+ assert.equal((await h.call('kidA','posts/'+id+'/gallery/comment',{board:other.board,kind:'meh',text:'Nice work here'},{access:false})).status,400);
+ const c=await h.call('kidA','posts/'+id+'/gallery/comment',{board:other.board,kind:'grow',text:'Say how memory changes.'},{access:false});assert.equal(c.status,201);
+ const tv=(await h.call('teacher','posts/'+id+'/gallery',undefined,{access:false})).body;
+ const tc=tv.boards.find(b=>b.board===other.board).comments[0];assert.equal(tc.author,'Name kidA');assert.equal(tv.boards.find(b=>b.board===other.board).name,'Name kidB');
+ let kb=(await h.call('kidB','posts/'+id+'/gallery',undefined,{access:false})).body.boards.find(b=>b.mine);assert.equal(kb.comments[0].text,'Say how memory changes.');assert.equal(kb.comments[0].author,undefined);
+ assert.equal((await h.call('teacher','posts/'+id+'/gallery/hide',{id:tc.id},{access:false})).body.hidden,true);
+ kb=(await h.call('kidB','posts/'+id+'/gallery',undefined,{access:false})).body.boards.find(b=>b.mine);assert.equal(kb.comments.length,0);
+ await h.call('teacher','posts/'+id+'/gallery/open',{open:false},{access:false});
+ assert.equal((await h.call('kidA','posts/'+id+'/gallery',undefined,{access:false})).status,403);
+ assert.equal((await h.call('kidA','account/delete',{confirm:'DELETE'},{access:false})).status,200);
+ assert.equal(h.sql.prepare('SELECT count(*) n FROM peer_comments').get().n,0);
+});
+test('the public library lists shared Hex Spaces, searches them, and hides ones reported by three teachers',async()=>{
+ const h=harness();await h.call('teacher','profile',{role:'teacher'});await h.call('teacher','workspace',{workspace:threeTerms(),revision:0});
+ const sh=await h.call('teacher','shares',{activityId:'act-m'},{access:false});const code=sh.body.share.code;
+ assert.equal((await h.call('teacher','library',{code,subject:'Cooking',grade:'6-8'},{access:false})).status,400);
+ assert.equal((await h.call('teacher','library',{code,subject:'Science',grade:'6-8',standards:'MS-LS1-2',summary:'Cell parts and jobs'},{access:false})).status,201);
+ await h.call('t2','profile',{role:'teacher'},{access:false});
+ assert.equal((await h.call('t2','library',{code,subject:'Science',grade:'6-8'},{access:false})).status,404);
+ let list=(await h.call('t2','library?q=ribosome',undefined,{access:false})).body.items;assert.equal(list.length,1,'term text is searchable');assert.equal(list[0].sharedBy,'Name teacher');
+ assert.equal((await h.call('t2','library?subject=Math',undefined,{access:false})).body.items.length,0);
+ assert.equal((await h.call('t2','library?q=ls1-2',undefined,{access:false})).body.items.length,1);
+ await h.call('kid','profile',{role:'student'},{access:false});assert.equal((await h.call('kid','library',undefined,{access:false})).status,403);
+ assert.equal((await h.call('teacher','library/'+code+'/report',{reason:'x'},{access:false})).status,400);
+ for(const t of ['t2','t3','t3','t4']){await h.call(t,'profile',{role:'teacher'},{access:false});assert.equal((await h.call(t,'library/'+code+'/report',{reason:'Wrong definitions'},{access:false})).status,200)}
+ assert.equal((await h.call('t5','library',undefined,{access:false})).status,403);
+ await h.call('t5','profile',{role:'teacher'},{access:false});
+ assert.equal((await h.call('t5','library',undefined,{access:false})).body.items.length,0,'three different reports hide it');
+ assert.equal((await h.call('teacher','library/mine',undefined,{access:false})).body.items[0].hiddenByReports,true);
+ assert.equal((await h.call('teacher','library/'+code+'/unlist',{},{access:false})).body.listed,false);
+});
+test('translation caches each text, limits use and works for any signed-in user',async()=>{
+ const h=harness();let calls=0;h.env.AI={run:async(model,inp)=>{calls++;assert.equal(model,'@cf/meta/m2m100-1.2b');return {translated_text:'ES:'+inp.text}}};
+ await h.call('kid','profile',{role:'student'},{access:false});
+ assert.equal((await h.call('kid','translate',{lang:'xx',texts:['a']},{access:false})).status,400);
+ const r=await h.call('kid','translate',{lang:'es',texts:['Nucleus','Control center','Nucleus','']},{access:false});
+ assert.deepEqual(r.body.translations,['ES:Nucleus','ES:Control center','ES:Nucleus','']);assert.equal(calls,2);
+ await h.call('kid','translate',{lang:'es',texts:['Nucleus']},{access:false});assert.equal(calls,2,'cached');
+ h.env.AI={run:async()=>{throw new Error('down')}};
+ assert.equal((await h.call('kid','translate',{lang:'es',texts:['New words']},{access:false})).status,503);
+});
+test('site owner stats, public config and Microsoft accounts',async()=>{
+ const h=harness();h.env.OWNER_EMAILS='Teacher@example.org, other@x.org';h.env.CF_ANALYTICS_TOKEN='abc123';
+ const cfg=await h.call(null,'config');assert.equal(cfg.status,200);assert.equal(cfg.body.analyticsToken,'abc123');
+ await h.call('teacher','profile',{role:'teacher'});assert.equal((await h.call('teacher','me')).body.owner,true);
+ const st=await h.call('teacher','owner/stats',undefined,{access:false});assert.equal(st.status,200);assert.equal(st.body.teachers,1);
+ assert.equal((await h.call('t2','owner/stats',undefined,{access:false})).status,404);assert.equal((await h.call('t2','me')).body.owner,false);
+ const ms=await h.call('msTeacher','me',undefined,{access:false});assert.equal(ms.status,200,'Microsoft accounts need no email-verification step');
+ assert.equal((await h.call('msTeacher','profile',{role:'teacher'},{access:false})).status,200);
+});
+test('student supports chosen when posting: definitions are removed for students, switches can change later',async()=>{
+ const h=harness();await h.call('teacher','profile',{role:'teacher'});await h.call('teacher','workspace',{workspace:threeTerms(),revision:0});
+ const p=await h.call('teacher','posts/new',{activityId:'act-m',classId:'club',tz:'UTC',options:{defs:false,starters:false,gallery:false,bogus:true}},{access:false});
+ assert.equal(p.status,201);const id=p.body.id;await kidJoin(h,'kid',p.body.code);
+ let a=(await h.call('kid','posts/'+id,undefined,{access:false})).body.assignment.act;
+ assert.ok(a.terms.every(t=>t.def===''),'definitions never reach the student');assert.equal(a.showDefs,false);assert.equal(a.starters,false);assert.equal(a.readAloud,true);assert.equal(a.reflect,true);
+ assert.equal((await h.call('teacher','posts/'+id,undefined,{access:false})).body.assignment.act.terms[0].def,'Control center','teacher still sees them');
+ assert.equal((await h.call('teacher','posts/'+id+'/gallery/open',{open:true},{access:false})).body.code,'gallery-off');
+ const ed=await h.call('teacher','posts/'+id+'/edit',{options:{defs:true,gallery:true}},{access:false});
+ assert.deepEqual(ed.body.options,{defs:true,starters:false,readAloud:true,translate:true,reflect:true,gallery:true});
+ a=(await h.call('kid','posts/'+id,undefined,{access:false})).body.assignment.act;assert.equal(a.terms[0].def,'Control center');
+ assert.equal((await h.call('teacher','posts/'+id+'/gallery/open',{open:true},{access:false})).status,200);
+ assert.equal((await h.call('kid','posts/'+id+'/submit',{draft:{name:'',place:{1:[0,0],2:[1,0],3:[0,1]},conns:{'1-2':{why:'Two words.',at:1},'1-3':{why:'Two more.',at:2}},view:{}}},{access:false})).status,200);
+ const sub=(await h.call('teacher','submissions?postId='+id,undefined,{access:false})).body.submissions[0];assert.equal(sub.activitySnapshot.terms[0].def,'Control center');
 });

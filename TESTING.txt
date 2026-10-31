@@ -1,10 +1,21 @@
-VERIFICATION — VERSION 4.6.1
+VERIFICATION — VERSION 4.7.0
 ============================
 108 automated tests pass (52 backend, 56 frontend) using in-memory SQLite,
 simulated Firebase/Classroom responses, and execution of the actual frontend
 script in a DOM test harness. No real Google Classroom assignment was created
 or modified by these tests.
 
+New in 4.7.0: 123 automated tests. Backend: versions (trimmed boards, teacher-only
+moves, version names hidden), student supports (definitions stripped server-side,
+later changes), gallery (anonymous boards, turn-in required, own-board comments
+refused, teacher authors/hide, deletion cascade), library (search by terms and
+standards, three-report hide, unlist), translation cache and limits, owner stats,
+public config, Microsoft accounts. Frontend: supports and versions in the Post
+dialog, starters, history recording and replay states, reflection, print page
+escaping, grader extras, gallery naming, Microsoft button. End-to-end in Chromium
+against the real Worker: print page, posting with definitions off and two
+versions, translation, starters, reflection, versions panel, gallery open and
+comment, grader reflection and replay, library publish/search, site stats.
 New in 4.6.1: AI-suggested scores (4.6) removed for now; vocabulary generation unchanged.
 New in 4.5.0: feedback scores/comments/revision and student view; progress for
 Present mode (owner only); data export; account deletion cascading through

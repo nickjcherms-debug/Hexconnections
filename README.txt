@@ -116,6 +116,30 @@ Tiles and text retain their original size, and zoom/scroll remain available.
 A hexagon still has six sides: extra space supports more arrangements, not more
 than six simultaneous neighboring tiles per hexagon.
 
+CLASSROOM TOOLS (4.7)
+- Student supports, chosen each time you post (Post dialog > Student supports),
+  and changeable later from the posting page: show definitions, sentence
+  starters, read aloud, translate, reflection when turning in, allow a gallery
+  walk. Switching definitions off removes them on the server, not just on screen.
+  A Hex Space's Setup tab sets the defaults for starters and reflection.
+- Printable tiles: Setup tab or posting page > Print tiles (with or without
+  definitions and Depth & Complexity hexagons). Print or save as PDF.
+- Versions: Post dialog > Differentiate gives up to 4 versions with different
+  terms (and starters on/off). Everyone starts in the first; move students on
+  the posting page. Students never see version names.
+- Gallery walk: open it from the posting page. Students who turned in see
+  classmates' boards as Board A, B, C… and leave Glow/Grow comments; teachers
+  see authors and can hide comments.
+- Replay: in the grader, "Watch how it was built" steps through placements and
+  connections. Student reflections appear in the grader too.
+- Library (menu > Library): search shared Hex Spaces by words, subject, grade or
+  standard and save a copy. Add yours from Share > Add to the public library.
+  Three reports from different teachers hide a listing.
+- Share to Classroom buttons on code-only postings. Optional Microsoft sign-in.
+- Works offline: the app shell is cached; boards keep saving on the device and
+  sync when the connection returns. Turning in needs a connection.
+- Site stats for owners (counts only) and optional Cloudflare Web Analytics.
+
 FREE-ALLOWANCE VOCABULARY GENERATION
 Enable the AI binding and apply migration 0002 as described in DEPLOYMENT.txt.
 The generator accepts a topic, grade, subject, 5-40 terms and optional notes.

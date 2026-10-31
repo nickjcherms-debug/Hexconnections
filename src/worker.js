@@ -4,6 +4,7 @@ import { generateVocabulary } from './vocabulary.js';
 import {handleShareRoutes} from './shares.js';
 import {handlePostingRoutes,assertStarted,isLate} from './postings.js';
 import {handleTeachingRoutes} from './teaching.js';
+import {handleClassToolRoutes,studentAct,variantAct,fitDraft,cleanReflection,cleanHistory,isOwner} from './classtools.js';
 // Cloudflare Worker. Firebase verifies accounts; every SQL query enforces ownership.
 // Google access tokens are used only for the current request and never persisted.
 const NOW = () => new Date().toISOString();
@@ -61,14 +62,16 @@ async function authenticate(request, env, net) {
   const account = data.users?.[0];
   if (!res.ok || !account?.localId || account.disabled) fail(401, 'Sign in again.', 'sign-in');
   // Email + password accounts must confirm their address before using the site.
-  if (!account.emailVerified) fail(401, 'Verify your email address first. Open the link we emailed you, then continue.', 'email-unverified');
+  const microsoft = (account.providerUserInfo || []).find(p => p.providerId === 'microsoft.com');
+  // Microsoft sign-in proves the account itself; Firebase doesn't mark those emails verified.
+  if (!account.emailVerified && !microsoft?.rawId) fail(401, 'Verify your email address first. Open the link we emailed you, then continue.', 'email-unverified');
   let claims;
   try { const part=token.split('.')[1]; claims=JSON.parse(atob(part.replace(/-/g,'+').replace(/_/g,'/'))); } catch { fail(401,'Invalid account token.','sign-in'); }
   if(claims.aud!==env.FIREBASE_PROJECT_ID || claims.iss!=='https://securetoken.google.com/'+env.FIREBASE_PROJECT_ID || claims.sub!==account.localId || claims.exp<=Date.now()/1000) fail(401,'Sign in to this Firebase project.','sign-in');
   const providers = account.providerUserInfo || [];
   const google = providers.find(p => p.providerId === 'google.com');
   const password = providers.find(p => p.providerId === 'password');
-  if (!google?.rawId && !password) fail(403, 'Sign in with Google or with your email and password.');
+  if (!google?.rawId && !password && !microsoft?.rawId) fail(403, 'Sign in with Google, Microsoft or your email and password.');
   // googleSub is empty for email-only accounts until they connect a Google account.
   return { uid: account.localId, email: account.email || '', name: account.displayName || account.email || '', googleSub: google?.rawId || '' };
 }
@@ -156,10 +159,13 @@ function boardDraft(value, act) {
     if (pair.length !== 2 || Number(pair[0]) >= Number(pair[1]) || !pair.every(id => allowed.has(id)) || !c || typeof c.why !== 'string' || c.why.length > 600) fail(400, 'Invalid connection.');
     conns[key] = { why: c.why, at: Number.isFinite(c.at) ? c.at : 0 };
   }
-  return { name: String(value.name || '').slice(0,60), place, conns, view: { orient: value.view?.orient === 'flat' ? 'flat' : 'pointy' }, _savedAt: NOW(), submittedAt: value.submittedAt || null };
+  const out = { name: String(value.name || '').slice(0,60), place, conns, view: { orient: value.view?.orient === 'flat' ? 'flat' : 'pointy' }, _savedAt: NOW(), submittedAt: value.submittedAt || null };
+  const reflection = cleanReflection(value.reflection); if (reflection) out.reflection = reflection;
+  const history = cleanHistory(value.history, allowed); if (history.length) { out.history = history; out.startedAt = typeof value.startedAt === 'string' ? value.startedAt.slice(0,40) : null; }
+  return out;
 }
-function submissionPayload(draft, post, user) {
-  const info = parse(post.body), act = info.act;
+function submissionPayload(draft, post, user, variant) {
+  const info = parse(post.body), act = variant==='all' ? info.act : variantAct(info, variant);
   const validConns = [];
   for (const [key,c] of Object.entries(draft.conns)) {
     const [a,b] = key.split('-').map(Number), p = draft.place[a], q = draft.place[b];
@@ -173,7 +179,9 @@ function submissionPayload(draft, post, user) {
   if (used < need) fail(400, 'Use the required number of terms with justified connections before submitting.');
   return { activitySnapshot:act,activityId:act.id,activityTitle:act.title,classId:info.cls.id,className:info.cls.name,period:info.cls.name,
     name:user.name,email:user.email,submittedAt:NOW(),placements:draft.place,connections:validConns,termsUsed:used,
-    due:info.asg.due || '',dueAt:info.asg.dueAt || '',late:isLate(info.asg) };
+    due:info.asg.due || '',dueAt:info.asg.dueAt || '',late:isLate(info.asg),
+    ...(draft.reflection?{reflection:draft.reflection}:{}),...(draft.history?{history:draft.history,startedAt:draft.startedAt||null}:{}),
+    ...(variant!=='all'&&info.asg.versions?.length>1?{version:info.asg.versions[Number.isInteger(variant)&&variant<info.asg.versions.length?variant:0].name}:{}) };
 }
 async function studentInPost(db, g, user, post) {
   if (post.status !== 'PUBLISHED') fail(404, 'This assignment is unavailable.');
@@ -212,6 +220,7 @@ export async function handle(request, env, net = fetch) {
     if (!['GET','POST'].includes(request.method)) fail(405,'Unsupported method.');
     const origin = request.headers.get('Origin');
     if (origin && origin !== url.origin) fail(403,'Use this site directly.');
+    if (url.pathname==='/api/config' && request.method==='GET') return json({analyticsToken:String(env.CF_ANALYTICS_TOKEN||'').slice(0,64),microsoft:env.MICROSOFT_SIGN_IN==='on'});
     if (!env.DB || !env.FIREBASE_API_KEY) fail(503,'The site owner needs to deploy the Cloudflare backend and database.','backend-setup');
     const user = await authenticate(request,env,net), db=env.DB;
     await run(db,'INSERT INTO users(uid,email,name,created_at) VALUES(?,?,?,?) ON CONFLICT(uid) DO UPDATE SET email=excluded.email,name=excluded.name',user.uid,user.email,user.name,NOW());
@@ -223,7 +232,8 @@ export async function handle(request, env, net = fetch) {
     const teachingRoute=await handleTeachingRoutes(context);if(teachingRoute)return teachingRoute;
     const dashboard=await handleDashboardRoutes(context);if(dashboard)return dashboard;
     const groupRoute=await handleGroupRoutes(context);if(groupRoute)return groupRoute;
-    if (path==='/api/me' && request.method==='GET') return json({profile});
+    const toolRoute=await handleClassToolRoutes({...context,env});if(toolRoute)return toolRoute;
+    if (path==='/api/me' && request.method==='GET') return json({profile,owner:isOwner(env,user)});
     if(path==='/api/register' && request.method==='POST'){
       const {role}=await input(request);
       if(!['teacher','student'].includes(role)) fail(400,'Choose a teacher or student account.');
@@ -375,10 +385,12 @@ export async function handle(request, env, net = fetch) {
           if(post.owner_uid!==user.uid) await studentInPost(db,g,user,post);
           else await g('/courses/'+enc(post.course_id)+'/teachers/me');
         }
-        const s=await one(db,'SELECT draft,status,grade,classroom_status,feedback FROM submissions WHERE post_id=? AND uid=?',id,user.uid);
+        const s=await one(db,'SELECT draft,status,grade,classroom_status,feedback,variant FROM submissions WHERE post_id=? AND uid=?',id,user.uid);
+        const mineAct=post.owner_uid===user.uid?info.act:studentAct(info,s?.variant);
         const group=await groupForUser(db,id,user.uid);
         const groupData=group?await (await handleGroupRoutes({...context,url:new URL('/api/posts/'+id+'/group',url.origin)})).json():null;
-        return json({assignment:{...info,id,ownerUid:post.owner_uid},draft:parse(s?.draft),status:s?.status||'DRAFT',classroomStatus:s?.classroom_status,grade:s?.grade,feedback:parse(s?.feedback),maxPoints:post.max_points,group:groupData?.group||null});
+        const studentAsg=post.owner_uid===user.uid?info.asg:{...info.asg,versions:undefined};
+        return json({assignment:{...info,act:mineAct,asg:studentAsg,id,ownerUid:post.owner_uid},draft:fitDraft(parse(s?.draft),mineAct),status:s?.status||'DRAFT',classroomStatus:s?.classroom_status,grade:s?.grade,feedback:parse(s?.feedback),maxPoints:post.max_points,group:groupData?.group||null});
       }
       if(action==='grade' && request.method==='POST') {
         if(post.owner_uid!==user.uid) fail(403,'Only this assignment’s owner may grade it.');
@@ -402,17 +414,17 @@ export async function handle(request, env, net = fetch) {
         return json({grade:b.grade});
       }
       if(action==='draft' && request.method==='POST') {
-        const s=await one(db,'SELECT uid FROM submissions WHERE post_id=? AND uid=?',id,user.uid);
+        const s=await one(db,'SELECT uid,variant FROM submissions WHERE post_id=? AND uid=?',id,user.uid);
         if(!s) fail(403,'Open the assignment through Google Classroom first.');
         if(info.asg.open===false || post.status!=='PUBLISHED') fail(403,'This assignment is closed.');
         assertStarted(info,fail);
-        const b=await input(request), draft=boardDraft(b.draft,info.act);
+        const b=await input(request), draft=boardDraft(fitDraft(b.draft,variantAct(info,s.variant)),variantAct(info,s.variant));
         await run(db,'UPDATE submissions SET draft=?,updated_at=? WHERE post_id=? AND uid=?',JSON.stringify(draft),NOW(),id,user.uid);
         return json({savedAt:draft._savedAt});
       }
       if(['submit','reclaim'].includes(action) && request.method==='POST' && isManual(post)) {
         await manualMember(db,user,post);
-        const row=await one(db,'SELECT status,payload FROM submissions WHERE post_id=? AND uid=?',id,user.uid);
+        const row=await one(db,'SELECT status,payload,variant FROM submissions WHERE post_id=? AND uid=?',id,user.uid);
         if(action==='reclaim') {
           if(!['TURNED_IN','GRADED'].includes(row.status)) fail(409,'This assignment is already open for editing.');
           await run(db,'UPDATE submissions SET status=?,classroom_status=?,grade=NULL WHERE post_id=? AND uid=?','DRAFT','RECLAIMED_BY_STUDENT',id,user.uid);
@@ -423,7 +435,7 @@ export async function handle(request, env, net = fetch) {
         if(row.status==='TURNED_IN') fail(409,'Reclaim the assignment before changing submitted work.','needs-reclaim');
         const b=await input(request),group=await groupForUser(db,id,user.uid);
         if(group&&b.groupRevision!==group.revision)fail(409,'Save and refresh the shared board before turning it in.','group-not-saved');
-        const draft=boardDraft(group?parse(group.draft):b.draft,info.act),payload=submissionPayload(draft,post,user);
+        const vAct=group?info.act:variantAct(info,row.variant),draft=boardDraft(group?parse(group.draft):fitDraft(b.draft,vAct),vAct),payload=submissionPayload(draft,post,user,group?'all':row.variant);
         if(group)payload.group={id:group.id,name:group.name,revision:group.revision};
         await run(db,'UPDATE submissions SET draft=?,payload=?,status=?,classroom_status=?,updated_at=? WHERE post_id=? AND uid=?',JSON.stringify(draft),JSON.stringify(payload),'TURNED_IN','TURNED_IN',NOW(),id,user.uid);
         return json({submittedAt:payload.submittedAt});
@@ -449,7 +461,8 @@ export async function handle(request, env, net = fetch) {
         }
         const b=await input(request),group=await groupForUser(db,id,user.uid);
         if(group&&b.groupRevision!==group.revision)fail(409,'Save and refresh the shared board before turning it in.','group-not-saved');
-        const draft=boardDraft(group?parse(group.draft):b.draft,info.act),payload=submissionPayload(draft,post,user);
+        const vr=group?null:(await one(db,'SELECT variant FROM submissions WHERE post_id=? AND uid=?',id,user.uid))?.variant;
+        const vAct=group?info.act:variantAct(info,vr),draft=boardDraft(group?parse(group.draft):fitDraft(b.draft,vAct),vAct),payload=submissionPayload(draft,post,user,group?'all':vr);
         if(group)payload.group={id:group.id,name:group.name,revision:group.revision};
         // Save first. If Classroom rejects turn-in, work stays safe and status says pending.
         await run(db,'UPDATE submissions SET draft=?,payload=?,status=?,updated_at=? WHERE post_id=? AND uid=?',JSON.stringify(draft),JSON.stringify(payload),'SAVED_PENDING_CLASSROOM',NOW(),id,user.uid);

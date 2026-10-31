@@ -33,6 +33,7 @@ function make(){
  getData(){return DATA},setData(w){DATA=w},setView(fn){viewSubmission=fn},
  setWork(w){TW=w;TS.rows={};TS.sel=w.activities[0].id},setRenderTeacher(fn){renderTeacher=fn},
  setApi(fn){platformApi=fn},setTeacher(fn){startTeacher=fn;teacherDashboard=fn},
+ v47:{supportsEditor,versionsEditor,printTileHTML,replayStates,startersFor,recordHistory,graderExtras,drawGallery,studentTools,writingHelps,hexMap,TR,CFG,renderLogin:()=>renderLogin(),getST(){return ST}},
  v4:{openGrader,insightsData,exportGrades,setDownload(fn){downloadBlob=fn},setPostState(v){PX.postState=v},accountItems:(r)=>accountItems(r,false),folderPicker:a=>folderPicker(a),deleteHexSpace:a=>deleteHexSpace(a),publishNow:()=>publishNow(),setTeacherData(v){PX.teacherData=v},openPostDialog,studentCard:a=>studentAssignmentCard(a),setPosts(v){PX.posts=v},keyToPath,pathToKey,navItems:()=>navItems(),startPage,renderHome,hexSpaceSidebar,newFolder,deleteFolder,moveActivity,folderById,childFolders,folderActs,canMoveFolder,syncClassroomClasses,importClassroomClasses,sharePreview,copyShared,postManual,codesPane,TS,getTW(){return TW},startTeacher(){startTeacher()},renderTeacher(){renderTeacher()},setSave(fn){saveWorkspaceCloud=fn},setTS(o){Object.assign(TS,o)}}};`;
  vm.runInContext(script.replace(/startPage\(\);\nroute\(\);\nbootGoogle\(\);\n\}\)\(\);\s*$/,hooks+'})();'),context);
  const h=context.hx;
@@ -374,12 +375,12 @@ test('logged-out visits to private pages show the homepage and resume after logi
 test('menus share one layout: Home first, then role-specific tabs',()=>{
  const labels=(h)=>h.v4.navItems().map(i=>i.label).join('|');
  let {h}=make();h.GA.ready=true;assert.equal(labels(h),'Home|How it works|Depth & Complexity|Enter a class code|Log in|New Hex Space');
- ({h}=make());h.GA.user={uid:'t'};h.PX.profile={role:'teacher'};assert.equal(labels(h),'Home|Classes|Hex Space|Shared links|+ New Hex Space');
+ ({h}=make());h.GA.user={uid:'t'};h.PX.profile={role:'teacher'};assert.equal(labels(h),'Home|Classes|Hex Space|Shared links|Library|+ New Hex Space');
  ({h}=make());h.GA.user={uid:'s'};h.PX.profile={role:'student'};assert.equal(labels(h),'Home|My assignments|Enter a class code');
 });
 test('clean page addresses map both ways and old # links still resolve',()=>{
  const {h}=make();const v=h.v4;
- const pairs=[['#home','/'],['#signin','/login'],['#signup','/signup'],['#code','/code'],['#c-ABC234','/code/ABC234'],['#share-K7MQ2PXRT4','/share/K7MQ2PXRT4'],['#teacher','/teacher/classes'],['#teacher/class-g1','/teacher/classes/g1'],['#teacher/post-p1','/teacher/assignments/p1'],['#teacher/editor','/teacher/hex-space'],['#teacher/edit-a1','/teacher/hex-space/a1'],['#teacher/new','/teacher/hex-space/new'],['#teacher/shared','/teacher/shared'],['','/student/assignments'],['#a-p1','/student/assignments/p1'],['#review-p1~u%201','/teacher/review/p1/u%201']];
+ const pairs=[['#teacher/library','/teacher/library'],['#owner','/owner'],['#gallery-p1','/gallery/p1'],['#home','/'],['#signin','/login'],['#signup','/signup'],['#code','/code'],['#c-ABC234','/code/ABC234'],['#share-K7MQ2PXRT4','/share/K7MQ2PXRT4'],['#teacher','/teacher/classes'],['#teacher/class-g1','/teacher/classes/g1'],['#teacher/post-p1','/teacher/assignments/p1'],['#teacher/editor','/teacher/hex-space'],['#teacher/edit-a1','/teacher/hex-space/a1'],['#teacher/new','/teacher/hex-space/new'],['#teacher/shared','/teacher/shared'],['','/student/assignments'],['#a-p1','/student/assignments/p1'],['#review-p1~u%201','/teacher/review/p1/u%201']];
  for(const [key,path] of pairs){assert.equal(v.keyToPath(key),path,key);assert.equal(v.pathToKey(path),key,path)}
  assert.equal(v.pathToKey('/teacher'),'#teacher');assert.equal(v.pathToKey('/nope/x'),'#home');assert.equal(v.keyToPath('#how'),null);
  assert.equal(v.pathToKey('/teacher/classes/manual%3Aclub'),'#teacher/class-manual%3Aclub');
@@ -542,4 +543,78 @@ test('the privacy page is public and the account menu offers data download and d
  const {h:h2}=make();h2.GA.user={uid:'t',email:'t@x'};h2.PX.profile={role:'teacher'};
  const labels=h2.v4.accountItems('teacher').map(i=>i.label||i.note).join('|');
  assert.match(labels,/Download my data\|Delete my account…\|Privacy/);assert.match(labels,/Sign out$/);
+});
+
+// ---------------- 4.7 ----------------
+test('student supports in the Post dialog start from the Hex Space and are sent with the posting, with versions',async()=>{
+ const t=make();const {h}=t;teacher2(h);const v=h.v4;v.setSave(async()=>({revision:2}));v.setPosts([]);
+ v.getTW().activities[0].starters=false;v.getTW().activities[0].terms.push({n:2,id:2,term:'Membrane'});
+ const sent=[];h.setApi(async(path,body)=>{if(path==='posts/new'){sent.push(body);return {id:'p1',code:'ABC23X',title:body.title}}if(path==='teacher/dashboard')return {assignments:[]};throw new Error(path)});
+ v.openPostDialog(v.getTW().activities[0]);
+ const byId=id=>everything(t).find(n=>n.attrs?.id===id);
+ assert.ok(!byId('ps-starters').checked,'starters default from the Hex Space');assert.equal(byId('ps-defs').checked,true);
+ byId('ps-defs').checked=false;byId('ps-translate').checked=false;
+ byId('pv-on').checked=true;byId('pv-on').listeners.change();
+ const chips=everything(t).filter(n=>String(n.attrs?.class||'').includes('term-chip')&&n.textContent==='Membrane');assert.equal(chips.length,2);
+ chips[1].listeners.click({});
+ byId('pd-c-club').checked=true;byId('pd-c-club').listeners.change();
+ everything(t).find(n=>n.tagName==='button'&&n.textContent==='Post').listeners.click();await settle();
+ assert.equal(sent.length,1);
+ assert.deepEqual(JSON.parse(JSON.stringify(sent[0].options)),{defs:false,starters:false,readAloud:true,translate:false,reflect:true,gallery:true});
+ assert.deepEqual(JSON.parse(JSON.stringify(sent[0].versions.map(x=>x.terms))),[[1,2],[1]]);
+});
+test('a version with no terms is caught before posting',()=>{
+ const {h}=make();const ve=h.v47.versionsEditor({terms:[{id:1,term:'A'}]});
+ assert.equal(ve.value(),null);
+});
+test('sentence starters use both terms, or the Depth & Complexity lens',()=>{
+ const {h}=make();
+ h.setStudent({act:{},H:{1:{name:'Nucleus'},2:{name:'Membrane'},1003:{name:'Patterns',kind:'dc'}},d:{place:{},conns:{}}});
+ const s=h.v47.startersFor(1,2);assert.ok(s.includes('Nucleus affects Membrane by '));
+ assert.match(h.v47.startersFor(1003,1)[0],/^Through the lens of Patterns, Nucleus/);
+});
+test('the board records a build history for the teacher replay',()=>{
+ const {h}=make();const d={place:{1:[0,0]},conns:{}};h.setStudent({act:{},cls:{},d,preview:false});
+ h.v47.recordHistory();assert.equal(d.history,undefined,'first call only remembers the starting board');
+ d.place[2]=[1,0];d.conns['1-2']={why:'Because reasons',at:1};h.v47.recordHistory();
+ delete d.place[1];h.v47.recordHistory();
+ assert.deepEqual(JSON.parse(JSON.stringify(d.history.map(e=>e.slice(1)))),[[2,1,0],['1-2'],[1,null,null]]);
+ const st=h.v47.replayStates({history:d.history,connections:[{a:1,b:2,why:'Because reasons'}]});
+ assert.equal(st.length,4);assert.deepEqual(Object.keys(st[2].conns),['1-2']);assert.equal(st[2].conns['1-2'].why,'Because reasons');assert.deepEqual(Object.keys(st[3].place),['2']);
+});
+test('reflection is asked before turning in and saved with the board',()=>{
+ const t=make();const {h,text}=t;const d={name:'A',place:{},conns:{}};
+ h.setStudent({act:{id:'a',reflect:true},cls:{id:'c'},d,preview:false});h.setReady(()=>true);
+ h.submit();assert.match(text(),/Quick reflection/);
+ everything(t).find(n=>n.attrs?.id==='rf-proud').value='C2 because it explains cause';
+ try{everything(t).find(n=>n.tagName==='button'&&n.textContent==='Turn in').listeners.click()}catch(e){/* the platform submit needs a signed-in browser */}
+ assert.equal(d.reflection.proud,'C2 because it explains cause');
+ const t2=make();t2.h.setStudent({act:{id:'a',reflect:false},cls:{id:'c'},d:{name:'A',place:{},conns:{}},preview:false});t2.h.setReady(()=>true);try{t2.h.submit()}catch(e){}assert.doesNotMatch(t2.text(),/Quick reflection/);
+});
+test('printable tiles list every term, with or without definitions, safely escaped',()=>{
+ const {h}=make();const a={title:'Cells <3',terms:[{n:1,id:1,term:'Nucleus',def:'Control center'},{n:2,id:2,term:'A&B',def:''}],dcOn:true,dc:['patterns']};
+ const withDefs=h.v47.printTileHTML(a,{defs:true,lenses:true});
+ assert.match(withDefs,/Nucleus/);assert.match(withDefs,/Control center/);assert.match(withDefs,/A&amp;B/);assert.match(withDefs,/Cells &lt;3/);assert.match(withDefs,/Patterns/);
+ const bare=h.v47.printTileHTML(a,{defs:false,lenses:false});assert.doesNotMatch(bare,/Control center/);assert.doesNotMatch(bare,/Patterns/);
+});
+test('the grader shows the version, the reflection and a replay button',()=>{
+ const {h}=make();const n=h.v47.graderExtras({version:'Support',reflection:{proud:'C1',hard:'C3'},history:[[0,1,0,0],[5,2,1,0]]},[],0);
+ const all=kids(n).map(x=>x.textContent).join(' ');assert.match(all,/Version: Support/);assert.match(all,/Proudest/);assert.match(all,/Watch how it was built/);
+ assert.equal(h.v47.graderExtras({},[],0),null);
+});
+test('the gallery hides names from students and lets teachers hide comments',()=>{
+ const {h}=make();h.GA.user={uid:'s'};
+ const act={id:'a',title:'Cells',terms:[{n:1,id:1,term:'Nucleus'},{n:2,id:2,term:'Membrane'}]};
+ const board=(o)=>({board:'k'+o.label,label:o.label,mine:!!o.mine,placements:{1:[0,0],2:[1,0]},connections:[{num:1,a:1,b:2,why:'Linked'}],comments:o.comments||[],...o.extra});
+ const root=make();const el=root.root;
+ h.v47.drawGallery(el,'p1',{title:'Cells',open:true,act,boards:[board({label:'Board A',mine:true,comments:[{id:'c1',kind:'glow',text:'Clear!'}]}),board({label:'Board B'})]},false);
+ let txt=kids(el).map(x=>x.textContent).join(' ');assert.match(txt,/Your board/);assert.match(txt,/Clear!/);assert.match(txt,/Board B/);assert.ok(kids(el).some(n=>n.tagName==='button'&&n.textContent==='🌱 Grow'));
+ const el2=make().root;
+ h.v47.drawGallery(el2,'p1',{title:'Cells',open:true,act,boards:[board({label:'Board A',extra:{name:'Ava'},comments:[{id:'c1',kind:'grow',text:'Say how',author:'Ben',hidden:false}]})]},true);
+ txt=kids(el2).map(x=>x.textContent).join(' ');assert.match(txt,/Board A · Ava/);assert.match(txt,/Ben/);assert.ok(kids(el2).some(n=>n.tagName==='button'&&n.textContent==='Hide'));assert.ok(kids(el2).some(n=>n.textContent==='Close gallery walk'));
+});
+test('Microsoft sign-in appears only when the site owner turns it on',()=>{
+ const t=make();const {h,text,location}=t;h.GA.ready=true;h.GA.auth={};location.hash='#signin';h.renderGoogleGate();
+ assert.doesNotMatch(text(),/Continue with Microsoft/);
+ h.v47.CFG.microsoft=true;h.renderGoogleGate();assert.match(text(),/Continue with Microsoft/);
 });
