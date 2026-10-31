@@ -33,7 +33,7 @@ function make(){
  getData(){return DATA},setData(w){DATA=w},setView(fn){viewSubmission=fn},
  setWork(w){TW=w;TS.rows={};TS.sel=w.activities[0].id},setRenderTeacher(fn){renderTeacher=fn},
  setApi(fn){platformApi=fn},setTeacher(fn){startTeacher=fn;teacherDashboard=fn},
- v4:{folderPicker:a=>folderPicker(a),deleteHexSpace:a=>deleteHexSpace(a),publishNow:()=>publishNow(),setTeacherData(v){PX.teacherData=v},openPostDialog,studentCard:a=>studentAssignmentCard(a),setPosts(v){PX.posts=v},keyToPath,pathToKey,navItems:()=>navItems(),startPage,renderHome,hexSpaceSidebar,newFolder,deleteFolder,moveActivity,folderById,childFolders,folderActs,canMoveFolder,syncClassroomClasses,importClassroomClasses,sharePreview,copyShared,postManual,codesPane,TS,getTW(){return TW},startTeacher(){startTeacher()},renderTeacher(){renderTeacher()},setSave(fn){saveWorkspaceCloud=fn},setTS(o){Object.assign(TS,o)}}};`;
+ v4:{openGrader,insightsData,exportGrades,setDownload(fn){downloadBlob=fn},setPostState(v){PX.postState=v},accountItems:(r)=>accountItems(r,false),folderPicker:a=>folderPicker(a),deleteHexSpace:a=>deleteHexSpace(a),publishNow:()=>publishNow(),setTeacherData(v){PX.teacherData=v},openPostDialog,studentCard:a=>studentAssignmentCard(a),setPosts(v){PX.posts=v},keyToPath,pathToKey,navItems:()=>navItems(),startPage,renderHome,hexSpaceSidebar,newFolder,deleteFolder,moveActivity,folderById,childFolders,folderActs,canMoveFolder,syncClassroomClasses,importClassroomClasses,sharePreview,copyShared,postManual,codesPane,TS,getTW(){return TW},startTeacher(){startTeacher()},renderTeacher(){renderTeacher()},setSave(fn){saveWorkspaceCloud=fn},setTS(o){Object.assign(TS,o)}}};`;
  vm.runInContext(script.replace(/startPage\(\);\nroute\(\);\nbootGoogle\(\);\n\}\)\(\);\s*$/,hooks+'})();'),context);
  const h=context.hx;
  function flatten(n=root){return [n,...(n.children||[]).flatMap(flatten)]}
@@ -495,4 +495,51 @@ test('appearance menu switches theme and text size and remembers the choice',()=
  item('High contrast').listeners.click({});
  assert.equal(JSON.parse(store.get('hx-appearance')).theme,'contrast');
  item('Larger text').listeners.click({});assert.equal(JSON.parse(store.get('hx-appearance')).text,'large');
+});
+
+// ---------------- 4.5 ----------------
+const subAct={id:'a1',title:'Cells',terms:[{n:1,id:1,term:'Nucleus',def:''},{n:2,id:2,term:'Membrane',def:''},{n:3,id:3,term:'Ribosome',def:''}],board:{shape:'hexagon',size:'roomy',orient:'pointy',rotate:true}};
+const sub=(name,uid,extra={})=>({name,_studentUid:uid,_postId:'p1',_maxPoints:20,_manual:true,_status:'TURNED_IN',activitySnapshot:subAct,placements:{1:[0,0],2:[1,0],3:[1,-1]},connections:[{num:1,a:1,b:2,why:'The membrane surrounds the nucleus area'},{num:2,a:2,b:3,why:'Both are cell parts'}],termsUsed:3,...extra});
+test('the grader scores each connection, fills the grade from the scores and moves to the next student',async()=>{
+ const t=make();const {h,text}=t;teacherWork(h);const v=h.v4;
+ const calls=[];h.setApi(async(path,body)=>{calls.push([path,JSON.parse(JSON.stringify(body||{}))]);return {}});
+ const list=[sub('Ava','s1'),sub('Ben','s2')];v.openGrader(list,0);
+ assert.match(text(),/1 of 2/);assert.match(text(),/The membrane surrounds the nucleus area/);
+ const btn=(label,i=0)=>everything(t).filter(n=>n.tagName==='button'&&n.textContent===label)[i];
+ btn('2 · Strong',0).listeners.click();btn('1 · Partly',1).listeners.click();
+ assert.equal(everything(t).find(n=>n.attrs?.id==='gr-grade').value,15);
+ everything(t).find(n=>n.attrs?.['aria-label']==='Comment on C2').value='Say how they work together.';everything(t).find(n=>n.attrs?.['aria-label']==='Comment on C2').listeners.input();
+ btn('Save & next student').listeners.click();await settle();
+ assert.equal(calls[0][0],'posts/p1/feedback');assert.equal(JSON.stringify(calls[0][1].scores),JSON.stringify({1:2,2:1}));assert.equal(calls[0][1].comments['2'],'Say how they work together.');
+ assert.equal(calls[1][0],'posts/p1/grade');assert.equal(calls[1][1].grade,15);
+ assert.match(text(),/2 of 2/);assert.match(text(),/Ben/);
+});
+test('returning a code-only board for revision saves feedback without a grade',async()=>{
+ const t=make();const {h}=t;teacherWork(h);const v=h.v4;const calls=[];h.setApi(async(path,body)=>{calls.push(path);return {}});
+ v.openGrader([sub('Ava','s1')],0);everything(t).find(n=>n.attrs?.id==='gr-revise').checked=true;everything(t).find(n=>n.attrs?.id==='gr-grade').value='12';
+ everything(t).find(n=>n.textContent==='Save & finish').listeners.click();await settle();
+ assert.equal(JSON.stringify(calls.filter(c=>c.startsWith('posts/'))),JSON.stringify(['posts/p1/feedback']));
+});
+test('class insights count term use, common pairs, unused terms and short reasons',()=>{
+ const {h}=make();
+ const d=h.v4.insightsData({terms:3,act:{terms:subAct.terms,dc:[]},students:[
+  {status:'TURNED_IN',placed:3,connections:2,conns:[{pair:'1-2',why:'one two three four five six'},{pair:'2-3',why:'short'}]},
+  {status:'DRAFT',placed:2,connections:1,conns:[{pair:'1-2',why:'also connects these two terms in a clear way'}]},
+  {status:'DRAFT',placed:0,connections:0,conns:[]}]});
+ assert.equal(d.total,3);assert.equal(d.started,2);assert.equal(d.done,1);
+ assert.equal(d.top[0].a+'|'+d.top[0].b+'|'+d.top[0].n,'Nucleus|Membrane|2');
+ assert.equal(JSON.stringify(d.terms.map(t=>t.n)),JSON.stringify([2,2,1]));assert.equal(d.short,1);
+});
+test('grades download as a spreadsheet file with rubric counts and feedback',()=>{
+ const {h}=make();let file=null;h.v4.setDownload((name,text)=>{file={name,text}});
+ h.v4.exportGrades({title:'Cells / Unit 3'},[sub('Ava','s1',{_grade:15,email:'ava@x.org',_feedback:{scores:{1:2,2:1},overall:'Nice, "clear" work'}})]);
+ assert.equal(file.name,'Cells-Unit-3-grades.csv');const lines=file.text.split('\r\n');
+ assert.match(lines[0],/^Student,Email,Status/);assert.match(lines[1],/^Ava,ava@x.org,Turned in,3,2,/);assert.match(lines[1],/,1,1,0,15,20,No,/);assert.match(lines[1],/"Nice, ""clear"" work"$/);
+});
+test('the privacy page is public and the account menu offers data download and deletion',()=>{
+ const t=make();const {h,text,location}=t;h.GA.ready=true;location.hash='#privacy';h.route();
+ assert.match(text(),/How Hex Connections handles your information/);assert.match(text(),/No ads/);assert.doesNotMatch(text(),/Log in to open that page/);
+ const {h:h2}=make();h2.GA.user={uid:'t',email:'t@x'};h2.PX.profile={role:'teacher'};
+ const labels=h2.v4.accountItems('teacher').map(i=>i.label||i.note).join('|');
+ assert.match(labels,/Download my data\|Delete my account…\|Privacy/);assert.match(labels,/Sign out$/);
 });

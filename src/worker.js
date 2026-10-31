@@ -3,6 +3,7 @@ import {handleDashboardRoutes} from './dashboards.js';
 import { generateVocabulary } from './vocabulary.js';
 import {handleShareRoutes} from './shares.js';
 import {handlePostingRoutes,assertStarted,isLate} from './postings.js';
+import {handleTeachingRoutes} from './teaching.js';
 // Cloudflare Worker. Firebase verifies accounts; every SQL query enforces ownership.
 // Google access tokens are used only for the current request and never persisted.
 const NOW = () => new Date().toISOString();
@@ -219,6 +220,7 @@ export async function handle(request, env, net = fetch) {
     const context={request,url,db,user,profile,input,fail,json,boardDraft,studentInPost,allPages,isManual,joinManual,manualMember,origin:env.PUBLIC_ORIGIN||url.origin,getGoogle:()=>classroomContext(request,user,net)};
     const shareRoute=await handleShareRoutes(context);if(shareRoute)return shareRoute;
     const postingRoute=await handlePostingRoutes(context);if(postingRoute)return postingRoute;
+    const teachingRoute=await handleTeachingRoutes(context);if(teachingRoute)return teachingRoute;
     const dashboard=await handleDashboardRoutes(context);if(dashboard)return dashboard;
     const groupRoute=await handleGroupRoutes(context);if(groupRoute)return groupRoute;
     if (path==='/api/me' && request.method==='GET') return json({profile});
@@ -262,7 +264,7 @@ export async function handle(request, env, net = fetch) {
     }
     if (path==='/api/submissions' && request.method==='GET') {
       const list=await rows(db,`SELECT s.*,p.activity_id,p.max_points,p.course_id FROM submissions s JOIN posts p ON p.id=s.post_id WHERE p.owner_uid=? AND s.payload IS NOT NULL`+(url.searchParams.get('postId')?' AND p.id=?':''),...(url.searchParams.get('postId')?[user.uid,url.searchParams.get('postId')]:[user.uid]));
-      return json({submissions:list.map(s=>({...parse(s.payload),_postId:s.post_id,_studentUid:s.uid,_grade:s.grade,_maxPoints:s.max_points,_status:s.status,_classroomStatus:s.classroom_status,_manual:String(s.course_id||'').startsWith('manual:')}))});
+      return json({submissions:list.map(s=>({...parse(s.payload),_postId:s.post_id,_studentUid:s.uid,_grade:s.grade,_maxPoints:s.max_points,_status:s.status,_classroomStatus:s.classroom_status,_manual:String(s.course_id||'').startsWith('manual:'),_feedback:parse(s.feedback)}))});
     }
     if (path==='/api/my-assignments' && request.method==='GET') {
       const list=await rows(db,'SELECT p.*,s.status AS submission_status,s.grade FROM posts p JOIN submissions s ON s.post_id=p.id WHERE s.uid=? AND p.status=?',user.uid,'PUBLISHED');
@@ -373,10 +375,10 @@ export async function handle(request, env, net = fetch) {
           if(post.owner_uid!==user.uid) await studentInPost(db,g,user,post);
           else await g('/courses/'+enc(post.course_id)+'/teachers/me');
         }
-        const s=await one(db,'SELECT draft,status,grade,classroom_status FROM submissions WHERE post_id=? AND uid=?',id,user.uid);
+        const s=await one(db,'SELECT draft,status,grade,classroom_status,feedback FROM submissions WHERE post_id=? AND uid=?',id,user.uid);
         const group=await groupForUser(db,id,user.uid);
         const groupData=group?await (await handleGroupRoutes({...context,url:new URL('/api/posts/'+id+'/group',url.origin)})).json():null;
-        return json({assignment:{...info,id,ownerUid:post.owner_uid},draft:parse(s?.draft),status:s?.status||'DRAFT',classroomStatus:s?.classroom_status,grade:s?.grade,group:groupData?.group||null});
+        return json({assignment:{...info,id,ownerUid:post.owner_uid},draft:parse(s?.draft),status:s?.status||'DRAFT',classroomStatus:s?.classroom_status,grade:s?.grade,feedback:parse(s?.feedback),maxPoints:post.max_points,group:groupData?.group||null});
       }
       if(action==='grade' && request.method==='POST') {
         if(post.owner_uid!==user.uid) fail(403,'Only this assignment’s owner may grade it.');

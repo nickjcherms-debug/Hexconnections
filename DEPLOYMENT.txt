@@ -1,3 +1,27 @@
+GRADING, INSIGHTS, PRESENT MODE AND PRIVACY 4.5.0
+================================================
+Database: migrations/0006_feedback.sql adds submissions.feedback. Applied to
+the live database on 2026-10-30. Other databases:
+  npx wrangler d1 execute hex-connections --remote --file migrations/0006_feedback.sql
+Everything stays on Cloudflare's free plan and sign-up stays open.
+- Grading: on a posting's Submissions page, "Grade submissions" opens a queue.
+  Score each connection 0 (needs work), 1 (partly) or 2 (strong); the grade
+  fills in from the scores and can be changed. Comment per connection (with a
+  saved comment bank) and overall. "Return for revision" reopens code-only
+  boards; Classroom grades still return through Classroom.
+- Students see scores, comments and revision requests above their board.
+- Class insights: joined/started/turned-in counts, term use, most common
+  connections, terms nobody used, reason length.
+- Present to class: projector view with the join code, live counts, the
+  class's connection network (refreshes every 15 s), anonymous spotlighted
+  reasons, and Pause/Resume boards. Esc exits.
+- Download grades (CSV) opens in Google Sheets or Excel.
+- Privacy page (/privacy, linked in the footer and account menu); Download my
+  data and Delete my account in the account menu.
+- Free-plan headroom: group boards check every 5 s only while the group is
+  active (20 s after two quiet minutes, none while the tab is hidden);
+  autosave batches edits for 1.5 s.
+
 DISPLAY THEMES, SCREEN FITTING AND SIMULATION FIXES 4.4.0
 ========================================================
 No database or Firebase step. Merging deploys through Workers Builds.
