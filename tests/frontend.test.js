@@ -33,6 +33,7 @@ function make(){
  getData(){return DATA},setData(w){DATA=w},setView(fn){viewSubmission=fn},
  setWork(w){TW=w;TS.rows={};TS.sel=w.activities[0].id},setRenderTeacher(fn){renderTeacher=fn},
  setApi(fn){platformApi=fn},setTeacher(fn){startTeacher=fn;teacherDashboard=fn},
+ v49:{mergeInto,reconcileLocal,renderDirectory,blockPaste,graderExtras:(p)=>graderExtras(p,[],0),SYNC,dirFolderId},
  v48:{assignMenu,assignNudge:a=>assignNudgeBody(a),assignTo},
  v47:{supportsEditor,versionsEditor,printTileHTML,replayStates,startersFor,recordHistory,graderExtras,drawGallery,studentTools,writingHelps,hexMap,TR,CFG,renderLogin:()=>renderLogin(),getST(){return ST}},
  v4:{openGrader,insightsData,exportGrades,setDownload(fn){downloadBlob=fn},setPostState(v){PX.postState=v},accountItems:(r)=>accountItems(r,false),folderPicker:a=>folderPicker(a),deleteHexSpace:a=>deleteHexSpace(a),publishNow:()=>publishNow(),setTeacherData(v){PX.teacherData=v},openPostDialog,studentCard:a=>studentAssignmentCard(a),setPosts(v){PX.posts=v},keyToPath,pathToKey,navItems:()=>navItems(),startPage,renderHome,hexSpaceSidebar,newFolder,deleteFolder,moveActivity,folderById,childFolders,folderActs,canMoveFolder,syncClassroomClasses,importClassroomClasses,sharePreview,copyShared,postManual,codesPane,TS,getTW(){return TW},startTeacher(){startTeacher()},renderTeacher(){renderTeacher()},setSave(fn){saveWorkspaceCloud=fn},setTS(o){Object.assign(TS,o)}}};`;
@@ -376,7 +377,7 @@ test('logged-out visits to private pages show the homepage and resume after logi
 test('menus share one layout: Home first, then role-specific tabs',()=>{
  const labels=(h)=>h.v4.navItems().map(i=>i.label).join('|');
  let {h}=make();h.GA.ready=true;assert.equal(labels(h),'Home|How it works|Depth & Complexity|Enter a class code|Log in|New Hex Space');
- ({h}=make());h.GA.user={uid:'t'};h.PX.profile={role:'teacher'};assert.equal(labels(h),'Home|Classes|Hex Space|Shared links|Library|+ New Hex Space');
+ ({h}=make());h.GA.user={uid:'t'};h.PX.profile={role:'teacher'};assert.equal(labels(h),'Home|Classes|Hex Spaces|Shared links|Library|+ New Hex Space');
  ({h}=make());h.GA.user={uid:'s'};h.PX.profile={role:'student'};assert.equal(labels(h),'Home|My assignments|Enter a class code');
 });
 test('clean page addresses map both ways and old # links still resolve',()=>{
@@ -561,7 +562,7 @@ test('student supports in the Post dialog start from the Hex Space and are sent 
  byId('pd-c-club').checked=true;byId('pd-c-club').listeners.change();
  everything(t).find(n=>n.tagName==='button'&&n.textContent==='Post').listeners.click();await settle();
  assert.equal(sent.length,1);
- assert.deepEqual(JSON.parse(JSON.stringify(sent[0].options)),{defs:false,starters:false,readAloud:true,translate:false,reflect:true,gallery:true});
+ assert.deepEqual(JSON.parse(JSON.stringify(sent[0].options)),{defs:false,starters:false,readAloud:true,translate:false,reflect:true,gallery:true,noPaste:false});
  assert.deepEqual(JSON.parse(JSON.stringify(sent[0].versions.map(x=>x.terms))),[[1,2],[1]]);
 });
 test('a version with no terms is caught before posting',()=>{
@@ -631,4 +632,40 @@ test('a finished Hex Space can be assigned to a chosen class from the Hex Space 
  assert.ok(h.v48.assignNudge(a),'nudge for a ready, unassigned Hex Space');
  v.setPosts([{activityId:'a1'}]);assert.equal(h.v48.assignNudge(a),null);
  assert.equal(h.v48.assignNudge({title:'',terms:[]}),null);
+});
+
+// ---------------- 4.9 ----------------
+test('merging keeps changes from both windows: folders, moves, edits and deletes',()=>{
+ const {h}=make();const m=h.v49.mergeInto;
+ const base={activities:[{id:'a',title:'A',folder:null},{id:'b',title:'B'},{id:'c',title:'C'}],folders:[{id:'f1',name:'Bio',parent:null}],classes:[]};
+ const mine=JSON.parse(JSON.stringify(base));mine.folders.push({id:'f2',name:'Unit 3',parent:'f1'});mine.activities[0].folder='f2';mine.activities=mine.activities.filter(x=>x.id!=='c');
+ const keep=mine.activities[0];
+ const theirs=JSON.parse(JSON.stringify(base));theirs.activities[1].title='B edited';theirs.folders.push({id:'f3',name:'Chem',parent:null});theirs.activities.push({id:'d',title:'D'});theirs.folders=theirs.folders.filter(f=>f.id!=='f1');
+ m(mine,base,theirs);
+ assert.equal(JSON.stringify(mine.activities.map(a=>a.id+':'+a.title+':'+(a.folder||''))),JSON.stringify(['a:A:f2','b:B edited:','d:D:']));
+ assert.ok(mine.activities[0]===keep,'open editor keeps the same object');
+ assert.equal(JSON.stringify(mine.folders.map(f=>f.id+':'+(f.parent||'')).sort()),JSON.stringify(['f2:','f3:']),'f1 deleted elsewhere; its child moves to the top');
+});
+test('an earlier visit’s unsaved folders are merged on the next login instead of being set aside',()=>{
+ const {h}=make();
+ h.lsSet('hx-workspace-snap',{activities:[{id:'a',title:'A'}],folders:[],classes:[]});h.lsSet('hx-workspace-base',1);
+ h.lsSet('hx-teacher-work',{activities:[{id:'a',title:'A',folder:'f9'}],folders:[{id:'f9',name:'Mine',parent:null}],classes:[]});
+ h.v49.reconcileLocal({revision:2,workspace:{activities:[{id:'a',title:'A'},{id:'n',title:'New elsewhere'}],folders:[],classes:[]}});
+ const w=h.lsGet('hx-teacher-work');assert.equal(w.folders[0].name,'Mine');assert.equal(w.activities[0].folder,'f9');assert.ok(w.activities.some(a=>a.id==='n'));
+ assert.equal(h.lsGet('hx-workspace-base'),2);
+});
+test('the Hex Space page is a directory of folders and Hex Spaces with a New Hex Space button',()=>{
+ const t=make();const {h,text,location}=t;teacher2(h);const v=h.v4;v.setPosts([{activityId:'a1',className:'Science club',submissions:3}]);
+ location.hash='#teacher/editor';h.v49.renderDirectory();
+ assert.match(text(),/My Hex Spaces/);assert.match(text(),/\+ New Hex Space/);assert.match(text(),/Biology/);assert.match(text(),/Atoms/);assert.doesNotMatch(text(),/Cells · /);
+ assert.doesNotMatch(text(),/Science club/,'folder Hex Spaces are inside the folder, not listed at the top');
+ location.hash='#teacher/folder-bio';h.v49.renderDirectory();assert.match(text(),/Cells/);assert.match(text(),/3 submissions/);assert.match(text(),/All Hex Spaces/);
+ const s=everything(t).find(n=>n.attrs?.id==='dir-q');s.value='proton';s.listeners.input();assert.match(text(),/Atoms/);
+});
+test('paste blocking stops paste and drop, tells the student, and counts attempts for the teacher',()=>{
+ const t=make();const {h}=t;const d={place:{},conns:{}};h.setStudent({act:{noPaste:true},cls:{},d,preview:true});
+ const wrap={tagName:'div',children:[],insertBefore(n){this.children.push(n)}};const ta={tagName:'textarea',listeners:{},attrs:{},parentNode:wrap,addEventListener(k,f){this.listeners[k]=f},setAttribute(k,v){this.attrs[k]=v}};
+ h.v49.blockPaste(ta);let prevented=0;ta.listeners.paste({preventDefault(){prevented++}});ta.listeners.drop({preventDefault(){prevented++}});ta.listeners.beforeinput({inputType:'insertText',preventDefault(){prevented++}});
+ assert.equal(prevented,2);assert.equal(d.pasteBlocked,2);assert.equal(wrap.children[0].hidden,false);
+ const g=h.v49.graderExtras({pasteAttempts:2});assert.match(kids(g).map(x=>x.textContent).join(' '),/2 paste attempts blocked/);
 });

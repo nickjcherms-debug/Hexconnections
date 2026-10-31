@@ -161,6 +161,7 @@ function boardDraft(value, act) {
   }
   const out = { name: String(value.name || '').slice(0,60), place, conns, view: { orient: value.view?.orient === 'flat' ? 'flat' : 'pointy' }, _savedAt: NOW(), submittedAt: value.submittedAt || null };
   const reflection = cleanReflection(value.reflection); if (reflection) out.reflection = reflection;
+  const pastes = Number(value.pasteBlocked); if (Number.isInteger(pastes) && pastes > 0) out.pasteBlocked = Math.min(pastes, 9999);
   const history = cleanHistory(value.history, allowed); if (history.length) { out.history = history; out.startedAt = typeof value.startedAt === 'string' ? value.startedAt.slice(0,40) : null; }
   return out;
 }
@@ -180,7 +181,7 @@ function submissionPayload(draft, post, user, variant) {
   return { activitySnapshot:act,activityId:act.id,activityTitle:act.title,classId:info.cls.id,className:info.cls.name,period:info.cls.name,
     name:user.name,email:user.email,submittedAt:NOW(),placements:draft.place,connections:validConns,termsUsed:used,
     due:info.asg.due || '',dueAt:info.asg.dueAt || '',late:isLate(info.asg),
-    ...(draft.reflection?{reflection:draft.reflection}:{}),...(draft.history?{history:draft.history,startedAt:draft.startedAt||null}:{}),
+    ...(draft.reflection?{reflection:draft.reflection}:{}),...(draft.pasteBlocked?{pasteAttempts:draft.pasteBlocked}:{}),...(draft.history?{history:draft.history,startedAt:draft.startedAt||null}:{}),
     ...(variant!=='all'&&info.asg.versions?.length>1?{version:info.asg.versions[Number.isInteger(variant)&&variant<info.asg.versions.length?variant:0].name}:{}) };
 }
 async function studentInPost(db, g, user, post) {
