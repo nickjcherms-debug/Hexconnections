@@ -232,8 +232,13 @@ export async function handle(request, env, net = fetch) {
     if (url.pathname==='/api/config' && request.method==='GET') return json({analyticsToken:String(env.CF_ANALYTICS_TOKEN||'').slice(0,64),microsoft:env.MICROSOFT_SIGN_IN==='on'});
     if (!env.DB || !env.FIREBASE_API_KEY) fail(503,'The site owner needs to deploy the Cloudflare backend and database.','backend-setup');
     const user = await authenticate(request,env,net), db=env.DB;
-    await run(db,'INSERT INTO users(uid,email,name,created_at) VALUES(?,?,?,?) ON CONFLICT(uid) DO UPDATE SET email=excluded.email,name=excluded.name',user.uid,user.email,user.name,NOW());
-    const profile = await one(db,'SELECT uid,email,name,role FROM users WHERE uid=?',user.uid);
+    // Write the account row only when it's new or the name/email changed: every request used to
+    // rewrite it, which spends Cloudflare's free daily write allowance on polling.
+    let profile = await one(db,'SELECT uid,email,name,role FROM users WHERE uid=?',user.uid);
+    if (!profile || (profile.email||'') !== (user.email||'') || (profile.name||'') !== (user.name||'')) {
+      await run(db,'INSERT INTO users(uid,email,name,created_at) VALUES(?,?,?,?) ON CONFLICT(uid) DO UPDATE SET email=excluded.email,name=excluded.name',user.uid,user.email,user.name,NOW());
+      profile = await one(db,'SELECT uid,email,name,role FROM users WHERE uid=?',user.uid);
+    }
     const path=url.pathname;
     const context={request,url,db,user,profile,input,fail,json,boardDraft,studentInPost,allPages,isManual,joinManual,manualMember,origin:env.PUBLIC_ORIGIN||url.origin,getGoogle:()=>classroomContext(request,user,net)};
     const shareRoute=await handleShareRoutes(context);if(shareRoute)return shareRoute;
@@ -401,7 +406,7 @@ export async function handle(request, env, net = fetch) {
         const mineAct=post.owner_uid===user.uid?info.act:studentAct(info,s?.variant);
         const group=await groupForUser(db,id,user.uid);
         const groupData=group?await (await handleGroupRoutes({...context,url:new URL('/api/posts/'+id+'/group',url.origin)})).json():null;
-        const studentAsg=post.owner_uid===user.uid?info.asg:{...info.asg,versions:undefined};
+        const studentAsg=post.owner_uid===user.uid?info.asg:{...info.asg,versions:undefined,versionPlan:undefined,game:undefined,debate:undefined};
         return json({assignment:{...info,act:mineAct,asg:studentAsg,id,ownerUid:post.owner_uid},draft:fitDraft(parse(s?.draft),mineAct),status:s?.status||'DRAFT',classroomStatus:s?.classroom_status,grade:s?.grade,feedback:parse(s?.feedback),maxPoints:post.max_points,group:groupData?.group||null});
       }
       if(action==='grade' && request.method==='POST') {

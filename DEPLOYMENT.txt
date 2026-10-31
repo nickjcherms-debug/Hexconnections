@@ -1,3 +1,9 @@
+SYSTEM CHECK 4.17.0
+===================
+Database: migrations/0010_debate_index.sql (one index). Applied to the live
+database on 2026-10-31. Other databases:
+  npx wrangler d1 execute hex-connections --remote --file migrations/0010_debate_index.sql
+
 SAVE PROGRESS AND GUIDE 4.16.0
 ==============================
 No database migration. New static files in public/guide/ (screenshots for the
