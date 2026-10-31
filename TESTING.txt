@@ -1,9 +1,27 @@
-VERIFICATION — VERSION 4.3.0
+VERIFICATION — VERSION 4.4.0
 ============================
-99 automated tests pass (49 backend, 50 frontend) using in-memory SQLite,
+100 automated tests pass (49 backend, 51 frontend) using in-memory SQLite,
 simulated Firebase/Classroom responses, and execution of the actual frontend
 script in a DOM test harness. No real Google Classroom assignment was created
 or modified by these tests.
+
+New in 4.4.0: 20 simulated sessions (10 teacher, 10 student; new-to-tech and
+power-user teachers; middle- and high-school students, struggling and
+advanced) against the real Worker on a Chromebook (1366x768), 1440 and 1920
+desktops, iPad portrait (820) and landscape (1024) and a phone (390), in light,
+dark and high-contrast themes. Every screen was checked for sideways
+scrolling, text under 12px, low contrast, small tap targets, stray text and
+errors. First run: 74 accessibility, 4 layout and 3 flow findings plus 5
+blocked sessions. Final run: all 20 complete; only hexagon labels that shrink
+to fit long words (about 11px) remain.
+Fixed: connection reasons squeezed one word per line (homepage .why style
+collision); sign-up form erased the typed name after an error; long titles
+overflowed the page; low-contrast teal and red labels; 30px tap targets on
+touch screens; the editor pushed far down by the Hex Space list on tablets;
+the open Hex Space's folder collapsed; an unneeded name box on the student
+board; raw status words ("new", "draft"); a "Grade and return in Classroom"
+button on code-only classes; submissions page back link, wording and group
+text; class page layout; student dashboard layout.
 
 New in 4.3.0: posting one Hex Space to several classes at once; posting from a
 class page with a Hex Space picker, repeatedly; new folders from the folder
