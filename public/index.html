@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Hexagonal thinking boards for classrooms: students arrange vocabulary hexagons and explain every connection, with optional Depth and Complexity icons.">
-<meta name="hex-connections-build" content="4.11.0">
+<meta name="hex-connections-build" content="4.11.1">
 <title>Hex Connections</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0F6E6E">
@@ -671,6 +671,12 @@ h2,h3,.brand h1,.aitem b,.act-head h2,.modal h3{overflow-wrap:anywhere}
 .guide-sec h3{margin:0 0 8px;font-size:1.15rem}
 .guide-sec ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;line-height:1.5}
 @media (max-width:600px){.guide-toc{columns:1}}
+.sub-meta{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:4px;font-size:.86rem;color:var(--muted)}
+.sub-flag{font-weight:700}.sub-flag.late{color:var(--danger)}.sub-flag.ok{color:var(--ok)}
+.sub-row{padding-top:10px;padding-bottom:10px}
+.gr-quick-save{display:none}
+@media (max-width:900px){.gr-head{position:sticky;top:-24px;z-index:3;background:var(--panel);margin:-12px -12px 0;padding:12px;border-bottom:1px solid var(--line)}.gr-quick-save{display:inline-flex}}
+@media (pointer:coarse){input[type=checkbox],input[type=radio]{width:24px;height:24px}}
 </style>
 <div id="root"></div>
 <script type="application/json" id="hx-data">{"version":4,"classes":[],"activities":[]}</script>
@@ -2059,7 +2065,7 @@ function setupPane(a){
     preview,
     el('div',{class:'row',style:'justify-content:space-between;border-top:1px solid var(--line);padding-top:14px'},
       el('div',{class:'row'},el('button',{class:'btn',id:'f-try',onclick:function(){ previewAsStudent(a); },disabled:!a.terms.length,text:'Try it as a student'}),
-        el('button',{class:'btn',onclick:function(){ printTiles(a); },disabled:!a.terms.length,text:'Print tiles'})),
+        el('button',{class:'btn',id:'f-print',onclick:function(){ printTiles(a); },disabled:!a.terms.length,text:'Print tiles'})),
       el('button',{class:'btn danger sm',onclick:function(){ deleteHexSpace(a); },text:'Delete Hex Space'})
     )
   );
@@ -2138,11 +2144,11 @@ function manageClasses(){
   setTimeout(function(){ addIn.focus(); }, 40);
 }
 function addPreviewBanner(){
-  var back = el('div',{class:'banner warn',style:'display:flex;gap:10px;align-items:center;flex-wrap:wrap'}, el('span',{style:'margin-right:auto',text:'Student preview. Your test board stays on this device and is never submitted.'}), el('button',{class:'btn sm',onclick:function(){ ST = null; PX.activePost=null; previewing = false; NAV.hash='teacher'; route(); },text:'Back to teacher view'}));
+  var back = el('div',{class:'banner warn',style:'display:flex;gap:10px;align-items:center;flex-wrap:wrap'}, el('span',{style:'margin-right:auto',text:'Student preview. Your test board stays on this device and is never submitted.'}), el('button',{class:'btn sm',onclick:function(){ ST = null; PX.activePost=null; previewing = false; var to = PX.previewReturn || 'teacher'; PX.previewReturn = null; NAV.hash = to; route(); },text:'Back to teacher view'}));
   root.insertBefore(back, root.children[1]);
 }
 function previewAsStudent(a){
-  ST = null; PX.activePost=null; previewing = true;
+  ST = null; PX.activePost=null; previewing = true; PX.previewReturn = 'teacher/edit-' + encodeURIComponent(a.id);
   var cid = Object.keys(a.assign||{})[0], c = cid && classOf(TW, cid);
   startStudent(clone(a), c || { id:'preview', name:'Preview class' }, c ? a.assign[cid] : { open:true, due:'' }, true);
   addPreviewBanner();
@@ -2724,7 +2730,17 @@ function teacherPostDashboard(postId){
   dashboardAdd(body,postToolsRow(a,subs));
   dashboardAdd(body,postExtras(postId,a,subs));
   if(!subs.length)dashboardMessage(body,'No student submissions yet.');
-  subs.forEach(function(p){dashboardAdd(body,el('div',{class:'panel row',style:'justify-content:space-between'},el('div',null,el('b',{text:p.name}),el('p',{class:'muted',text:(p.group?p.group.name+' · ':'')+({TURNED_IN:'Turned in',GRADED:'Graded',DRAFT:'Unsubmitted · still working',SAVED_PENDING_CLASSROOM:'Turning in…'}[p._status]||String(p._status||'').replace(/_/g,' ').toLowerCase())+(p._grade==null?'':' · '+p._grade+' / '+p._maxPoints)})),el('button',{class:'btn primary',onclick:function(){openGrader(subs,subs.indexOf(p))},text:p._feedback||p._grade!=null?'Review feedback':'View board & grade'})))});
+  subs.forEach(function(p){dashboardAdd(body,el('div',{class:'panel row sub-row',style:'justify-content:space-between'},el('div',{style:'min-width:0'},el('b',{text:p.name}),
+    el('p',{class:'muted',style:'margin:2px 0 0',text:(p.group?p.group.name+' · ':'')+({TURNED_IN:'Turned in',GRADED:'Graded',DRAFT:'Unsubmitted · still working',SAVED_PENDING_CLASSROOM:'Turning in…'}[p._status]||String(p._status||'').replace(/_/g,' ').toLowerCase())+(p._grade==null?'':' · '+p._grade+' / '+p._maxPoints)}),
+    el('div',{class:'sub-meta'},
+      p.termsUsed!=null?el('span',{text:p.termsUsed+' terms'}):null,el('span',{text:(p.connections||[]).length+' connections'}),
+      p.submittedAt?el('span',{text:fmtTime(p.submittedAt)}):null,
+      p.late?el('span',{class:'sub-flag late',text:'Late'}):null,
+      p.version?el('span',{text:p.version}):null,
+      p._feedback?el('span',{class:'sub-flag ok',text:p._feedback.revise?'Returned for revision':'Feedback given'}):null,
+      p.reflection?el('span',{text:'Reflection ✓'}):null,
+      p.pasteAttempts?el('span',{class:'sub-flag late',text:'⚠ '+p.pasteAttempts+' paste attempt'+(p.pasteAttempts===1?'':'s')}):null)),
+    el('button',{class:'btn primary',onclick:function(){openGrader(subs,subs.indexOf(p))},text:p._feedback||p._grade!=null?'Review feedback':'View board & grade'})))});
   dashboardAdd(body,el('h3',{text:'Group project boards'}),el('p',{class:'muted',text:a.manual?'Create a group and give its code to the students in it. They build one shared board, and each member turns in their own copy.':'Create a group and share its code with enrolled students. Each member turns in their own Classroom assignment.'}),el('button',{class:'btn primary',style:'align-self:flex-start',disabled:!!r[2].setupError,onclick:function(){createProjectGroup(postId)},text:'Create group'}));
   if(r[2].setupError)dashboardMessage(body,r[2].setupError);
   (r[2].groups||[]).forEach(function(g){dashboardAdd(body,el('div',{class:'panel stack'},el('h3',{text:g.name}),el('p',{text:g.members.length+' / '+g.maxMembers+' members'+(g.members.length?' · '+g.members.map(function(m){return m.name}).join(', '):'')}),el('div',{class:'row'},el('code',{class:'linkcode',text:groupCode(g.code)}),el('button',{class:'btn sm',onclick:function(){copyText(groupCode(g.code),'Group code')},text:'Copy group code'}),el('button',{class:'btn sm',onclick:function(){viewSubmission(r[2].activity,{name:g.name,placements:g.draft.place,connections:activeConns(g.draft.place,g.draft.conns),period:a.className})},text:'View shared board'}))))});
@@ -3444,7 +3460,7 @@ route=function(){
     if(share){PX.routeId++;stopGroupPolling();GROUP.current=null;ST=null;PX.activePost=null;caps.teacher=false;
       if(role!=='teacher'){fill(root,topBar(),el('div',{class:'code-page'},el('div',{class:'panel stack'},el('h2',{text:'Teacher account needed'}),el('p',{text:'Shared Hex Spaces are for teachers. Log in with a teacher account to preview and copy this one.'}),el('a',{class:'btn primary',href:'#',text:'Go to my assignments'}))));return;}
       sharePreview(share[1]);return;}
-    if(h==='#teacher/new'){if(role==='teacher'){PX.wantNew=true;NAV.hash='teacher/editor';return;}NAV.hash='home';return;}
+    if(h==='#teacher/new'){if(role==='teacher'){PX.wantNew=true;/* Replace, so Back doesn't make another new Hex Space. */navReplace('teacher/editor');route();return;}NAV.hash='home';return;}
     if(h==='#code'&&role==='teacher'){toast('Class codes are for student accounts. Log in with a student account to use one.');NAV.hash='teacher';return;}
   }
   v3Route();
@@ -4377,9 +4393,9 @@ function openGrader(list,index){
   }
   var addBank=el('button',{type:'button',class:'btn ghost sm',text:'+ Save a comment to my bank',onclick:function(){promptDialog('Add to comment bank','Comment','',function(t){var b=commentBank();b.unshift(t.slice(0,200));saveBank(b);openGrader(list,index);toast('Added to your comment bank.')},{ok:'Add'})}});
   openModal([
-    el('div',{class:'row',style:'justify-content:space-between'},
+    el('div',{class:'row gr-head',style:'justify-content:space-between'},
       el('div',null,el('div',{class:'eyebrow',text:(index+1)+' of '+list.length+' · '+(rowClass(p)||'')+(p.submittedAt?' · '+fmtTime(p.submittedAt):'')+(p.late?' · Late':'')}),el('h3',{style:'font-size:1.3rem',text:p.name})),
-      el('div',{class:'row'},el('button',{class:'btn sm',disabled:index===0,onclick:function(){openGrader(list,index-1)},text:'← Previous'}),el('button',{class:'btn sm',disabled:index>=list.length-1,onclick:function(){openGrader(list,index+1)},text:'Next →'}),el('button',{class:'btn ghost sm',onclick:closeModal,text:'Close'}))),
+      el('div',{class:'row'},el('button',{class:'btn sm',disabled:index===0,onclick:function(){openGrader(list,index-1)},text:'← Previous'}),el('button',{class:'btn sm',disabled:index>=list.length-1,onclick:function(){openGrader(list,index+1)},text:'Next →'}),el('button',{class:'btn primary sm gr-quick-save',onclick:function(){save(true)},text:index<list.length-1?'Save & next':'Save & finish'}),el('button',{class:'btn ghost sm',onclick:closeModal,text:'Close'}))),
     el('div',{class:'grader'},
       el('div',{class:'board grader-board'},boardSVG(a,p.placements||{},conns,{})),
       el('div',{class:'grader-side'},
@@ -4452,7 +4468,7 @@ function insightsData(r){
     s.conns.forEach(function(c){var ab=c.pair.split('-').map(Number);ab.forEach(function(x){if(x<1000)seen[x]=1});pairs[c.pair]=(pairs[c.pair]||0)+1;reasons.push(c.why);});
     Object.keys(seen).forEach(function(x){use[x]=(use[x]||0)+1});
   });
-  var label=function(x){x=Number(x);if(x>=1000){var k=r.act.dc[x-1000];var d=DC.find(function(z){return z.k===k});return d?d.name:'Icon'}var t=byId[x];return t?t.term:'T'+x;};
+  var label=function(x){x=Number(x);if(x>=1000){var d=DC[x-1001];return d?d.name:'Icon'}var t=byId[x];return t?t.term:'T'+x;};
   var top=Object.keys(pairs).sort(function(x,y){return pairs[y]-pairs[x]}).slice(0,8).map(function(k){var ab=k.split('-');return {a:label(ab[0]),b:label(ab[1]),n:pairs[k]}});
   var avg=reasons.length?Math.round(reasons.reduce(function(n,t){return n+words(t)},0)/reasons.length*10)/10:0;
   return {terms:terms.map(function(t){return {term:t.term,id:t.id,n:use[t.id]||0}}),top:top,pairs:pairs,avg:avg,short:reasons.filter(function(t){return words(t)<6}).length,reasons:reasons,started:started,done:done,total:r.students.length,label:label};
@@ -4925,7 +4941,7 @@ function postExtras(postId,a){
   var verBox=el('div',{class:'stack',style:'gap:6px'});
   var panel=el('div',{class:'panel stack post-extras',style:'gap:10px'},
     el('h3',{text:'Classroom tools'}),
-    el('div',{class:'row',style:'gap:6px'},el('span',{class:'hint',text:'Student supports:'}),SUPPORTS.map(function(s){return el('span',{class:'chip'+(o[s.k]===false?' off':''),text:(o[s.k]===false?'Off: ':'')+s.label})}),
+    el('div',{class:'row',style:'gap:6px'},el('span',{class:'hint',text:'Student supports:'}),SUPPORTS.map(function(s){if(s.k==='noPaste')return el('span',{class:'chip',text:o.noPaste?'Pasting blocked':'Pasting allowed'});return el('span',{class:'chip'+(o[s.k]===false?' off':''),text:(o[s.k]===false?'Off: ':'')+s.label})}),
       el('button',{class:'btn ghost sm',text:'Change',onclick:function(){openPostDialog(act||{id:a.activityId,title:a.title,terms:[]},a)}})),
     el('div',{class:'row'},
       o.gallery===false?el('span',{class:'hint',text:'Gallery walk is switched off for this posting.'}):[
@@ -5169,7 +5185,7 @@ saveWorkspaceCloud=function(ws){
   if(!target)return Promise.resolve({});
   clearTimeout(SYNC.timer);
   var job=(SYNC.chain||Promise.resolve()).catch(function(){}).then(function(){
-    PX.saving=true;setSync('saving');
+    PX.saving=true;setSync('saving');PX.prevSaved=PX.teacherData?clone(PX.teacherData):null;
     return attemptSave(target,0);
   });
   SYNC.chain=job.then(function(r){PX.saving=false;setSync(TW&&dirty()?'pending':'saved');afterAutoSave();
@@ -5213,7 +5229,7 @@ function afterAutoSave(){
   var ids=[];
   TW.activities.forEach(function(a){
     var open=openPostingsFor([a.id]);if(!open.length)return;
-    var c=contentOf(a);if(POSTED_SEEN[a.id]===undefined){POSTED_SEEN[a.id]=c;return;}
+    var c=contentOf(a);if(POSTED_SEEN[a.id]===undefined){var prev=PX.prevSaved&&(PX.prevSaved.activities||[]).find(function(x){return x.id===a.id});POSTED_SEEN[a.id]=prev?contentOf(prev):c;}
     if(POSTED_SEEN[a.id]!==c)ids.push(a.id);
   });
   var bar=document.getElementById('post-update-bar');
@@ -5405,7 +5421,7 @@ newActivity=function(){
 };
 /* Track when each Hex Space was last edited, for "Recently edited". */
 var v48Bar2=ensureBar;
-ensureBar=function(){var a=TW&&caps.teacher&&!isDirHash()&&curAct();if(a){var c=contentOf(a)+'|'+(a.folder||'');if(a._sig!==undefined&&a._sig!==c)a.updatedAt=new Date().toISOString();try{Object.defineProperty(a,'_sig',{value:c,writable:true,enumerable:false,configurable:true})}catch(e){}}return v48Bar2.apply(this,arguments);};
+ensureBar=function(){try{var cur=TW&&curAct(),pb=document.getElementById('f-print');if(pb&&cur)pb.disabled=!(cur.terms||[]).some(function(t){return String(t.term||'').trim()});}catch(e){}var a=TW&&caps.teacher&&!isDirHash()&&curAct();if(a){var c=contentOf(a)+'|'+(a.folder||'');if(a._sig!==undefined&&a._sig!==c)a.updatedAt=new Date().toISOString();try{Object.defineProperty(a,'_sig',{value:c,writable:true,enumerable:false,configurable:true})}catch(e){}}return v48Bar2.apply(this,arguments);};
 /* Routes: directory and folders; new Hex Spaces open straight in the editor. */
 var v48Route49=route;
 route=function(){
