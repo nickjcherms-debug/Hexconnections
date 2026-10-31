@@ -1,10 +1,18 @@
-VERIFICATION — VERSION 4.18.0
+VERIFICATION — VERSION 4.19.0
 ============================
 108 automated tests pass (52 backend, 56 frontend) using in-memory SQLite,
 simulated Firebase/Classroom responses, and execution of the actual frontend
 script in a DOM test harness. No real Google Classroom assignment was created
 or modified by these tests.
 
+New in 4.19: 167 tests (teacher and student menu categories, live panel contents
+including the grading queue, running games and recent Hex Spaces; 20-word
+default). Chromium: teacher tabs, each panel's links and actions, the grading link,
+keyboard (ArrowDown into a panel, Escape back to the tab), click-outside closing,
+one-line header at 1100-1440 px, panels staying on screen, tablet and phone
+accordions with live items, student menus (Continue, join box); 20 sims clean;
+tablet/phone personas pass after fixing the Menu sheet staying open when choosing
+the current page. Guide screenshots regenerated with the new header.
 New in 4.18: 165 tests (Hex Party: unique nicknames, one-row "unchanged" replies,
 word filter with science words allowed, anonymous ballots, no self-votes, Link
 Lightning/Hex Bluff/Odd Hex Out/Head-to-head scoring, hidden answers earn nothing,

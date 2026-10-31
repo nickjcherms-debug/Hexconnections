@@ -13,7 +13,7 @@ function savedProgress(info,s){
 function card(p,s={}){
  const info=parse(p.body);
  return {id:p.id,activityId:p.activity_id,classId:p.class_id,title:info.act.title,className:info.cls.name,courseId:p.course_id,courseName:info.courseName||info.cls.name,manual:String(p.course_id||'').startsWith('manual:'),code:info.asg.code||'',classroomUrl:p.classroom_url,status:p.status,due:info.asg.due||'',dueAt:info.asg.dueAt||'',start:info.asg.start||'',startAt:info.asg.startAt||'',tz:info.asg.tz||'',maxPoints:p.max_points,createdAt:p.created_at,open:info.asg.open!==false,game:info.asg.game?.on===true,debate:info.asg.debate?.on===true,
- submissions:Number(p.submission_count||0),turnedIn:Number(p.turned_in_count||0),...s};
+ submissions:Number(p.submission_count||0),turnedIn:Number(p.turned_in_count||0),ungraded:Number(p.ungraded_count||0),...s};
 }
 export async function handleDashboardRoutes(c){
  const {request,url,db,user,profile,json,fail,getGoogle,allPages,studentInPost}=c;
@@ -21,7 +21,8 @@ export async function handleDashboardRoutes(c){
  if(url.pathname==='/api/teacher/dashboard'){
   if(profile.role!=='teacher')fail(403,'This is for teacher accounts only.','teacher-required');
   const posts=await rows(db,`SELECT p.*,COUNT(s.payload) AS submission_count,
-   SUM(CASE WHEN s.status IN ('TURNED_IN','GRADED') THEN 1 ELSE 0 END) AS turned_in_count
+   SUM(CASE WHEN s.status IN ('TURNED_IN','GRADED') THEN 1 ELSE 0 END) AS turned_in_count,
+   SUM(CASE WHEN s.payload IS NOT NULL AND s.grade IS NULL AND s.feedback IS NULL THEN 1 ELSE 0 END) AS ungraded_count
    FROM posts p LEFT JOIN submissions s ON s.post_id=p.id WHERE p.owner_uid=? GROUP BY p.id ORDER BY p.created_at DESC`,user.uid);
   return json({assignments:posts.map(p=>{const i=parse(p.body);return card(p,{options:{...cleanOptions(i.asg.options,i.act),flow:i.asg.options?.flow===true},versions:(i.asg.versions||[]).map(v=>({name:v.name,terms:v.terms,starters:v.starters!==false})),gallery:!!i.asg.gallery?.open})})});
  }

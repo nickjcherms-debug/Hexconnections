@@ -1,3 +1,7 @@
+MENUS 4.19.0
+============
+No database migration.
+
 HEX PARTY 4.18.0
 ================
 Database: migrations/0011_party.sql (party_games, party_players, party_answers,
