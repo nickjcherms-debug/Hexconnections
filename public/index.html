@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Hexagonal thinking boards for classrooms: students arrange vocabulary hexagons and explain every connection, with optional Depth and Complexity icons.">
-<meta name="hex-connections-build" content="4.5.0">
+<meta name="hex-connections-build" content="4.6.0">
 <title>Hex Connections</title>
 
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=JetBrains+Mono:wght@500;700&display=swap">
@@ -573,6 +573,11 @@ h2,h3,.brand h1,.aitem b,.act-head h2,.modal h3{overflow-wrap:anywhere}
 .privacy{max-width:760px}
 .privacy ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
 @media (max-width:900px){.grader,.ins-grid{grid-template-columns:minmax(0,1fr)}.grader-side{max-height:none}}
+.ai-bar{display:flex;flex-direction:column;gap:4px;background:var(--t4);border-radius:12px;padding:8px 10px}
+.ai-btn{background:var(--panel)}
+.ai-tag{margin-left:auto;font-size:.76rem;font-weight:700;border-radius:999px;padding:1px 8px;background:var(--t4);color:var(--ink);white-space:nowrap}
+.gr-row.ai{border-style:dashed;border-color:color-mix(in srgb,var(--blue) 45%,var(--line))}
+.ai-flag{margin:0;font-size:.86rem;font-weight:700;color:var(--danger)}
 </style>
 <div id="root"></div>
 <script type="application/json" id="hx-data">{"version":4,"classes":[],"activities":[]}</script>
@@ -4220,26 +4225,32 @@ function saveBank(b){lsSet('hx-comment-bank',b.slice(0,40));}
 var SCORE_LABELS=['Needs work','Partly','Strong'];
 function scoreGrade(scores,n,max){if(!n)return '';var t=0;for(var k in scores)t+=scores[k];return Math.round(t/(2*n)*max*10)/10;}
 function actFor(p){return p.activitySnapshot||(PX.teacherData&&(PX.teacherData.activities||[]).find(function(x){return x.id===p.activityId}));}
+var GR_SEQ=0;
 function openGrader(list,index){
-  var p=list[index];if(!p)return;var a=actFor(p);if(!a){toast('The activity snapshot is unavailable.');return;}
+  var p=list[index];if(!p)return;var seq=++GR_SEQ;var a=actFor(p);if(!a){toast('The activity snapshot is unavailable.');return;}
   var conns={};(p.connections||[]).forEach(function(c,i){conns[pkey(c.a,c.b)]={why:c.why,at:i+1}});
-  var H=hexMap(a),fb=p._feedback||{},scores=Object.assign({},fb.scores||{}),comments=Object.assign({},fb.comments||{});
+  var H=hexMap(a),fb=p._feedback||{},dr=p._draft||fb,scores=Object.assign({},dr.scores||{}),comments=Object.assign({},dr.comments||{});
   var cl=p.connections||[],max=p._maxPoints||100;
+  /* AI suggestions only fill what the teacher hasn't decided yet, and stay marked until reviewed. */
+  var ai=p._ai,aiK={},flags={};
+  if(ai&&ai.connections)Object.keys(ai.connections).forEach(function(k){var s2=ai.connections[k];if(scores[k]==null){scores[k]=s2.score;aiK[k]=1}if(!comments[k]&&s2.comment)comments[k]=s2.comment;if(s2.misconception)flags[k]=1;});
   var gradeIn=el('input',{type:'number',id:'gr-grade',min:0,max:max,step:'any',value:p._grade!=null?p._grade:''});
   var gradeTouched=p._grade!=null;gradeIn.addEventListener('input',function(){gradeTouched=true});
   function autoGrade(){if(!gradeTouched&&Object.keys(scores).length===cl.length&&cl.length)gradeIn.value=scoreGrade(scores,cl.length,max);}
-  var overall=el('textarea',{id:'gr-overall',rows:3,maxlength:2000,placeholder:'Overall feedback for the student (optional)',value:fb.overall||''});
+  var overall=el('textarea',{id:'gr-overall',rows:3,maxlength:2000,placeholder:'Overall feedback for the student (optional)',value:(p._draft?p._draft.overall:fb.overall)||(ai&&ai.overall)||''});
   var revise=el('input',{type:'checkbox',id:'gr-revise',checked:!!fb.revise});
   var err=el('p',{class:'err',role:'alert'});
   function rows(){return cl.map(function(c){
     var k=String(c.num),la=H[c.a]?H[c.a].label+' '+H[c.a].name:'?',lb=H[c.b]?H[c.b].label+' '+H[c.b].name:'?';
     var note=el('textarea',{rows:2,maxlength:600,class:'gr-note','aria-label':'Comment on C'+k,placeholder:'Comment (optional)',value:comments[k]||''});
     note.addEventListener('input',function(){comments[k]=note.value});
+    var tag=aiK[k]?el('span',{class:'ai-tag',title:'Suggested by AI. Choose a score to confirm or change it.',text:'AI suggestion'}):null;
     var seg=el('div',{class:'score-seg',role:'radiogroup','aria-label':'Score for C'+k},[0,1,2].map(function(v){
-      var b=el('button',{type:'button',class:'score-btn s'+v+(scores[k]===v?' on':''),role:'radio','aria-checked':scores[k]===v?'true':'false',text:v+' · '+SCORE_LABELS[v],onclick:function(){scores[k]=v;
+      var b=el('button',{type:'button',class:'score-btn s'+v+(scores[k]===v?' on':''),role:'radio','aria-checked':scores[k]===v?'true':'false',text:v+' · '+SCORE_LABELS[v],onclick:function(){scores[k]=v;if(aiK[k]){delete aiK[k];if(tag&&tag.remove)tag.remove();}
         var sibs=seg.children||[];for(var i=0;i<sibs.length;i++){var on=i===v;sibs[i].classList&&sibs[i].classList.toggle('on',on);sibs[i].setAttribute('aria-checked',on?'true':'false')}autoGrade();}});return b;}));
     var chips=menuButton('Insert comment ▾',commentBank().map(function(t){return {label:t,onclick:function(){note.value=(note.value?note.value+' ':'')+t;comments[k]=note.value}}}),{btnCls:'ghost sm',cls:'bank-menu',aria:'Insert a saved comment for C'+k});
-    return el('li',{class:'gr-row'},el('div',{class:'gr-head'},el('span',{class:'cnum',text:'C'+k}),el('b',{text:la+' – '+lb})),el('p',{class:'gr-why',text:c.why}),seg,note,chips);
+    return el('li',{class:'gr-row'+(aiK[k]?' ai':'')},el('div',{class:'gr-head'},el('span',{class:'cnum',text:'C'+k}),el('b',{text:la+' – '+lb}),tag),el('p',{class:'gr-why',text:c.why}),
+      flags[k]?el('p',{class:'ai-flag',text:'⚠ Possible misconception. Check this one.'}):null,seg,note,chips);
   });}
   function payload(){var cm={};for(var k in comments)if(String(comments[k]||'').trim())cm[k]=String(comments[k]).trim();return {studentUid:p._studentUid,scores:scores,comments:cm,overall:overall.value,revise:revise.checked};}
   function save(next){
@@ -4250,10 +4261,24 @@ function openGrader(list,index){
     platformApi('posts/'+p._postId+'/feedback',body).then(function(){
       return (g!=null&&!(revise.checked&&p._manual))?platformApi('posts/'+p._postId+'/grade',{studentUid:p._studentUid,grade:g},!p._manual):null;
     }).then(function(){
-      p._feedback=Object.assign({},body,{updatedAt:new Date().toISOString()});if(g!=null)p._grade=g;
+      p._feedback=Object.assign({},body,{updatedAt:new Date().toISOString()});p._draft=null;if(g!=null)p._grade=g;
       toast(revise.checked?'Returned to '+p.name+' for revision.':'Saved feedback for '+p.name+'.');
       if(next&&list[index+1])openGrader(list,index+1);else{closeModal();route();}
     }).catch(function(e){err.textContent=e.message});
+  }
+  var autoBox=el('input',{type:'checkbox',id:'ai-auto',checked:!!rawGet('hx-ai-auto')});
+  autoBox.addEventListener('change',function(){rawSet('hx-ai-auto',autoBox.checked?1:null);if(autoBox.checked&&!p._ai&&!p._feedback&&cl.length)suggest();});
+  var aiBtn=el('button',{type:'button',class:'btn sm ai-btn',disabled:!cl.length,text:p._ai?'↻ Suggest again':'✨ Suggest scores',onclick:function(){suggest()}});
+  var aiNote=el('span',{class:'hint',text:p._ai?'Suggested by '+(p._aiModel||'AI')+'. Review each one before saving.':'Free AI drafts scores and comments; you decide.'});
+  var aiBar=el('div',{class:'ai-bar'},el('div',{class:'row',style:'gap:8px'},aiBtn,el('label',{class:'row',for:'ai-auto',style:'gap:6px;font-size:.88rem'},autoBox,'Suggest for each student')),aiNote);
+  function suggest(){
+    aiBtn.disabled=true;aiBtn.textContent='Suggesting…';aiNote.textContent='Reading '+cl.length+' connection'+(cl.length===1?'':'s')+'…';
+    platformApi('posts/'+p._postId+'/ai-suggest',{studentUid:p._studentUid}).then(function(r){
+      p._ai=r.suggestions;p._aiModel=r.model;
+      /* Re-open with the suggestions, keeping anything the teacher changed while waiting. */
+      if(seq===GR_SEQ&&modalClose){p._draft={scores:scores,comments:comments,overall:overall.value};openGrader(list,index);}
+      if(r.remaining&&r.remaining.teacher<=5)toast(r.remaining.teacher+' AI suggestion'+(r.remaining.teacher===1?'':'s')+' left today.');
+    }).catch(function(e){aiBtn.disabled=false;aiBtn.textContent='✨ Suggest scores';aiNote.textContent=e.message;});
   }
   var addBank=el('button',{type:'button',class:'btn ghost sm',text:'+ Save a comment to my bank',onclick:function(){promptDialog('Add to comment bank','Comment','',function(t){var b=commentBank();b.unshift(t.slice(0,200));saveBank(b);openGrader(list,index);toast('Added to your comment bank.')},{ok:'Add'})}});
   openModal([
@@ -4264,6 +4289,7 @@ function openGrader(list,index){
       el('div',{class:'board grader-board'},boardSVG(a,p.placements||{},conns,{})),
       el('div',{class:'grader-side'},
         el('p',{class:'muted',style:'margin:0'},(p.termsUsed!=null?p.termsUsed+' terms used · ':'')+cl.length+' connection'+(cl.length===1?'':'s')+'. Score each 0–2; the grade fills in from the scores.'),
+        aiBar,
         cl.length?el('ol',{class:'gr-list'},rows()):el('p',{class:'muted',text:'No connections to score.'}),
         addBank)),
     el('div',{class:'grader-foot'},
@@ -4277,6 +4303,8 @@ function openGrader(list,index){
         el('button',{class:'btn',onclick:function(){save(false)},text:'Save'}),
         el('button',{class:'btn primary',onclick:function(){save(true)},text:index<list.length-1?'Save & next student':'Save & finish'})))
   ],{wide:true});
+  if(ai)autoGrade();
+  if(!ai&&!p._feedback&&cl.length&&rawGet('hx-ai-auto'))suggest();
 }
 /* Students see their teacher's feedback above the board. */
 var v44Shell=renderStudentShell;
@@ -4414,6 +4442,7 @@ function renderPrivacy(){
       el('ul',null,
         el('li',{text:'No ads, no selling or sharing of data, and no tracking or analytics scripts.'}),
         el('li',{text:'Google Classroom access is used only while you’re using the site and is never stored.'}),
+        el('li',{text:'When a teacher asks for AI-suggested scores, the terms, definitions and the student’s reasons (never names or emails) are sent to Cloudflare Workers AI. Teachers review every suggestion before anything is saved.'}),
         el('li',{text:'Only the teacher who posted an assignment can see the work turned in to it.'})),
       el('h3',{text:'Your choices'}),
       el('ul',null,
