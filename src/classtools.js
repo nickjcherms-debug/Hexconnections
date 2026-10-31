@@ -27,12 +27,13 @@ export function cleanOptions(o,act){
   const src=o&&typeof o==='object'?o:{},out={};
   const dflt={starters:act?.starters!==false,reflect:act?.reflect!==false,noPaste:act?.noPaste===true,flow:act?.flow!==false};
   for(const k of OPTION_KEYS)out[k]=typeof src[k]==='boolean'?src[k]:(k in dflt?dflt[k]:true);
+  out.lang=LANGUAGES[src.lang]?src.lang:'';
   return out;
 }
 // What a student's browser receives: their version, with switched-off supports removed.
 export function studentAct(info,variant){
   const act=variantAct(info,variant),o=cleanOptions(info?.asg?.options,info?.act);
-  const out={...act,starters:act.starters!==false&&o.starters,reflect:act.reflect!==false&&o.reflect,readAloud:o.readAloud,translate:o.translate,gallery:o.gallery,showDefs:o.defs,noPaste:o.noPaste,flow:flowRequired(info)};
+  const out={...act,starters:act.starters!==false&&o.starters,reflect:act.reflect!==false&&o.reflect,readAloud:o.readAloud,translate:o.translate,gallery:o.gallery,showDefs:o.defs,noPaste:o.noPaste,flow:flowRequired(info),lang:o.translate?o.lang:''};
   if(!o.defs)out.terms=(act.terms||[]).map(t=>({...t,def:''}));
   return out;
 }

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Hexagonal thinking boards for classrooms: students arrange vocabulary hexagons and explain every connection, with optional Depth and Complexity icons.">
-<meta name="hex-connections-build" content="4.12.0">
+<meta name="hex-connections-build" content="4.13.0">
 <title>Hex Connections</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0F6E6E">
@@ -706,6 +706,15 @@ h2,h3,.brand h1,.aitem b,.act-head h2,.modal h3{overflow-wrap:anywhere}
 .gal-prog.ok{background:var(--teal-soft);color:var(--teal)}
 .reteach{background:var(--honey-soft);color:var(--honey-ink);border-radius:12px;padding:8px 12px;font-size:.95rem}
 .reteach.big{font-size:clamp(1.05rem,1.6vw,1.4rem)}
+.warn-text{color:var(--honey-ink,#8A5A00)}
+.first-steps{display:flex;flex-direction:column;gap:8px;border-color:var(--blue)}
+.fs-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+.fs-list li{display:grid;grid-template-columns:26px 1fr auto;gap:10px;align-items:center}
+.fs-check{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);display:inline-flex;align-items:center;justify-content:center;font-weight:700;color:var(--teal)}
+.fs-list li.done .fs-check{border-color:var(--teal);background:var(--teal-soft)}
+.fs-list li.done b{color:var(--muted)}
+.skip-link{position:absolute;left:-9999px;top:8px;z-index:200;background:var(--ink);color:var(--paper);padding:8px 14px;border-radius:8px;font-weight:700}
+.skip-link:focus{left:8px}
 </style>
 <div id="root"></div>
 <script type="application/json" id="hx-data">{"version":4,"classes":[],"activities":[]}</script>
@@ -1777,7 +1786,7 @@ function renderTeacher(){
   function tab(k, label){ return el('button',{class:'tab'+(TS.tab===k?' on':''),role:'tab','aria-selected':String(TS.tab===k),onclick:function(){ TS.tab=k; remember(); renderTeacher(); },text:label}); }
   var main = a ? el('div',{style:'min-width:0'},
     el('div',{class:'eyebrow',text:'Hex Space'}),
-    el('div',{class:'row',style:'justify-content:space-between;align-items:flex-start'}, el('h2',{text:a.title || 'Untitled Hex Space'}), el('div',{class:'row'}, folderPicker(a), assignMenu(a), el('button',{class:'btn sm',onclick:function(){ openShare(a); },text:'Share'}), el('button',{class:'btn ghost sm danger-text','aria-label':'Delete this Hex Space',onclick:function(){ deleteHexSpace(a); },text:'Delete'}))),
+    el('div',{class:'row',style:'justify-content:space-between;align-items:flex-start'}, el('h2',{text:a.title || 'Untitled Hex Space'}), el('div',{class:'row'}, folderPicker(a), assignMenu(a), el('button',{class:'btn sm',onclick:function(){ openShare(a); },text:'Share'}), el('button',{class:'btn ghost sm',onclick:function(){ duplicateHexSpace(a); },text:'Duplicate'}), el('button',{class:'btn ghost sm danger-text','aria-label':'Delete this Hex Space',onclick:function(){ deleteHexSpace(a); },text:'Delete'}))),
     el('div',{class:'tabs',role:'tablist'}, tab('setup','Setup'), tab('codes','Post (' + postsFor(a.id).length + ')'), tab('subs','Submissions (' + rowsFor(a.id).length + ')')),
     TS.tab === 'setup' ? setupPane(a) : TS.tab === 'codes' ? codesPane(a) : subsPane(a)
   ) : el('div',{class:'panel'}, el('h3',{text:'No activities yet'}), el('p',{class:'muted',text:'Create one to paste in your unit vocabulary.'}), el('button',{class:'btn primary',onclick:newActivity,text:'New activity'}));
@@ -2078,6 +2087,7 @@ function setupPane(a){
     el('div',{class:'grid2'},
       el('div',{class:'stack'},
         field('f-title','Title', bind(el('input',{type:'text',id:'f-title',value:a.title,maxlength:80,placeholder:'e.g. Unit 3: Cells'}),'title')),
+        el('p',{id:'f-title-warn',class:'hint warn-text',hidden:String(a.title||'').length<=60,style:'margin:0',text:'Long titles wrap on phones and in Google Classroom. Under 60 characters reads best.'}),
         el('p',{class:'hint',style:'margin:0',text:'When it’s ready, choose Assign to class above. You pick the dates and student supports when you assign it.'})),
       field('f-ins','Directions for students', bind(el('textarea',{id:'f-ins',rows:3,value:a.instructions||'',maxlength:600,placeholder:DEFAULT_INS}),'instructions'), 'Leave blank to use the standard directions shown.')
     ),
@@ -4660,8 +4670,10 @@ function supportsEditor(opts,act){
     return el('label',{class:'sup-row',for:'ps-'+s.k},cb,el('span',null,el('b',{text:s.label}),el('span',{class:'hint',text:s.hint})));
   });
   count();
-  var node=el('details',{class:'sup-box'},sum,el('div',{class:'sup-grid'},rowsEl));
-  return {node:node,value:function(){var o={};SUPPORTS.forEach(function(s){o[s.k]=!!boxes[s.k].checked});return o;}};
+  var langSel=el('select',{id:'ps-lang'},el('option',{value:'',text:'English (students choose)'}),Object.keys(LANGS).map(function(k){return el('option',{value:k,text:LANGS[k],selected:opts&&opts.lang===k||null})}));
+  var node=el('details',{class:'sup-box'},sum,el('div',{class:'sup-grid'},rowsEl),
+    el('label',{class:'fld',for:'ps-lang',style:'margin-top:8px'},'Translation students start in',langSel,el('span',{class:'hint',text:'Used when Translate is on. Students can still switch languages.'})));
+  return {node:node,value:function(){var o={};SUPPORTS.forEach(function(s){o[s.k]=!!boxes[s.k].checked});o.lang=langSel.value||'';return o;}};
 }
 function versionsEditor(act){
   act=act||{terms:[]};var terms=act.terms||[],list=[],holder=el('div',{class:'stack',style:'gap:8px'});
@@ -4751,8 +4763,8 @@ function boardTexts(){
   (ST.act.terms||[]).forEach(function(t){out.push(t.term||'');if(t.def)out.push(t.def)});
   return out.filter(function(x,i,arr){return x&&arr.indexOf(x)===i});
 }
-function setLanguage(lang){
-  TR.lang=lang;rawSet('hx-lang',lang||null);
+function setLanguage(lang,keep){
+  TR.lang=lang;if(keep!==false)rawSet('hx-lang',lang||null);
   if(!lang||!ST){renderStudentShell();return;}
   var texts=boardTexts(),cache=TR.cache[lang]=TR.cache[lang]||{},need=texts.filter(function(t){return !cache[t]});
   if(!need.length){renderStudentShell();return;}
@@ -5343,6 +5355,7 @@ function actMenu(a){
     {label:'Open',onclick:function(){openHexSpace(a)}},
     {label:'Assign to class…',onclick:function(){assignTo(a,[])}},
     {label:'Share…',onclick:function(){openShare(a)}},
+    {label:'Duplicate',onclick:function(){duplicateHexSpace(a)}},
     {label:'Print tiles',onclick:function(){printTiles(a)}},
     {label:'Move to folder…',onclick:function(){moveActDialog(a)}},
     {sep:true},
@@ -5713,6 +5726,58 @@ function reteachCallout(d,big){
     list.map(function(t,i){return el('span',{class:'reteach-term'},(i?' · ':''),t.term+' ('+t.n+' of '+d.started+')')}),
     big?null:el('span',{class:'hint',text:' Worth a quick reteach or a class discussion.'}));
 }
+
+
+/* ===================== 4.13: quick conveniences ===================== */
+function duplicateHexSpace(a){
+  if(!TW)return;
+  var c=clone(a),nid=uid();c.id=nid;c.title=(String(a.title||'Untitled Hex Space').trim()+' (copy)').slice(0,80);c.assign={};delete c.sharedFrom;
+  c.createdAt=c.updatedAt=new Date().toISOString();
+  var i=TW.activities.findIndex(function(x){return x.id===a.id});TW.activities.splice(i<0?TW.activities.length:i+1,0,c);
+  TS.sel=nid;TS.tab='setup';remember();ensureBar();
+  toast('Duplicated. You’re editing the copy; the original and its postings are unchanged.');
+  NAV.hash='teacher/edit-'+encodeURIComponent(nid);
+}
+/* Live long-title hint and checklist bookkeeping ride on every edit. */
+var v412Bar=ensureBar;
+ensureBar=function(){var r=v412Bar.apply(this,arguments);try{var w=document.getElementById('f-title-warn'),a=TW&&curAct();if(w&&a)w.hidden=String(a.title||'').length<=60;}catch(e){}return r;};
+/* First-time checklist on the Hex Spaces page. */
+function firstSteps(){
+  if(rawGet('hx-checklist-hidden')||!TW)return null;
+  var hexes=TW.activities.filter(function(a){return String(a.title||'').trim()&&(a.terms||[]).length}),posts=PX.posts||[];
+  var steps=[
+    {done:(TW.classes||[]).length>0,t:'Add a class',d:'Import from Google Classroom or add a code-only class.',go:function(){NAV.hash='teacher'}},
+    {done:hexes.length>0,t:'Build a Hex Space',d:'A title and your unit’s terms. Definitions are optional.',go:function(){newHexSpaceIn(dirFolderId())}},
+    {done:posts.length>0,t:'Assign it to a class',d:'Use Assign on a Hex Space; you choose the dates and supports.',go:function(){if(hexes[0])assignTo(hexes[0],[]);else toast('Build a Hex Space first.')}},
+    {done:posts.some(function(p){return (p.submissions||0)>0}),t:'Review student work',d:'Classes → View submissions & groups, then Grade next ungraded.',go:function(){NAV.hash='teacher'}}];
+  if(steps.every(function(x){return x.done}))return null;
+  return el('div',{class:'panel first-steps'},
+    el('div',{class:'row',style:'justify-content:space-between'},el('h3',{text:'Getting started'}),el('button',{class:'btn ghost sm',onclick:function(){rawSet('hx-checklist-hidden',1);renderDirectory();},text:'Hide'})),
+    el('ol',{class:'fs-list'},steps.map(function(x){return el('li',{class:x.done?'done':''},el('span',{class:'fs-check','aria-hidden':'true',text:x.done?'✓':''}),
+      el('div',null,el('b',{text:x.t+(x.done?' (done)':'')}),el('span',{class:'hint',text:' '+x.d})),x.done?null:el('button',{class:'btn sm',onclick:x.go,text:'Start'}))})),
+    el('a',{href:'#guide',class:'hint',text:'Read the full guide →'}));
+}
+var v412Dir=renderDirectory;
+renderDirectory=function(){
+  v412Dir.apply(this,arguments);
+  var fs=firstSteps(),d=root.querySelector&&root.querySelector('.directory');
+  if(fs&&d){var top=d.querySelector&&d.querySelector('.dir-tools');if(top&&d.insertBefore)d.insertBefore(fs,top);else add(d,fs);}
+};
+/* Skip link for keyboard users. */
+function addSkipLink(){
+  if(document.getElementById('skip-link')||!document.body||!document.body.insertBefore)return;
+  var a=el('a',{id:'skip-link',class:'skip-link',href:'#',text:'Skip to main content',onclick:function(e){if(e&&e.preventDefault)e.preventDefault();
+    var t=root.querySelector&&(root.querySelector('main')||root.querySelector('.directory')||root.querySelector('.teach')||root.querySelector('h2'));
+    if(t){if(!t.getAttribute('tabindex'))t.setAttribute('tabindex','-1');t.focus();}}});
+  document.body.insertBefore(a,document.body.firstChild);
+}
+addSkipLink();
+/* Students start in the posting's translation language unless they've picked one themselves. */
+var v412Shell=renderStudentShell;
+renderStudentShell=function(){
+  if(ST&&ST.act&&ST.act.lang&&!ST._langApplied&&on('translate')){ST._langApplied=true;if(!TR.lang&&rawGet('hx-lang')===null&&LANGS[ST.act.lang]){setLanguage(ST.act.lang,false);return;}}
+  return v412Shell.apply(this,arguments);
+};
 
 /* The homepage is the starting page: a visit to the bare site address opens it,
    signed in or not. In-app links to "#" still go to the student dashboard. */

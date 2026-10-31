@@ -33,6 +33,7 @@ function make(){
  getData(){return DATA},setData(w){DATA=w},setView(fn){viewSubmission=fn},
  setWork(w){TW=w;TS.rows={};TS.sel=w.activities[0].id},setRenderTeacher(fn){renderTeacher=fn},
  setApi(fn){platformApi=fn},setTeacher(fn){startTeacher=fn;teacherDashboard=fn},
+ v413:{duplicateHexSpace,firstSteps},
  v412:{leastConnected,reteachCallout,openGalleryDialog},
  v410:{flowGroups,flowState,setChecker(fn){checkReady=fn},getChecker(){return checkReady}},
  v49:{mergeInto,reconcileLocal,renderDirectory,blockPaste,graderExtras:(p)=>graderExtras(p,[],0),SYNC,dirFolderId},
@@ -564,7 +565,7 @@ test('student supports in the Post dialog start from the Hex Space and are sent 
  byId('pd-c-club').checked=true;byId('pd-c-club').listeners.change();
  everything(t).find(n=>n.tagName==='button'&&n.textContent==='Post').listeners.click();await settle();
  assert.equal(sent.length,1);
- assert.deepEqual(JSON.parse(JSON.stringify(sent[0].options)),{defs:false,starters:false,readAloud:true,translate:false,reflect:true,gallery:true,noPaste:false,flow:true});
+ assert.deepEqual(JSON.parse(JSON.stringify(sent[0].options)),{defs:false,starters:false,readAloud:true,translate:false,reflect:true,gallery:true,noPaste:false,flow:true,lang:''});
  assert.deepEqual(JSON.parse(JSON.stringify(sent[0].versions.map(x=>x.terms))),[[1,2],[1]]);
 });
 test('a version with no terms is caught before posting',()=>{
@@ -728,4 +729,18 @@ test('least-connected terms are flagged for reteaching; the gallery dialog sends
  h.v412.openGalleryDialog('p1');everything(t).find(n=>n.attrs?.id==='gw-visits').value='3';everything(t).find(n=>n.attrs?.id==='gw-min').value='2';
  everything(t).find(n=>n.tagName==='button'&&n.textContent==='Open gallery walk').listeners.click({});await settle();
  assert.equal(sent[0],'posts/p1/gallery/open');assert.equal(JSON.stringify(sent[1]),JSON.stringify({open:true,visits:3,minComments:2}));
+});
+
+// ---------------- 4.13 ----------------
+test('duplicating a Hex Space copies terms and settings but not postings or share links',()=>{
+ const t=make();const {h}=t;teacher2(h);const TW=h.v4.getTW();const a=TW.activities[0];a.assign={club:{code:'X'}};a.sharedFrom={code:'S'};a.dcOn=true;
+ h.v413.duplicateHexSpace(a);const c=TW.activities[1];
+ assert.equal(c.title,'Cells (copy)');assert.notEqual(c.id,a.id);assert.equal(c.terms[0].term,'Nucleus');assert.equal(c.dcOn,true);assert.equal(c.folder,'bio');
+ assert.equal(JSON.stringify(c.assign),'{}');assert.equal(c.sharedFrom,undefined);
+});
+test('the getting-started checklist tracks progress and disappears when done or hidden',()=>{
+ const t=make();const {h}=t;teacher2(h);h.v4.setPosts([]);
+ let fs=h.v413.firstSteps();let txt=kids(fs).map(n=>n.textContent).join(' ');assert.match(txt,/Add a class \(done\)/);assert.match(txt,/Build a Hex Space \(done\)/);assert.doesNotMatch(txt,/Assign it to a class \(done\)/);
+ h.v4.setPosts([{activityId:'a1',submissions:2}]);assert.equal(h.v413.firstSteps(),null);
+ h.v4.setPosts([]);h.lsSet;t.store.set('hx-checklist-hidden','1');assert.equal(h.v413.firstSteps(),null);
 });

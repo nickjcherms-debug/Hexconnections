@@ -647,7 +647,7 @@ test('student supports chosen when posting: definitions are removed for students
  assert.equal((await h.call('teacher','posts/'+id,undefined,{access:false})).body.assignment.act.terms[0].def,'Control center','teacher still sees them');
  assert.equal((await h.call('teacher','posts/'+id+'/gallery/open',{open:true},{access:false})).body.code,'gallery-off');
  const ed=await h.call('teacher','posts/'+id+'/edit',{options:{defs:true,gallery:true}},{access:false});
- assert.deepEqual(ed.body.options,{defs:true,starters:false,readAloud:true,translate:true,reflect:true,gallery:true,noPaste:false,flow:true});
+ assert.deepEqual(ed.body.options,{defs:true,starters:false,readAloud:true,translate:true,reflect:true,gallery:true,noPaste:false,flow:true,lang:''});
  a=(await h.call('kid','posts/'+id,undefined,{access:false})).body.assignment.act;assert.equal(a.terms[0].def,'Control center');
  assert.equal((await h.call('teacher','posts/'+id+'/gallery/open',{open:true},{access:false})).status,200);
  assert.equal((await h.call('kid','posts/'+id+'/submit',{draft:{name:'',place:{1:[0,0],2:[1,0],3:[0,1]},conns:{'1-2':{why:'Two words.',at:1},'1-3':{why:'Two more.',at:2}},view:{}}},{access:false})).status,200);
@@ -715,4 +715,13 @@ test('gallery assignments: each student sees a fixed rotation of boards and the 
  assert.equal((await h.call('k1','posts/'+id+'/gallery',undefined,{access:false})).body.myComments,1);
  // reopening without settings keeps them
  await h.call('teacher','posts/'+id+'/gallery/open',{open:false},{access:false});const re=await h.call('teacher','posts/'+id+'/gallery/open',{open:true},{access:false});assert.equal(re.body.visits,2);
+});
+test('a posting can set the translation language students start in',async()=>{
+ const h=harness();await h.call('teacher','profile',{role:'teacher'});await h.call('teacher','workspace',{workspace:threeTerms(),revision:0});
+ const p=await h.call('teacher','posts/new',{activityId:'act-m',classId:'club',tz:'UTC',options:{lang:'es'}},{access:false});await kidJoin(h,'kid',p.body.code);
+ assert.equal((await h.call('kid','posts/'+p.body.id,undefined,{access:false})).body.assignment.act.lang,'es');
+ const q=await h.call('teacher','posts/new',{activityId:'act-m',classId:'club',tz:'UTC',options:{lang:'xx'}},{access:false});await kidJoin(h,'kid',q.body.code);
+ assert.equal((await h.call('kid','posts/'+q.body.id,undefined,{access:false})).body.assignment.act.lang,'');
+ await h.call('teacher','posts/'+p.body.id+'/edit',{options:{translate:false}},{access:false});
+ assert.equal((await h.call('kid','posts/'+p.body.id,undefined,{access:false})).body.assignment.act.lang,'','no default language when Translate is off');
 });
