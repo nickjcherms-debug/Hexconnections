@@ -34,6 +34,7 @@ function make(){
  setWork(w){TW=w;TS.rows={};TS.sel=w.activities[0].id},setRenderTeacher(fn){renderTeacher=fn},
  setApi(fn){platformApi=fn},setTeacher(fn){startTeacher=fn;teacherDashboard=fn},
  v414:{graderBoard,rosterPanel,termPictureButton,hexList},
+ v419:{teacherMenus,studentMenus,closeMegaMenus,blankActivity},
  v418:{renderPartyHost,renderPartyPlay,renderPartyJoin,openPartySetup,classMeter},
  v416:{studentAssignmentCard,saveAndFinishLater,GUIDE_IMG,renderGuide},
  v415:{gameScore,renderGames,renderGameConsole,renderPlay,drawHud,GS,GAME_CACHE,graderExtras,keyToPath,pathToKey,GUIDE,saveDraft,setST(v){ST=v},getST(){return ST}},
@@ -866,3 +867,20 @@ test('a student joins Hex Party with a room code and sees the answer screen',asy
  const txt=everything(t).map(n=>n.textContent||'').join(' ');
  assert.match(txt,/Keen Gecko/);assert.match(txt,/Nucleus/);assert.match(txt,/Ribosome/);assert.match(txt,/Lock it in/);assert.match(txt,/300 \/ 1,000|300 \/ 1000/);
 });
+
+/* ---------- 4.19 dropdown menus ---------- */
+test('signed-in headers show category tabs with dropdown panels of quick actions and live items',async()=>{
+ const t=make(),{h}=t;h.GA.ready=true;h.GA.user={uid:'t',displayName:'Ms. R',getIdToken:async()=>'x'};h.PX.loaded=true;h.PX.profile={role:'teacher'};
+ h.PX.teacherData={classes:[{id:'c1',name:'Period 2 Bio'}],activities:[{id:'a1',title:'Cells',terms:[{id:1},{id:2}]}],folders:[{id:'f1',name:'Life Science'}]};
+ h.setApi(async(path)=>path==='teacher/dashboard'?{assignments:[{id:'p1',title:'Cells',className:'Period 2 Bio',ungraded:3,game:true}]}:path==='party/mine'?{games:[{id:'g1',title:'Review',code:'BCDFG',status:'OPEN',players:12}]}:{});
+ const menus=h.v419.teacherMenus();assert.equal(menus.map(m=>m.label).join('|'),'Classes|Hex Spaces|Games|Help');
+ const box={children:[],appendChild(c){this.children.push(c)},replaceChildren(){this.children=[]}};
+ const walk=n=>[n].concat(...(n.children||[]).map(walk));const txt=n=>walk(n).map(x=>x.textContent||'').join(' ');
+ const live=new (t.root.constructor)('div');menus[0].live(live);await settle();
+ assert.match(txt(live),/Period 2 Bio/);assert.match(txt(live),/Needs grading/);assert.ok(walk(live).some(n=>n.attrs?.href==='#teacher/post-p1'),'grading queue links to the assignment');
+ const g=new (t.root.constructor)('div');menus[2].live(g);await settle();assert.match(txt(g),/Return to “Review” · BCDFG/);assert.ok(walk(g).some(n=>n.attrs?.href==='#teacher/game-p1'));
+ const hx=new (t.root.constructor)('div');menus[1].live(hx);assert.match(txt(hx),/Cells/);assert.match(txt(hx),/Life Science/);
+ const quick=menus[0].quick();assert.ok(quick.some(q=>/Import from Google Classroom/.test(txt(q))));
+ assert.equal(h.v419.studentMenus().map(m=>m.label).join('|'),'My work|Games|Help');
+});
+test('new Hex Spaces default to 20 words per connection',()=>{const {h}=make();assert.equal(h.v419.blankActivity().minWords,20);});

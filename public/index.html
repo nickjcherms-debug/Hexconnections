@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Hexagonal thinking boards for classrooms: students arrange vocabulary hexagons and explain every connection, with optional Depth and Complexity icons.">
-<meta name="hex-connections-build" content="4.18.0">
+<meta name="hex-connections-build" content="4.19.0">
 <title>Hex Connections</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0F6E6E">
@@ -895,6 +895,41 @@ h2,h3,.brand h1,.aitem b,.act-head h2,.modal h3{overflow-wrap:anywhere}
 .pt-kinds{border:1px solid var(--line);border-radius:12px;padding:8px 12px;display:flex;flex-direction:column;gap:6px;margin:0}
 .pt-kinds legend{font-weight:700;padding:0 4px}
 @media (max-width:700px){.pt-duel{grid-template-columns:1fr}.pt-big{font-size:2.2rem}.pt-pick{grid-template-columns:110px 1fr 30px}.pt-codechip{margin-left:0}}
+/* 4.19 dropdown menus */
+.mega-wrap{position:relative}
+.mega-btn{gap:4px}
+.mega-caret{font-size:.75em;transition:transform .15s}
+.mega-btn.open{color:var(--ink);background:var(--panel);box-shadow:inset 0 0 0 1px var(--line)}
+.mega-btn.open .mega-caret{transform:rotate(180deg)}
+.mega-panel{position:absolute;top:calc(100% + 8px);left:0;z-index:45;width:min(620px,calc(100vw - 24px));display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4px 18px;background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 44px var(--shadow);padding:14px}
+.mega-panel[hidden],.mega-sheet[hidden]{display:none}
+.mega-quick{display:flex;flex-direction:column;gap:2px}
+.mega-live{display:flex;flex-direction:column;gap:10px;border-left:1px solid var(--line);padding-left:16px;min-width:0}
+.mega-item{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:10px;color:var(--ink);text-decoration:none;background:transparent;border:0;font:inherit;text-align:left;cursor:pointer;width:100%}
+.mega-item:hover,.mega-item:focus-visible,.mega-link:hover,.mega-link:focus-visible{background:var(--paper)}
+.mega-ic{width:26px;height:26px;flex:none;display:grid;place-items:center;border-radius:8px;background:var(--t1);font-size:.95rem}
+.mega-tx{display:flex;flex-direction:column;gap:1px;min-width:0}
+.mega-tx b{font-size:.95rem}
+.mega-tx small{color:var(--muted);font-size:.8rem;line-height:1.3}
+.mega-sec{display:flex;flex-direction:column;gap:1px}
+.mega-h{font-size:.72rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:2px 0 4px}
+.mega-link{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;border-radius:8px;color:var(--ink);text-decoration:none;font-size:.92rem}
+.mega-link span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.mega-badge{flex:none;font-size:.75rem;font-weight:800;padding:2px 8px;border-radius:999px;background:var(--honey-soft);color:var(--ink)}
+.mega-empty{margin:0;padding:4px 8px;color:var(--muted);font-size:.88rem}
+.mega-join{display:flex;flex-direction:column;gap:6px;padding:8px 10px;border-radius:10px;background:var(--paper);margin-bottom:4px}
+.mega-code{width:110px;text-transform:uppercase;letter-spacing:.15em;font-weight:800}
+.mega-sheet{position:absolute;left:0;right:0;top:100%;z-index:45;margin-top:6px;background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 44px var(--shadow);padding:10px;max-height:78vh;overflow:auto;display:flex;flex-direction:column;gap:6px}
+.mega-acc{border-bottom:1px solid var(--line);padding:4px 0}
+.mega-acc summary{cursor:pointer;font-weight:800;padding:10px 8px;list-style:none;display:flex;justify-content:space-between}
+.mega-acc summary::after{content:'▾';color:var(--muted)}
+.mega-acc[open] summary::after{content:'▴'}
+.mega-acc.on summary{color:var(--blue)}
+.mega-acc .mega-live{border-left:0;padding:6px 0 6px 8px}
+.mega-sheet>.btn{align-self:flex-start;margin:6px 8px}
+@media (max-width:1240px) and (min-width:1001px){.top.signed-in .nav.mega-nav{display:flex}.top.signed-in .nav-mobile{display:none}}
+@media (max-width:1000px){.top.signed-in .nav{display:none}.top.signed-in .nav-mobile{display:block;margin-left:auto}}
+@media (max-width:640px){.mega-panel{grid-template-columns:1fr}.mega-live{border-left:0;padding-left:0}}
 </style>
 <div id="root"></div>
 <script type="application/json" id="hx-data">{"version":4,"classes":[],"activities":[]}</script>
@@ -1991,7 +2026,7 @@ function ensureBar(){
 }
 
 function blankActivity(){
-  return { id:uid(), title:'', instructions:'', minTerms:null, minWords:5, assign:{}, dcOn:false, dc:[], board:{shape:'hexagon',size:'roomy',orient:'pointy',rotate:true}, createdAt:new Date().toISOString(), terms:[] };
+  return { id:uid(), title:'', instructions:'', minTerms:null, minWords:20, assign:{}, dcOn:false, dc:[], board:{shape:'hexagon',size:'roomy',orient:'pointy',rotate:true}, createdAt:new Date().toISOString(), terms:[] };
 }
 function newActivity(){
   var x = blankActivity();
@@ -7064,6 +7099,172 @@ route=function(){
   }
   v418Route();
 };
+
+/* ===================== 4.19: dropdown menus for every major category ===================== */
+/* Signed-in headers show a few category tabs. Each opens a panel: quick actions on the left and
+   the user's live items on the right (classes, recent Hex Spaces, grading queue, running games…).
+   Panels open on click/tap, close on Escape or a click outside, and work with the arrow keys.
+   Below 1240 px the same categories fold into an accordion under the Menu button. */
+var MENU={open:null,cache:{}};
+function menuData(kind){
+  var c=MENU.cache[kind];if(c&&Date.now()-c.at<45000)return c.p;
+  var p=kind==='teacher'
+    ?Promise.all([platformApi('teacher/dashboard').catch(function(){return {assignments:[]}}),platformApi('party/mine').catch(function(){return {games:[]}})]).then(function(r){return {assignments:r[0].assignments||[],games:r[1].games||[]}})
+    :platformApi('student/dashboard',undefined,classroomReady('student')).then(function(r){return {active:r.active||[],submitted:r.submitted||[]}}).catch(function(){return {active:[],submitted:[]}});
+  MENU.cache[kind]={at:Date.now(),p:p};return p;
+}
+function closeMegaSheet(){var s=document.getElementById&&document.getElementById('mega-sheet');if(s&&!s.hidden){s.hidden=true;var b=document.querySelector&&document.querySelector('.mega-menu-btn');if(b)b.setAttribute('aria-expanded','false');
+  /* Fold the sections back up once any click has finished, so the next opening starts fresh. */
+  setTimeout(function(){if(!s.hidden||!s.querySelectorAll)return;[].slice.call(s.querySelectorAll('details')).forEach(function(d){d.open=false;d._filled=false;var b2=d.querySelector('.mega-acc-body');if(b2&&b2.replaceChildren)b2.replaceChildren()})},0);}}
+function closeMegaMenus(focusBtn){
+  closeMegaSheet();
+  var o=MENU.open;MENU.open=null;if(!o)return;
+  if(o.panel){var pn=o.panel;pn.hidden=true;setTimeout(function(){if(pn.hidden&&pn.replaceChildren)pn.replaceChildren()},0);}if(o.btn){o.btn.setAttribute('aria-expanded','false');if(o.btn.classList)o.btn.classList.remove('open');if(focusBtn&&o.btn.focus)o.btn.focus();}
+}
+function later(fn){return function(){closeMegaMenus();setTimeout(fn,0)}}
+function goThen(hash,fn){return function(){closeMegaMenus();if((NAV.hash||'')!==hash)NAV.hash=hash;setTimeout(fn,450)}}
+function mItem(icon,label,sub,target,extra){
+  var attrs={class:'mega-item'+(extra||'')};
+  var kids=[el('span',{class:'mega-ic','aria-hidden':'true',text:icon}),el('span',{class:'mega-tx'},el('b',{text:label}),sub?el('small',{text:sub}):null)];
+  if(typeof target==='string'){attrs.href=target;attrs.onclick=function(){closeMegaMenus()};return el('a',attrs,kids);}
+  attrs.type='button';attrs.onclick=target;return el('button',attrs,kids);
+}
+function mLink(label,href,badge){return el('a',{class:'mega-link',href:href,onclick:function(){closeMegaMenus()}},el('span',{text:label}),badge!=null?el('span',{class:'mega-badge',text:String(badge)}):null);}
+function mSection(title,list,empty){return el('div',{class:'mega-sec'},el('div',{class:'mega-h',text:title}),list&&list.length?list:el('p',{class:'mega-empty',text:empty||'Nothing here yet.'}));}
+function workspaceNow(){return (typeof TW!=='undefined'&&TW)||PX.teacherData||{classes:[],activities:[],folders:[]}}
+var GUIDE_LINKS_T=[['start','Get set up'],['build','Make a Hex Space'],['assign','Give it to a class'],['supports','Supports and rules'],['grade','Grade fast'],['gallery','Gallery walk'],['print','Print tiles'],['games','Games'],['party','Hex Party'],['debate','Defend the link']];
+var GUIDE_LINKS_S=[['s-join','Join your class'],['s-build','Build your board'],['s-save','Save now, finish later'],['s-turnin','Turn it in'],['s-games','Games and debates'],['s-party','Play Hex Party']];
+function teacherMenus(){
+  return [
+    {id:'classes',label:'Classes',match:/^#teacher(\/class-.*|\/post-.*|)$/,
+      quick:function(){return [mItem('🏫','All classes','Every class and its assignments','#teacher'),
+        mItem('＋','Add a code-only class','Students join with a class code',goThen('#teacher',function(){addClassFromDashboard()})),
+        mItem('⟳','Import from Google Classroom','Bring in or resync your courses',later(function(){importClassroomClasses()}))]},
+      live:function(box){
+        var ws=workspaceNow(),cls=(ws.classes||[]).slice(0,10);
+        var classes=mSection('Your classes',cls.map(function(c){return mLink(c.name||'Class','#teacher/class-'+encodeURIComponent(c.id))}),'Add a class to get started.');
+        var queue=el('div',{class:'mega-sec'},el('div',{class:'mega-h',text:'Needs grading'}),el('p',{class:'mega-empty',text:'Checking…'}));
+        fill(box,classes,queue);
+        menuData('teacher').then(function(d){var list=d.assignments.filter(function(a){return a.ungraded>0}).sort(function(x,y){return y.ungraded-x.ungraded}).slice(0,6);
+          fill(queue,el('div',{class:'mega-h',text:'Needs grading'}),list.length?list.map(function(a){return mLink(a.title+' · '+a.className,'#teacher/post-'+a.id,a.ungraded)}):el('p',{class:'mega-empty',text:'All caught up ✓'}));});
+      }},
+    {id:'hex',label:'Hex Spaces',match:/^#teacher\/(editor|edit-.*|folder-.*|new|shared|library)$/,
+      quick:function(){return [mItem('📁','All Hex Spaces','Your directory, folders and search','#teacher/editor'),mItem('＋','New Hex Space','Start from a blank board','#teacher/new'),
+        mItem('🗂','New folder','Group units together',goThen('#teacher/editor',function(){newFolder(null)})),
+        mItem('🔗','Shared links','Hex Spaces you’ve shared with teachers','#teacher/shared'),mItem('📚','Library','Find and copy other teachers’ Hex Spaces','#teacher/library')]},
+      live:function(box){
+        var ws=workspaceNow(),acts=(ws.activities||[]).slice().sort(function(a,b){return String(actStamp(b)).localeCompare(String(actStamp(a)))}).slice(0,6);
+        var folders=(ws.folders||[]).filter(function(f){return !f.parent}).slice(0,6);
+        fill(box,mSection('Recent',acts.map(function(a){return mLink(a.title||'Untitled Hex Space','#teacher/edit-'+encodeURIComponent(a.id),(a.terms||[]).length+' terms')}),'No Hex Spaces yet.'),
+          folders.length?mSection('Folders',folders.map(function(f){return mLink('📁 '+f.name,'#teacher/folder-'+encodeURIComponent(f.id))})):null);
+      }},
+    {id:'games',label:'Games',match:/^#(games|teacher\/game-.*|teacher\/party-.*)$/,
+      quick:function(){return [mItem('🎉','Start Hex Party','A Jackbox-style game for the whole class',later(function(){openPartySetup()})),
+        mItem('🎮','Games home','Points, badges, timed rounds, team race, debate','#games'),mItem('📖','How games work','Points, rounds and debates explained','#guide-games')]},
+      live:function(box){
+        fill(box,el('p',{class:'mega-empty',text:'Loading…'}));
+        menuData('teacher').then(function(d){
+          var open=d.games.filter(function(g){return g.status==='OPEN'}),cons=d.assignments.filter(function(a){return a.game||a.debate});
+          fill(box,mSection('Hex Party',open.map(function(g){return mLink('Return to “'+g.title+'” · '+g.code,'#teacher/party-'+g.id,g.players+' playing')}),'No class game running.'),
+            mSection('Game consoles',cons.slice(0,6).map(function(a){return mLink(a.title+' · '+a.className,'#teacher/game-'+a.id,(a.game?'🎮':'')+(a.debate?'🎤':''))}),'Turn on a game from Games home.'));
+        });
+      }},
+    {id:'help',label:'Help',match:/^#(guide.*|privacy)$/,
+      quick:function(){return [mItem('📖','The full guide','Everything, with pictures','#guide'),mItem('🧑‍🎓','Student guide','What students see and do','#guide-s-join'),mItem('🔒','Privacy','How student data is handled','#privacy')]},
+      live:function(box){fill(box,mSection('Guide topics',GUIDE_LINKS_T.map(function(g){return mLink(g[1],'#guide-'+g[0])})))}}
+  ];
+}
+function studentMenus(){
+  return [
+    {id:'work',label:'My work',match:/^(#?|#a-.*|#code|#c-.*)$/,
+      quick:function(){return [mItem('📋','My assignments','Everything you’ve joined','#'),mItem('🔑','Enter a class code','Join a new class or assignment','#code')]},
+      live:function(box){
+        fill(box,el('p',{class:'mega-empty',text:'Loading…'}));
+        menuData('student').then(function(d){
+          var prog=d.active.filter(function(a){return a.progress}),todo=d.active.filter(function(a){return !a.progress});
+          fill(box,mSection('Pick up where you left off',prog.slice(0,5).map(function(a){return mLink('Continue: '+a.title,'#a-'+a.id,a.progress.placed+'/'+a.progress.terms)}),'Nothing in progress.'),
+            todo.length?mSection('To do',todo.slice(0,5).map(function(a){return mLink(a.title+' · '+a.className,'#a-'+a.id)})):null,
+            d.submitted.length?mSection('Turned in',[mLink(d.submitted.length+' turned in','#')]):null);
+        });
+      }},
+    {id:'games',label:'Games',match:/^#(games|play-.*|party.*)$/,
+      quick:function(){
+        var inp=el('input',{type:'text',maxlength:5,class:'mega-code',placeholder:'ABCDE','aria-label':'Room code for a class game',autocapitalize:'characters'});
+        function join(){platformApi('party/join',{code:inp.value}).then(function(r){closeMegaMenus();NAV.hash='party-'+r.code}).catch(platformError)}
+        inp.addEventListener('keydown',function(e){if(e.key==='Enter'){if(e.preventDefault)e.preventDefault();join()}});
+        return [el('div',{class:'mega-join'},el('b',{text:'🎉 Join a class game'}),el('div',{class:'row',style:'gap:6px'},inp,el('button',{type:'button',class:'btn primary sm',onclick:join,text:'Join'}))),
+          mItem('🎮','Games home','Badges, leaderboards and debates','#games')]},
+      live:function(box){
+        fill(box,el('p',{class:'mega-empty',text:'Loading…'}));
+        menuData('student').then(function(d){var g=d.active.concat(d.submitted).filter(function(a){return a.game||a.debate});
+          fill(box,mSection('Your games',g.slice(0,6).map(function(a){return mLink(a.title,'#play-'+a.id,(a.game?'🎮':'')+(a.debate?'🎤':''))}),'No games turned on yet.'));});
+      }},
+    {id:'help',label:'Help',match:/^#(guide.*|privacy)$/,
+      quick:function(){return [mItem('📖','Student guide','How to join, build, save and play','#guide-s-join'),mItem('🔒','Privacy','How your data is handled','#privacy')]},
+      live:function(box){fill(box,mSection('Guide topics',GUIDE_LINKS_S.map(function(g){return mLink(g[1],'#guide-'+g[0])})))}}
+  ];
+}
+function megaPanel(m,id){
+  /* Built when opened, so closed menus add nothing to the page. */
+  var panel=el('div',{class:'mega-panel',id:id,hidden:true});
+  panel._fill=function(){var live=el('div',{class:'mega-live'});fill(panel,el('div',{class:'mega-quick'},m.quick()),live);m.live(live)};
+  return panel;
+}
+function megaKeys(e){
+  if(e.key==='Escape')closeMegaSheet();
+  var o=MENU.open;if(!o)return;
+  if(e.key==='Escape'){closeMegaMenus(true);return;}
+  if(e.key!=='ArrowDown'&&e.key!=='ArrowUp')return;
+  if(!o.panel.querySelectorAll)return;
+  var items=[].slice.call(o.panel.querySelectorAll('a,button,input')),i=items.indexOf(document.activeElement);
+  if(!items.length)return;if(e.preventDefault)e.preventDefault();
+  var n=e.key==='ArrowDown'?(i+1)%items.length:(i<=0?items.length-1:i-1);if(items[n].focus)items[n].focus();
+}
+if(document.addEventListener){
+  document.addEventListener('keydown',megaKeys);
+  document.addEventListener('click',function(e){var o=MENU.open;if(!o)return;var t=e.target;if(o.wrap&&o.wrap.contains&&t&&o.wrap.contains(t))return;closeMegaMenus();},true);
+}
+function megaTab(m,h,header){
+  var pid='mega-'+m.id,on=m.match.test(h);
+  var btn=el('button',{type:'button',class:'nav-link mega-btn'+(on?' on':''),'aria-expanded':'false','aria-controls':pid,'aria-current':on?'page':null},m.label,el('span',{class:'mega-caret','aria-hidden':'true',text:'▾'}));
+  var panel=megaPanel(m,pid),wrap=el('div',{class:'mega-wrap'},btn,panel);
+  btn.addEventListener('click',function(){
+    var was=MENU.open&&MENU.open.btn===btn;closeMegaMenus();if(was)return;
+    panel._fill();panel.hidden=false;btn.setAttribute('aria-expanded','true');if(btn.classList)btn.classList.add('open');MENU.open={btn:btn,panel:panel,wrap:wrap};
+    /* keep the panel on screen */
+    if(panel.getBoundingClientRect&&panel.style){panel.style.left='0';var r=panel.getBoundingClientRect(),vw=window.innerWidth||1200;if(r.right>vw-12)panel.style.left=Math.round(vw-12-r.right)+'px';}
+    if(e2focus)setTimeout(function(){var f=panel.querySelector&&panel.querySelector('a,button,input');if(f&&f.focus&&MENU.open&&MENU.open.panel===panel&&document.activeElement===btn)f.focus()},0);
+  });
+  var e2focus=false;btn.addEventListener('keydown',function(e){if(e.key==='ArrowDown'){e2focus=true;if(btn.getAttribute('aria-expanded')!=='true')btn.click();else{var f=panel.querySelector&&panel.querySelector('a,button,input');if(f&&f.focus)f.focus()}if(e.preventDefault)e.preventDefault();e2focus=false;}});
+  return wrap;
+}
+function megaSheet(menus,h,cta){
+  var sheet=el('div',{class:'mega-sheet',id:'mega-sheet',hidden:true});
+  fill(sheet,menus.map(function(m){
+    var body=el('div',{class:'mega-acc-body'}),d=el('details',{class:'mega-acc'+(m.match.test(h)?' on':'')},el('summary',{text:m.label}),body);
+    d.addEventListener('toggle',function(){if(d.open&&!d._filled){d._filled=true;var live=el('div',{class:'mega-live'});fill(body,el('div',{class:'mega-quick'},m.quick()),live);m.live(live)}});return d;}),cta?el('a',{class:'btn primary',href:cta.href,onclick:function(){sheet.hidden=true},text:cta.label}):null);
+  var btn=el('button',{type:'button',class:'btn sm mega-menu-btn','aria-expanded':'false','aria-controls':'mega-sheet',text:'Menu'});
+  btn.addEventListener('click',function(){sheet.hidden=!sheet.hidden;btn.setAttribute('aria-expanded',sheet.hidden?'false':'true');});
+  return {btn:btn,sheet:sheet};
+}
+var v419Top=topBar;
+topBar=function(){
+  var header=v419Top.apply(this,arguments),role=profileRole();
+  if(!GA.user||(role!=='teacher'&&role!=='student')||!header||!header.querySelector)return header;
+  var h=NAV.hash||'',menus=role==='teacher'?teacherMenus():studentMenus();
+  var cta=role==='teacher'?{label:'+ New Hex Space',href:'#teacher/new'}:{label:'Enter a class code',href:'#code'};
+  var nav=header.querySelector('nav.nav');
+  if(nav){fill(nav,menus.map(function(m){return megaTab(m,h,header)}),el('a',{class:'nav-link cta'+((role==='teacher'?/^#teacher\/new$/:/^#(code|c-.*)$/).test(h)?' on':''),href:cta.href,text:cta.label}));if(nav.classList)nav.classList.add('mega-nav');}
+  var mob=header.querySelector('.nav-mobile');
+  if(mob&&mob.parentNode&&mob.parentNode.replaceChild){var s=megaSheet(menus,h,cta),wrap=el('div',{class:'menu-wrap nav-mobile'},s.btn);mob.parentNode.replaceChild(wrap,mob);add(header,s.sheet);}
+  MENU.open=null;
+  return header;
+};
+/* Moving to another page closes any open panel. */
+var v419Route=route;
+route=function(){closeMegaMenus();var s=document.getElementById&&document.getElementById('mega-sheet');if(s)s.hidden=true;v419Route.apply(this,arguments);};
+/* Guide: the default minimum is now 20 words. */
+(function(){var b=GUIDE.find(function(g){return g.id==='build'});if(b)b.p=b.p.map(function(x){return x.indexOf('how many words each explanation needs')>=0?'Set how many terms students have to use (leave it blank for all of them) and how many words each explanation needs. New Hex Spaces start at 20 words; lower it for younger students.':x})})();
 
 /* The homepage is the starting page: a visit to the bare site address opens it,
    signed in or not. In-app links to "#" still go to the student dashboard. */

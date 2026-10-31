@@ -116,6 +116,23 @@ Tiles and text retain their original size, and zoom/scroll remain available.
 A hexagon still has six sides: extra space supports more arrangements, not more
 than six simultaneous neighboring tiles per hexagon.
 
+DROPDOWN MENUS AND 20-WORD DEFAULT (4.19)
+- Signed-in headers show category tabs, each opening a panel (click/tap, Escape
+  or click outside to close, arrow keys to move): quick actions on the left and
+  live items on the right, loaded when the panel opens and cached for 45 s.
+  Teachers: Classes (classes, Needs grading with counts, add/import), Hex Spaces
+  (recent, folders, new, new folder, shared links, library), Games (Hex Party:
+  start or return; game consoles), Help (guide topics, student guide, privacy),
+  plus + New Hex Space. Home is the logo.
+  Students: My work (Continue in-progress work, to do, turned in, enter a code),
+  Games (join a class game right in the menu, game assignments), Help.
+- Below 1000 px the categories become an accordion under the Menu button.
+- Panels and accordion sections are built only when opened.
+- The teacher dashboard API returns an ungraded count per posting.
+- New Hex Spaces start at a minimum of 20 words per connection (was 5). Existing
+  Hex Spaces and live postings keep their setting; teachers can change it per
+  Hex Space.
+
 HEX PARTY: A WHOLE-CLASS GAME SHOW (4.18)
 - Menu > Games > Start a class game. Terms come from an assignment (points then
   show in the grader and grades CSV) or any Hex Space. Pick round types, number of
