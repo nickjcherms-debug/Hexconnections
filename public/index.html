@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Hexagonal thinking boards for classrooms: students arrange vocabulary hexagons and explain every connection, with optional Depth and Complexity icons.">
-<meta name="hex-connections-build" content="4.7.0">
+<meta name="hex-connections-build" content="4.8.0">
 <title>Hex Connections</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0F6E6E">
@@ -620,6 +620,7 @@ h2,h3,.brand h1,.aitem b,.act-head h2,.modal h3{overflow-wrap:anywhere}
 .lib-card{display:flex;flex-direction:column;gap:8px}
 .btn.microsoft{background:var(--panel);border:1px solid var(--line);color:var(--ink);gap:10px}
 @media (max-width:600px){.gallery-grid,.lib-grid{grid-template-columns:minmax(0,1fr)}.ver-card input[type=text]{max-width:none}}
+.assign-nudge{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border-color:var(--blue);background:var(--t1)}
 </style>
 <div id="root"></div>
 <script type="application/json" id="hx-data">{"version":4,"classes":[],"activities":[]}</script>
@@ -1686,7 +1687,7 @@ function renderTeacher(){
   function tab(k, label){ return el('button',{class:'tab'+(TS.tab===k?' on':''),role:'tab','aria-selected':String(TS.tab===k),onclick:function(){ TS.tab=k; remember(); renderTeacher(); },text:label}); }
   var main = a ? el('div',{style:'min-width:0'},
     el('div',{class:'eyebrow',text:'Hex Space'}),
-    el('div',{class:'row',style:'justify-content:space-between;align-items:flex-start'}, el('h2',{text:a.title || 'Untitled Hex Space'}), el('div',{class:'row'}, folderPicker(a), el('button',{class:'btn sm',onclick:function(){ openShare(a); },text:'Share'}), el('button',{class:'btn ghost sm danger-text','aria-label':'Delete this Hex Space',onclick:function(){ deleteHexSpace(a); },text:'Delete'}))),
+    el('div',{class:'row',style:'justify-content:space-between;align-items:flex-start'}, el('h2',{text:a.title || 'Untitled Hex Space'}), el('div',{class:'row'}, folderPicker(a), assignMenu(a), el('button',{class:'btn sm',onclick:function(){ openShare(a); },text:'Share'}), el('button',{class:'btn ghost sm danger-text','aria-label':'Delete this Hex Space',onclick:function(){ deleteHexSpace(a); },text:'Delete'}))),
     el('div',{class:'tabs',role:'tablist'}, tab('setup','Setup'), tab('codes','Post (' + postsFor(a.id).length + ')'), tab('subs','Submissions (' + rowsFor(a.id).length + ')')),
     TS.tab === 'setup' ? setupPane(a) : TS.tab === 'codes' ? codesPane(a) : subsPane(a)
   ) : el('div',{class:'panel'}, el('h3',{text:'No activities yet'}), el('p',{class:'muted',text:'Create one to paste in your unit vocabulary.'}), el('button',{class:'btn primary',onclick:newActivity,text:'New activity'}));
@@ -1982,11 +1983,12 @@ function setupPane(a){
   dcBox.addEventListener('change', function(){ a.dcOn = dcBox.checked; if (!a.dc) a.dc = []; dcGrid.hidden = !a.dcOn; refreshPreview(); ensureBar(); });
 
   return el('div',{class:'stack',style:'gap:16px'},
+    assignNudge(a),
     hasSubs ? el('div',{class:'banner warn',text:'Students have already submitted. Removing or reordering terms changes the T numbers shown, but each submission still points to the right term.'}) : null,
     el('div',{class:'grid2'},
       el('div',{class:'stack'},
         field('f-title','Title', bind(el('input',{type:'text',id:'f-title',value:a.title,maxlength:80,placeholder:'e.g. Unit 3: Cells'}),'title')),
-        el('p',{class:'hint',style:'margin:0',text:'When it’s ready, post it to a class from the Post tab. You choose the start and due dates when you post.'})),
+        el('p',{class:'hint',style:'margin:0',text:'When it’s ready, choose Assign to class above. You pick the dates and student supports when you assign it.'})),
       field('f-ins','Directions for students', bind(el('textarea',{id:'f-ins',rows:3,value:a.instructions||'',maxlength:600,placeholder:DEFAULT_INS}),'instructions'), 'Leave blank to use the standard directions shown.')
     ),
     vocabPanel,
@@ -5008,6 +5010,35 @@ function bootExtras(){
   });
 }
 bootExtras();
+
+
+/* ===================== 4.8: assign a Hex Space to a class from the Hex Space itself ===================== */
+function postingsFor(a){return (PX.posts||[]).filter(function(p){return p.activityId===a.id});}
+function assignTo(a,ids){
+  if(!readyActivity(a)){toast('Give this Hex Space a title and at least one term, then assign it.');var t=document.getElementById('f-title');if(t&&t.focus&&!String(a.title||'').trim())t.focus();return;}
+  openPostDialog(a,null,{classIds:ids||[]});
+}
+function assignMenu(a){
+  var classes=((TW&&TW.classes)||[]).slice().sort(function(x,y){return String(x.name).localeCompare(String(y.name))});
+  var items=classes.length?[{note:'Assign this Hex Space to…'}].concat(classes.map(function(c){return {label:c.name+(c.classroomId?' · Classroom':' · code'),onclick:function(){assignTo(a,[c.id])}}}),
+    classes.length>1?[{sep:true},{label:'Several classes…',onclick:function(){assignTo(a,[])}}]:[]):
+    [{note:'You don’t have any classes yet.'},{label:'+ Add a class',onclick:addManualClass},{label:'Import from Google Classroom',onclick:importClassroomClasses}];
+  return menuButton('Assign to class ▾',items,{btnCls:'primary sm',aria:'Assign this Hex Space to a class',cls:'assign-menu'});
+}
+/* A just-finished Hex Space that hasn't been assigned yet gets a one-click nudge. */
+function assignNudge(a){
+  var slot=el('div',{id:'assign-nudge'});fill(slot,assignNudgeBody(a));return slot;
+}
+var v47EnsureBar=ensureBar;
+ensureBar=function(){var r=v47EnsureBar.apply(this,arguments);try{var slot=document.getElementById('assign-nudge'),a=TW&&curAct();if(slot&&a){var had=!!slot.firstChild,body=assignNudgeBody(a);if(had!==!!body)fill(slot,body);}}catch(e){}return r;};
+function assignNudgeBody(a){
+  if(!readyActivity(a)||postingsFor(a).length)return null;
+  var classes=((TW&&TW.classes)||[]).slice(0,6);
+  return el('div',{class:'panel assign-nudge'},
+    el('div',null,el('b',{text:'Ready to assign?'}),el('p',{class:'muted',style:'margin:2px 0 0',text:classes.length?'Pick a class. You’ll choose the dates and student supports next.':'Add a class first, then assign this Hex Space to it.'})),
+    el('div',{class:'row',style:'gap:6px'},classes.length?classes.map(function(c){return el('button',{class:'btn sm',onclick:function(){assignTo(a,[c.id])},text:c.name})}):el('button',{class:'btn sm',onclick:addManualClass,text:'+ Add a class'}),
+      classes.length>1?el('button',{class:'btn ghost sm',onclick:function(){assignTo(a,[])},text:'Several…'}):null));
+}
 
 /* The homepage is the starting page: a visit to the bare site address opens it,
    signed in or not. In-app links to "#" still go to the student dashboard. */
