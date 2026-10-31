@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Hexagonal thinking boards for classrooms: students arrange vocabulary hexagons and explain every connection, with optional Depth and Complexity icons.">
-<meta name="hex-connections-build" content="4.11.1">
+<meta name="hex-connections-build" content="4.12.0">
 <title>Hex Connections</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0F6E6E">
@@ -677,6 +677,29 @@ h2,h3,.brand h1,.aitem b,.act-head h2,.modal h3{overflow-wrap:anywhere}
 .gr-quick-save{display:none}
 @media (max-width:900px){.gr-head{position:sticky;top:-24px;z-index:3;background:var(--panel);margin:-12px -12px 0;padding:12px;border-bottom:1px solid var(--line)}.gr-quick-save{display:inline-flex}}
 @media (pointer:coarse){input[type=checkbox],input[type=radio]{width:24px;height:24px}}
+.subs-table-wrap{display:flex;flex-direction:column;gap:10px}
+.subs-tools{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center}
+.filter-chips{display:flex;flex-wrap:wrap;gap:6px}
+.filter-chip{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:.9rem;font-weight:700;cursor:pointer;min-height:36px}
+.filter-chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.subs-table select{width:auto}
+.subs-tools select{width:auto;min-height:40px}
+.subs-table{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.subs-row{display:grid;grid-template-columns:minmax(140px,1.6fr) minmax(120px,1.1fr) 60px 60px minmax(110px,1fr) minmax(120px,1.4fr) 90px 90px;gap:10px;align-items:center;padding:9px 14px;border-top:1px solid var(--line)}
+.subs-row:first-child{border-top:0}
+.subs-head{background:var(--t1);font-size:.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding-top:8px;padding-bottom:8px}
+.subs-name{overflow-wrap:anywhere}
+.subs-time{font-size:.88rem;color:var(--muted)}
+.subs-act{justify-self:end}
+.status-pill{display:inline-block;border-radius:999px;padding:2px 10px;font-size:.82rem;font-weight:700;background:var(--t1)}
+.status-pill.needs{background:var(--honey-soft);color:var(--honey-ink)}
+.status-pill.graded{background:var(--teal-soft);color:var(--teal)}
+.status-pill.returned{background:var(--t4)}
+.status-pill.working{background:var(--t2)}
+@media (max-width:820px){.subs-head{display:none}.subs-row{grid-template-columns:1fr auto;grid-auto-flow:row;gap:4px 10px}
+ .subs-row>[data-label]{font-size:.86rem;color:var(--muted)}.subs-row>[data-label]::before{content:attr(data-label) ': ';font-weight:700}
+ .subs-act{grid-column:2;grid-row:1/span 2;align-self:center}}
+@media (pointer:coarse){.gr-keys{display:none}}
 </style>
 <div id="root"></div>
 <script type="application/json" id="hx-data">{"version":4,"classes":[],"activities":[]}</script>
@@ -2729,18 +2752,7 @@ function teacherPostDashboard(postId){
   var subs=r[1].submissions||[];PX.gradeList=subs;
   dashboardAdd(body,postToolsRow(a,subs));
   dashboardAdd(body,postExtras(postId,a,subs));
-  if(!subs.length)dashboardMessage(body,'No student submissions yet.');
-  subs.forEach(function(p){dashboardAdd(body,el('div',{class:'panel row sub-row',style:'justify-content:space-between'},el('div',{style:'min-width:0'},el('b',{text:p.name}),
-    el('p',{class:'muted',style:'margin:2px 0 0',text:(p.group?p.group.name+' · ':'')+({TURNED_IN:'Turned in',GRADED:'Graded',DRAFT:'Unsubmitted · still working',SAVED_PENDING_CLASSROOM:'Turning in…'}[p._status]||String(p._status||'').replace(/_/g,' ').toLowerCase())+(p._grade==null?'':' · '+p._grade+' / '+p._maxPoints)}),
-    el('div',{class:'sub-meta'},
-      p.termsUsed!=null?el('span',{text:p.termsUsed+' terms'}):null,el('span',{text:(p.connections||[]).length+' connections'}),
-      p.submittedAt?el('span',{text:fmtTime(p.submittedAt)}):null,
-      p.late?el('span',{class:'sub-flag late',text:'Late'}):null,
-      p.version?el('span',{text:p.version}):null,
-      p._feedback?el('span',{class:'sub-flag ok',text:p._feedback.revise?'Returned for revision':'Feedback given'}):null,
-      p.reflection?el('span',{text:'Reflection ✓'}):null,
-      p.pasteAttempts?el('span',{class:'sub-flag late',text:'⚠ '+p.pasteAttempts+' paste attempt'+(p.pasteAttempts===1?'':'s')}):null)),
-    el('button',{class:'btn primary',onclick:function(){openGrader(subs,subs.indexOf(p))},text:p._feedback||p._grade!=null?'Review feedback':'View board & grade'})))});
+  dashboardAdd(body,submissionsTable(postId,a,subs));
   dashboardAdd(body,el('h3',{text:'Group project boards'}),el('p',{class:'muted',text:a.manual?'Create a group and give its code to the students in it. They build one shared board, and each member turns in their own copy.':'Create a group and share its code with enrolled students. Each member turns in their own Classroom assignment.'}),el('button',{class:'btn primary',style:'align-self:flex-start',disabled:!!r[2].setupError,onclick:function(){createProjectGroup(postId)},text:'Create group'}));
   if(r[2].setupError)dashboardMessage(body,r[2].setupError);
   (r[2].groups||[]).forEach(function(g){dashboardAdd(body,el('div',{class:'panel stack'},el('h3',{text:g.name}),el('p',{text:g.members.length+' / '+g.maxMembers+' members'+(g.members.length?' · '+g.members.map(function(m){return m.name}).join(', '):'')}),el('div',{class:'row'},el('code',{class:'linkcode',text:groupCode(g.code)}),el('button',{class:'btn sm',onclick:function(){copyText(groupCode(g.code),'Group code')},text:'Copy group code'}),el('button',{class:'btn sm',onclick:function(){viewSubmission(r[2].activity,{name:g.name,placements:g.draft.place,connections:activeConns(g.draft.place,g.draft.conns),period:a.className})},text:'View shared board'}))))});
@@ -4447,11 +4459,11 @@ function postToolsRow(a,subs){
 }
 function words(t){return String(t||'').trim().split(/\s+/).filter(Boolean).length;}
 function exportGrades(a,subs){
-  var rows=[['Student','Email','Status','Terms used','Connections','Average words per reason','Strong (2)','Partly (1)','Needs work (0)','Grade','Out of','Late','Submitted','Overall feedback']];
+  var rows=[['Student','Email','Status','Terms used','Connections','Average words per reason','Strong (2)','Partly (1)','Needs work (0)','Grade','Out of','Late','Submitted','Version','Paste attempts blocked','Reflection: proudest','Reflection: hardest','Overall feedback']];
   subs.forEach(function(p){
     var cl=p.connections||[],fb=p._feedback||{},sc=fb.scores||{},cnt=[0,0,0];for(var k in sc)cnt[sc[k]]++;
     var avg=cl.length?Math.round(cl.reduce(function(n,c){return n+words(c.why)},0)/cl.length*10)/10:0;
-    rows.push([p.name,p.email||'',({TURNED_IN:'Turned in',GRADED:'Graded',DRAFT:'Unsubmitted'}[p._status]||p._status||''),p.termsUsed==null?'':p.termsUsed,cl.length,avg,cnt[2],cnt[1],cnt[0],p._grade==null?'':p._grade,p._maxPoints||'',p.late?'Yes':'No',p.submittedAt||'',fb.overall||'']);
+    rows.push([p.name,p.email||'',({TURNED_IN:'Turned in',GRADED:'Graded',DRAFT:'Unsubmitted'}[p._status]||p._status||''),p.termsUsed==null?'':p.termsUsed,cl.length,avg,cnt[2],cnt[1],cnt[0],p._grade==null?'':p._grade,p._maxPoints||'',p.late?'Yes':'No',p.submittedAt||'',p.version||'',p.pasteAttempts||0,(p.reflection&&p.reflection.proud)||'',(p.reflection&&p.reflection.hard)||'',fb.overall||'']);
   });
   var name=(a.title||'assignment').replace(/[^\w\- ]+/g,'').trim().replace(/\s+/g,'-').slice(0,60)||'grades';
   downloadBlob(name+'-grades.csv',toCSV(rows),'text/csv');
@@ -5542,6 +5554,104 @@ route=function(){
   if(m){renderGuide(m[1]||null);return;}
   v410Route();
 };
+
+/* ===================== 4.12: grading big classes ===================== */
+var SUBS_VIEW={filter:'all',sort:rawGet('hx-subs-sort')||'name'};
+function needsGrading(p){return !!p._payload&&p._grade==null&&!p._feedback;}
+function subStatus(p){
+  if(!p._payload)return {t:'Still working',c:'working'};
+  if(p._feedback&&p._feedback.revise)return {t:'Returned for revision',c:'returned'};
+  if(p._grade!=null)return {t:'Graded',c:'graded'};
+  if(p._feedback)return {t:'Feedback given',c:'graded'};
+  if(p._status==='SAVED_PENDING_CLASSROOM')return {t:'Turning in…',c:'working'};
+  return {t:'Needs grading',c:'needs'};
+}
+/* One row per student in the class: turned-in work plus students still working (from live progress). */
+function submissionsTable(postId,a,subs){
+  var wrap=el('section',{class:'subs-table-wrap','aria-label':'Student work'});
+  var rows=subs.map(function(p){return Object.assign(p,{_payload:true})});
+  function draw(){
+    var counts={all:rows.length,needs:0,graded:0,late:0,working:0};
+    rows.forEach(function(p){var st=subStatus(p).c;if(st==='needs')counts.needs++;if(st==='graded'||st==='returned')counts.graded++;if(p.late)counts.late++;if(st==='working')counts.working++;});
+    var shown=rows.filter(function(p){var st=subStatus(p).c;return SUBS_VIEW.filter==='all'||(SUBS_VIEW.filter==='needs'&&st==='needs')||(SUBS_VIEW.filter==='graded'&&(st==='graded'||st==='returned'))||(SUBS_VIEW.filter==='late'&&p.late)||(SUBS_VIEW.filter==='working'&&st==='working');});
+    var s=SUBS_VIEW.sort;
+    shown.sort(function(x,y){
+      if(s==='recent')return String(y.submittedAt||y._updatedAt||'').localeCompare(String(x.submittedAt||x._updatedAt||''));
+      if(s==='fewest')return (x.connections||[]).length-(y.connections||[]).length;
+      if(s==='grade')return (x._grade==null?1e9:x._grade)-(y._grade==null?1e9:y._grade);
+      if(s==='status'){var o={needs:0,returned:1,graded:2,working:3};return o[subStatus(x).c]-o[subStatus(y).c]||String(x.name).localeCompare(String(y.name));}
+      return String(x.name||'').localeCompare(String(y.name||''),undefined,{sensitivity:'base'});
+    });
+    var gradable=shown.filter(function(p){return p._payload});
+    var queue=rows.filter(needsGrading).sort(function(x,y){return shown.indexOf(x)-shown.indexOf(y)});
+    function chip(k,label){return el('button',{type:'button',class:'filter-chip'+(SUBS_VIEW.filter===k?' on':''),'aria-pressed':SUBS_VIEW.filter===k?'true':'false',onclick:function(){SUBS_VIEW.filter=k;draw();},text:label+' ('+counts[k]+')'});}
+    var sort=el('select',{'aria-label':'Sort students',id:'subs-sort'},[['name','Name'],['status','Needs grading first'],['recent','Recently turned in'],['fewest','Fewest connections'],['grade','Grade']].map(function(o){return el('option',{value:o[0],text:'Sort: '+o[1],selected:s===o[0]||null})}));
+    sort.addEventListener('change',function(){SUBS_VIEW.sort=sort.value;rawSet('hx-subs-sort',sort.value);draw();});
+    fill(wrap,
+      el('div',{class:'subs-tools'},
+        el('div',{class:'filter-chips',role:'group','aria-label':'Show'},chip('all','All'),chip('needs','Needs grading'),chip('graded','Graded'),chip('late','Late'),chip('working','Still working')),
+        el('div',{class:'row',style:'gap:8px'},sort,
+          el('button',{class:'btn primary',disabled:!queue.length,onclick:function(){openGrader(queue,0)},text:queue.length?'Grade next ungraded ('+queue.length+')':'All graded ✓'}))),
+      shown.length?el('div',{class:'subs-table',role:'table','aria-label':'Students'},
+        el('div',{class:'subs-row subs-head',role:'row'},['Student','Status','Terms','Links','Turned in','Notes','Grade',''].map(function(h){return el('span',{role:'columnheader',text:h})})),
+        shown.map(function(p){
+          var st=subStatus(p),cl=(p.connections||[]).length;
+          var notes=[p.late?el('span',{class:'sub-flag late',text:'Late'}):null,p.version?el('span',{text:p.version}):null,p.reflection?el('span',{title:(p.reflection.proud||'')+' / '+(p.reflection.hard||''),text:'Reflection'}):null,p.pasteAttempts?el('span',{class:'sub-flag late',text:'⚠ '+p.pasteAttempts+' paste'}):null,p.group?el('span',{text:p.group.name}):null].filter(Boolean);
+          return el('div',{class:'subs-row st-'+st.c,role:'row'},
+            el('b',{class:'subs-name',role:'cell',text:p.name||'(no name)'}),
+            el('span',{role:'cell'},el('span',{class:'status-pill '+st.c,text:st.t})),
+            el('span',{role:'cell','data-label':'Terms',text:p.termsUsed!=null?String(p.termsUsed):'—'}),
+            el('span',{role:'cell','data-label':'Links',text:String(cl)}),
+            el('span',{role:'cell','data-label':p._payload?'Turned in':'Last saved',class:'subs-time',text:p.submittedAt?fmtTime(p.submittedAt):(p._updatedAt?'saved '+fmtTime(p._updatedAt):'—')}),
+            el('span',{role:'cell',class:'sub-meta'},notes),
+            el('span',{role:'cell','data-label':'Grade',text:p._grade!=null?p._grade+' / '+p._maxPoints:'—'}),
+            el('span',{role:'cell',class:'subs-act'},p._payload?el('button',{class:'btn sm'+(st.c==='needs'?' primary':''),onclick:function(){openGrader(gradable,gradable.indexOf(p))},text:st.c==='needs'?'Grade':'Review'})
+              :el('button',{class:'btn sm',onclick:function(){peekBoard(p)},text:'Peek'})));
+        })):el('p',{class:'muted',text:SUBS_VIEW.filter==='all'?'No student work yet. Students appear here as soon as they open the assignment.':'No students in this view.'}),
+      el('p',{class:'hint',style:'margin:0',text:'Still working = opened the assignment but hasn’t turned it in. Peek shows their board as last saved; they can’t see that you looked.'}));
+  }
+  draw();
+  /* Students who have opened it but not turned in yet. */
+  platformApi('posts/'+postId+'/progress').then(function(r){
+    var have={};rows.forEach(function(p){have[p._studentUid]=1});
+    var act={id:'peek',title:r.act.title,terms:r.act.terms,dcOn:(r.act.dc||[]).length>0,dc:r.act.dc||[],board:{shape:'open',size:'roomy',orient:'pointy'}};
+    (r.students||[]).forEach(function(s){
+      if(have[s.uid]||s.turnedIn)return;
+      rows.push({name:s.name,_studentUid:s.uid,_payload:false,_updatedAt:s.updatedAt,placements:s.place||{},termsUsed:null,
+        connections:(s.conns||[]).map(function(c){var ab=c.pair.split('-');return {a:+ab[0],b:+ab[1],why:c.why}}),_peekAct:act,_maxPoints:a.maxPoints});
+    });
+    draw();
+  }).catch(function(){});
+  return wrap;
+}
+function peekBoard(p){
+  var a=p._peekAct;if(!a){toast('This board isn’t available.');return;}
+  viewSubmission(a,{name:p.name+' · still working',placements:p.placements||{},connections:p.connections||[],period:'',submittedAt:p._updatedAt});
+}
+/* Keyboard grading: 0/1/2 score the next unscored connection, Enter saves and moves on, arrows change student. */
+var v411GraderExtras=graderExtras;
+graderExtras=function(p,list,index){
+  var base=v411GraderExtras(p,list,index);
+  var hint=el('p',{class:'hint gr-keys',style:'margin:0',text:'Keys: 0 1 2 score the next unscored connection · Enter saves and opens the next student · ← → change student'});
+  return el('div',{class:'stack',style:'gap:8px'},base,hint);
+};
+function graderKeys(e){
+  if(!document.querySelector('.grader'))return;
+  var t=e.target||{},tag=(t.tagName||'').toUpperCase();
+  if(tag==='TEXTAREA'||tag==='INPUT'||tag==='SELECT'||e.ctrlKey||e.metaKey||e.altKey)return;
+  var k=e.key;
+  if(k==='0'||k==='1'||k==='2'){
+    var rows=[].slice.call(document.querySelectorAll('.gr-row')),r=rows.find(function(x){return !x.querySelector('.score-btn.on')});
+    if(!r)return;var b=r.querySelectorAll('.score-btn')[+k];if(b){b.click();e.preventDefault();var nx=rows.find(function(x){return !x.querySelector('.score-btn.on')});if(nx&&nx.scrollIntoView)nx.scrollIntoView({block:'nearest',behavior:'smooth'});}
+    return;
+  }
+  var btns=[].slice.call(document.querySelectorAll('.modal button'));
+  function by(re){return btns.find(function(b){return re.test(b.textContent||'')&&!b.disabled})}
+  if(k==='Enter'){var s=by(/^Save & (next student|finish)$/);if(s){e.preventDefault();s.click();}}
+  else if(k==='ArrowRight'){var n=by(/^Next →$/);if(n){e.preventDefault();n.click();}}
+  else if(k==='ArrowLeft'){var pv=by(/^← Previous$/);if(pv){e.preventDefault();pv.click();}}
+}
+if(document.addEventListener)document.addEventListener('keydown',graderKeys);
 
 /* The homepage is the starting page: a visit to the bare site address opens it,
    signed in or not. In-app links to "#" still go to the student dashboard. */

@@ -55,7 +55,7 @@ export async function handleTeachingRoutes(c){
       const pay=parse(r.payload),d=pay?{place:pay.placements,conns:Object.fromEntries((pay.connections||[]).map(c=>[c.a+'-'+c.b,{why:c.why}]))}:parse(r.draft)||{};
       const placed=Object.keys(d.place||{}).filter(k=>Number(k)<1000).length;
       const conns=Object.entries(d.conns||{}).filter(([,v])=>v&&String(v.why||'').trim()).map(([k,v])=>({pair:k,why:String(v.why).slice(0,600)}));
-      return {uid:r.uid,name:r.name,status:r.status,variant:r.variant||0,placed,connections:conns.length,conns,updatedAt:r.updated_at};
+      return {uid:r.uid,name:r.name,status:r.status,variant:r.variant||0,placed,connections:conns.length,conns,place:d.place||{},turnedIn:!!pay,updatedAt:r.updated_at};
     });
     return json({terms,students,versions:(info.asg?.versions||[]).map(v=>({name:v.name,terms:v.terms.length})),gallery:!!info.asg?.gallery?.open,act:{title:info.act?.title||'',terms:(info.act?.terms||[]).map(t=>({id:t.id||t.n,n:t.n,term:t.term})),dc:info.act?.dcOn?info.act.dc||[]:[]}});
   }

@@ -216,7 +216,7 @@ test('shared-board conflicts keep the student’s local edits and offer a safe r
 test('teacher assignment page renders submission controls and the create-group action',async()=>{
  const {h,location,text,flatten}=make();h.GA.ready=true;h.GA.user={uid:'teacher'};h.PX.loaded=true;h.PX.profile={role:'teacher'};
  h.setApi(async path=>path==='teacher/dashboard'?{assignments:[{id:'post',title:'Memory',courseName:'Psychology',submissions:1}]}:path.startsWith('submissions')?{submissions:[{name:'Alex',_status:'TURNED_IN',_grade:null}]}:{groups:[]});
- location.hash='#teacher/post-post';h.route();await tick();assert.match(text(),/Psychology · No due date · 1 submission/);assert.match(text(),/Refresh/);assert.match(text(),/← Psychology/);assert.match(text(),/Create group/);assert.match(text(),/View board & grade/);
+ location.hash='#teacher/post-post';h.route();await tick();assert.match(text(),/Psychology · No due date · 1 submission/);assert.match(text(),/Refresh/);assert.match(text(),/← Psychology/);assert.match(text(),/Create group/);assert.match(text(),/Grade next ungraded \(1\)/);assert.match(text(),/Needs grading/);
  flatten().find(n=>n.textContent==='Create group').listeners.click();assert.match(text(),/Create a project group/);assert.match(text(),/Create shared board/);
 });
 
@@ -603,7 +603,7 @@ test('printable tiles list every term, with or without definitions, safely escap
 test('the grader shows the version, the reflection and a replay button',()=>{
  const {h}=make();const n=h.v47.graderExtras({version:'Support',reflection:{proud:'C1',hard:'C3'},history:[[0,1,0,0],[5,2,1,0]]},[],0);
  const all=kids(n).map(x=>x.textContent).join(' ');assert.match(all,/Version: Support/);assert.match(all,/Proudest/);assert.match(all,/Watch how it was built/);
- assert.equal(h.v47.graderExtras({},[],0),null);
+ assert.doesNotMatch(kids(h.v47.graderExtras({},[],0)).map(x=>x.textContent).join(' '),/Student reflection|Watch how/);
 });
 test('the gallery hides names from students and lets teachers hide comments',()=>{
  const {h}=make();h.GA.user={uid:'s'};
@@ -693,4 +693,27 @@ test('the How to use guide is public, covers teacher and student features, and t
  location.hash='#home';h.route();assert.match(text(),/From vocabulary list to visible thinking/);assert.match(text(),/Read the full guide/);
  assert.ok(t.flatten().some(n=>n.attrs?.href==='#guide-gallery'),'homepage card links to the gallery walk guide');
  const labels=h.v4.navItems().map(i=>i.label);assert.ok(labels.includes('How to use'));
+});
+
+// ---------------- 4.12 ----------------
+test('submissions table: filters, sorting, Grade next ungraded and students still working',async()=>{
+ const t=make();const {h,text,location,flatten}=t;h.GA.ready=true;h.GA.user={uid:'teacher'};h.PX.loaded=true;h.PX.profile={role:'teacher'};
+ const sub=(name,uid,extra)=>Object.assign({name,_studentUid:uid,_status:'TURNED_IN',_grade:null,_maxPoints:20,connections:[{num:1,a:1,b:2,why:'x'}],termsUsed:2,submittedAt:'2026-10-30T10:00:00Z'},extra||{});
+ h.setApi(async path=>{
+  if(path==='teacher/dashboard')return {assignments:[{id:'post',title:'Memory',courseName:'Psychology',submissions:3,maxPoints:20}]};
+  if(path.startsWith('submissions'))return {submissions:[sub('Zed','z',{late:true}),sub('Amy','a',{_grade:18,_feedback:{scores:{}}}),sub('Bo','b',{pasteAttempts:2})]};
+  if(path==='posts/post/progress')return {terms:2,act:{title:'Memory',terms:[{id:1,n:1,term:'A'},{id:2,n:2,term:'B'}],dc:[]},students:[{uid:'a',turnedIn:true},{uid:'c',name:'Cy',turnedIn:false,place:{1:[0,0],2:[1,0]},conns:[{pair:'1-2',why:'draft reason'}],updatedAt:'2026-10-30T11:00:00Z'}]};
+  return {groups:[]};});
+ location.hash='#teacher/post-post';h.route();await tick();await tick();await tick();
+ assert.match(text(),/Needs grading \(2\)/);assert.match(text(),/Still working \(1\)/);assert.match(text(),/Grade next ungraded \(2\)/);assert.match(text(),/Cy/);assert.match(text(),/⚠ 2 paste/);
+ const names=()=>flatten().filter(n=>String(n.attrs?.class||'').includes('subs-name')).map(n=>n.textContent);
+ assert.deepEqual(JSON.parse(JSON.stringify(names())),['Amy','Bo','Cy','Zed']);
+ flatten().find(n=>n.textContent==='Needs grading (2)').listeners.click();assert.deepEqual(JSON.parse(JSON.stringify(names())),['Bo','Zed']);
+ flatten().find(n=>n.textContent==='Still working (1)').listeners.click();assert.deepEqual(JSON.parse(JSON.stringify(names())),['Cy']);
+ flatten().find(n=>n.textContent==='Peek').listeners.click();assert.match(text(),/Cy · still working/);assert.match(text(),/draft reason/);
+});
+test('grades CSV includes version, paste attempts and reflections',()=>{
+ const {h}=make();let file=null;h.v4.setDownload((name,text)=>{file={name,text}});
+ h.v4.exportGrades({title:'U'},[{name:'Ava',connections:[],_status:'TURNED_IN',version:'Support',pasteAttempts:3,reflection:{proud:'C1',hard:'C2'},_feedback:{overall:'ok'}}]);
+ const [head,row]=file.text.split('\r\n');assert.match(head,/Version,Paste attempts blocked,Reflection: proudest,Reflection: hardest,Overall feedback$/);assert.match(row,/,Support,3,C1,C2,ok$/);
 });
