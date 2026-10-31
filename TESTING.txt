@@ -1,9 +1,17 @@
-VERIFICATION — VERSION 4.4.0
+VERIFICATION — VERSION 4.5.0
 ============================
-100 automated tests pass (49 backend, 51 frontend) using in-memory SQLite,
+108 automated tests pass (52 backend, 56 frontend) using in-memory SQLite,
 simulated Firebase/Classroom responses, and execution of the actual frontend
 script in a DOM test harness. No real Google Classroom assignment was created
 or modified by these tests.
+
+New in 4.5.0: feedback scores/comments/revision and student view; progress for
+Present mode (owner only); data export; account deletion cascading through
+postings, submissions, groups, shares and workspace. End-to-end: a teacher
+posts, two students submit, the teacher grades both with the rubric queue and
+comment bank, returns one for revision, downloads the CSV, opens insights and
+Present mode (spotlight, pause/resume, Esc), the student sees the revision
+request on a phone, downloads their data and deletes their account.
 
 New in 4.4.0: 20 simulated sessions (10 teacher, 10 student; new-to-tech and
 power-user teachers; middle- and high-school students, struggling and

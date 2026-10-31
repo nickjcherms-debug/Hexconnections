@@ -11,6 +11,7 @@ function harness(){
  sql.exec(readFileSync(new URL('../migrations/0003_group_boards.sql',import.meta.url),'utf8'));
  sql.exec(readFileSync(new URL('../migrations/0004_shares.sql',import.meta.url),'utf8'));
  sql.exec(readFileSync(new URL('../migrations/0005_multiple_posts.sql',import.meta.url),'utf8'));
+ sql.exec(readFileSync(new URL('../migrations/0006_feedback.sql',import.meta.url),'utf8'));
  const DB = {
   prepare(query) {
    return {
@@ -502,4 +503,44 @@ test('a Classroom posting Google refuses leaves no stuck pending assignment',asy
  h.state.classroomError={error:{status:'PERMISSION_DENIED',details:[{reason:'insufficientPermissions'}]}};
  const realTeacher=await h.call('teacher','posts/new',{activityId:'act-m',classId:'p2',tz:'UTC'});assert.equal(realTeacher.status,403);
  assert.equal(h.sql.prepare('SELECT count(*) n FROM posts').get().n,0);
+});
+
+// ---------------- 4.5: feedback, progress, account export and deletion ----------------
+test('teachers score each connection, comment, and return work for revision; students see it',async()=>{
+ const h=harness(),id=await manualSetup(h);
+ await h.call('kid','profile',{role:'student'},{access:false});await h.call('kid','resolve',{code:'CLUB23'},{access:false});
+ assert.equal((await h.call('teacher','posts/'+id+'/feedback',{studentUid:'kid',scores:{1:2}},{access:false})).status,404);
+ assert.equal((await h.call('kid','posts/'+id+'/submit',{draft:h.draft},{access:false})).status,200);
+ assert.equal((await h.call('kid','posts/'+id+'/feedback',{studentUid:'kid',scores:{1:2}},{access:false})).status,403);
+ assert.equal((await h.call('teacher','posts/'+id+'/feedback',{studentUid:'kid',scores:{1:3}},{access:false})).status,400);
+ const fb=await h.call('teacher','posts/'+id+'/feedback',{studentUid:'kid',scores:{1:1},comments:{1:'Say how experience changes memory.'},overall:'Good start.',revise:true},{access:false});
+ assert.equal(fb.status,200);
+ const view=(await h.call('kid','posts/'+id,undefined,{access:false})).body;
+ assert.equal(view.feedback.scores['1'],1);assert.equal(view.feedback.comments['1'],'Say how experience changes memory.');assert.equal(view.feedback.revise,true);assert.equal(view.status,'DRAFT');
+ assert.equal((await h.call('kid','posts/'+id+'/submit',{draft:h.draft},{access:false})).status,200);
+ const subs=(await h.call('teacher','submissions?postId='+id,undefined,{access:false})).body.submissions;assert.equal(subs[0]._feedback.overall,'Good start.');
+});
+test('Present mode progress lists each student’s placed terms and connections, for the owner only',async()=>{
+ const h=harness(),id=await manualSetup(h);
+ await h.call('kid','profile',{role:'student'},{access:false});await h.call('kid','resolve',{code:'CLUB23'},{access:false});
+ await h.call('kid','posts/'+id+'/draft',{draft:h.draft},{access:false});
+ const r=await h.call('teacher','posts/'+id+'/progress',undefined,{access:false});assert.equal(r.status,200);
+ assert.equal(r.body.terms,2);assert.equal(r.body.students[0].placed,2);assert.equal(r.body.students[0].connections,1);assert.equal(r.body.act.terms.length,2);
+ assert.equal((await h.call('kid','posts/'+id+'/progress',undefined,{access:false})).status,403);
+ await h.call('teacher2','profile',{role:'teacher'},{access:false});assert.equal((await h.call('teacher2','posts/'+id+'/progress',undefined,{access:false})).status,404);
+});
+test('users can export their data and delete their account and everything it owns',async()=>{
+ const h=harness(),id=await manualSetup(h);
+ await h.call('kid','profile',{role:'student'},{access:false});await h.call('kid','resolve',{code:'CLUB23'},{access:false});
+ await h.call('kid','posts/'+id+'/submit',{draft:h.draft},{access:false});
+ const ex=await h.call('kid','account/export',undefined,{access:false});assert.equal(ex.status,200);assert.equal(ex.body.myWork.length,1);
+ const tx=await h.call('teacher','account/export',undefined,{access:false});assert.equal(tx.body.workspace.activities.length,1);assert.equal(tx.body.postings.length,1);
+ assert.equal((await h.call('kid','account/delete',{confirm:'nope'},{access:false})).status,400);
+ assert.equal((await h.call('kid','account/delete',{confirm:'DELETE'},{access:false})).status,200);
+ assert.equal(h.sql.prepare('SELECT count(*) n FROM submissions WHERE uid=?').get('kid').n,0);
+ assert.equal(h.sql.prepare('SELECT count(*) n FROM users WHERE uid=?').get('kid').n,0);
+ await h.call('kid2','profile',{role:'student'},{access:false});await h.call('kid2','resolve',{code:'CLUB23'},{access:false});
+ const del=await h.call('teacher','account/delete',{confirm:'DELETE'},{access:false});assert.equal(del.status,200);assert.equal(del.body.postings,1);
+ for(const t of ['posts','submissions','workspaces','shares'])assert.equal(h.sql.prepare('SELECT count(*) n FROM '+t).get().n,0,t);
+ assert.equal(h.sql.prepare('SELECT count(*) n FROM users WHERE uid=?').get('teacher').n,0);
 });
