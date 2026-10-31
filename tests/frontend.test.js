@@ -377,13 +377,13 @@ test('logged-out visits to private pages show the homepage and resume after logi
 });
 test('menus share one layout: Home first, then role-specific tabs',()=>{
  const labels=(h)=>h.v4.navItems().map(i=>i.label).join('|');
- let {h}=make();h.GA.ready=true;assert.equal(labels(h),'Home|How it works|Depth & Complexity|Enter a class code|Log in|New Hex Space');
- ({h}=make());h.GA.user={uid:'t'};h.PX.profile={role:'teacher'};assert.equal(labels(h),'Home|Classes|Hex Spaces|Shared links|Library|+ New Hex Space');
- ({h}=make());h.GA.user={uid:'s'};h.PX.profile={role:'student'};assert.equal(labels(h),'Home|My assignments|Enter a class code');
+ let {h}=make();h.GA.ready=true;assert.equal(labels(h),'Home|Depth & Complexity|How to use|Enter a class code|Log in|New Hex Space');
+ ({h}=make());h.GA.user={uid:'t'};h.PX.profile={role:'teacher'};assert.equal(labels(h),'Home|Classes|Hex Spaces|Shared links|Library|How to use|+ New Hex Space');
+ ({h}=make());h.GA.user={uid:'s'};h.PX.profile={role:'student'};assert.equal(labels(h),'Home|My assignments|How to use|Enter a class code');
 });
 test('clean page addresses map both ways and old # links still resolve',()=>{
  const {h}=make();const v=h.v4;
- const pairs=[['#teacher/library','/teacher/library'],['#owner','/owner'],['#gallery-p1','/gallery/p1'],['#home','/'],['#signin','/login'],['#signup','/signup'],['#code','/code'],['#c-ABC234','/code/ABC234'],['#share-K7MQ2PXRT4','/share/K7MQ2PXRT4'],['#teacher','/teacher/classes'],['#teacher/class-g1','/teacher/classes/g1'],['#teacher/post-p1','/teacher/assignments/p1'],['#teacher/editor','/teacher/hex-space'],['#teacher/edit-a1','/teacher/hex-space/a1'],['#teacher/new','/teacher/hex-space/new'],['#teacher/shared','/teacher/shared'],['','/student/assignments'],['#a-p1','/student/assignments/p1'],['#review-p1~u%201','/teacher/review/p1/u%201']];
+ const pairs=[['#guide','/guide'],['#guide-gallery','/guide/gallery'],['#teacher/library','/teacher/library'],['#owner','/owner'],['#gallery-p1','/gallery/p1'],['#home','/'],['#signin','/login'],['#signup','/signup'],['#code','/code'],['#c-ABC234','/code/ABC234'],['#share-K7MQ2PXRT4','/share/K7MQ2PXRT4'],['#teacher','/teacher/classes'],['#teacher/class-g1','/teacher/classes/g1'],['#teacher/post-p1','/teacher/assignments/p1'],['#teacher/editor','/teacher/hex-space'],['#teacher/edit-a1','/teacher/hex-space/a1'],['#teacher/new','/teacher/hex-space/new'],['#teacher/shared','/teacher/shared'],['','/student/assignments'],['#a-p1','/student/assignments/p1'],['#review-p1~u%201','/teacher/review/p1/u%201']];
  for(const [key,path] of pairs){assert.equal(v.keyToPath(key),path,key);assert.equal(v.pathToKey(path),key,path)}
  assert.equal(v.pathToKey('/teacher'),'#teacher');assert.equal(v.pathToKey('/nope/x'),'#home');assert.equal(v.keyToPath('#how'),null);
  assert.equal(v.pathToKey('/teacher/classes/manual%3Aclub'),'#teacher/class-manual%3Aclub');
@@ -684,4 +684,13 @@ test('one connected board: groups are joined only by explained, touching connect
  const check=h.v410.getChecker();assert.equal(check(),false);assert.match(t.text(),/Not linked to the rest yet: Ribosome/);
  d.place[3]=[2,0];d.conns['2-3']={why:'y'};assert.equal(check(),true);
  h.setStudent({act:{minTerms:2,terms},H:{},d:{name:'Ava',place:{1:[0,0],2:[1,0],3:[3,0]},conns:{'1-2':{why:'x'}}}});assert.equal(check(),true,'rule off: separate groups are fine');
+});
+
+// ---------------- 4.11 ----------------
+test('the How to use guide is public, covers teacher and student features, and the homepage links into it',()=>{
+ const t=make();const {h,text,location}=t;h.GA.ready=true;location.hash='#guide';h.route();
+ for(const s of ['For teachers','For students','Gallery walk','Printable tiles','Student supports and rules','Versions for different students','Review and grade student work','Watch how it was built','Turn in, feedback and the gallery walk'])assert.ok(text().includes(s),s);
+ location.hash='#home';h.route();assert.match(text(),/From vocabulary list to visible thinking/);assert.match(text(),/Read the full guide/);
+ assert.ok(t.flatten().some(n=>n.attrs?.href==='#guide-gallery'),'homepage card links to the gallery walk guide');
+ const labels=h.v4.navItems().map(i=>i.label);assert.ok(labels.includes('How to use'));
 });

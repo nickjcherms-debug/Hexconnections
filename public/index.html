@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Hexagonal thinking boards for classrooms: students arrange vocabulary hexagons and explain every connection, with optional Depth and Complexity icons.">
-<meta name="hex-connections-build" content="4.10.0">
+<meta name="hex-connections-build" content="4.11.0">
 <title>Hex Connections</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0F6E6E">
@@ -655,6 +655,22 @@ h2,h3,.brand h1,.aitem b,.act-head h2,.modal h3{overflow-wrap:anywhere}
 @media (max-width:700px){.dir-row{grid-template-columns:minmax(0,1fr) auto}.dir-classes{grid-column:1/-1;order:3}.dir-subs{display:none}.sync-pill{left:8px;bottom:8px}}
 .flow-stat.done b{color:var(--ok)}
 .hexg.flow-off .hx{stroke:var(--danger);stroke-width:3;stroke-dasharray:6 4}
+.howto-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.howto-card{display:flex;flex-direction:column;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 16px;color:var(--ink);text-decoration:none}
+.howto-card:hover,.howto-card:focus-visible{border-color:var(--blue);box-shadow:0 4px 14px var(--shadow)}
+.howto-card b{font-size:1.05rem}.howto-card span:last-child{color:var(--muted);font-size:.92rem}
+#howto{display:flex;flex-direction:column;gap:16px}
+.guide{max-width:860px;display:flex;flex-direction:column;gap:14px;padding-bottom:40px}
+.guide-title{font-size:clamp(1.8rem,4vw,2.6rem);margin:0}
+.guide-part{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+.guide-part>h2{margin:8px 0 0;font-size:1.6rem}
+.guide-toc{margin:0;padding:12px 16px 12px 36px;background:var(--panel);border:1px solid var(--line);border-radius:14px;columns:2;column-gap:28px}
+.guide-toc li{margin:3px 0;break-inside:avoid}
+.guide-toc a{color:var(--blue);font-weight:700;text-decoration:none}
+.guide-sec{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 18px;scroll-margin-top:16px}
+.guide-sec h3{margin:0 0 8px;font-size:1.15rem}
+.guide-sec ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;line-height:1.5}
+@media (max-width:600px){.guide-toc{columns:1}}
 </style>
 <div id="root"></div>
 <script type="application/json" id="hx-data">{"version":4,"classes":[],"activities":[]}</script>
@@ -703,6 +719,8 @@ function keyToPath(key){
   if (key === 'code') return '/code';
   if (key === 'new') return '/new';
   if (key === 'privacy') return '/privacy';
+  if (key === 'guide') return '/guide';
+  if ((m = key.match(/^guide-(.+)$/))) return '/guide/' + encSeg(m[1]);
   if (key === 'teacher') return '/teacher/classes';
   if (key === 'teacher/editor') return '/teacher/hex-space';
   if (key === 'teacher/new') return '/teacher/hex-space/new';
@@ -723,13 +741,14 @@ function keyToPath(key){
 function pathToKey(path){
   path = (path || '/').replace(/\/+$/, '') || '/';
   var m;
-  var exact = {'/':'#home','/index.html':'#home','/login':'#signin','/signup':'#signup','/code':'#code','/new':'#new','/privacy':'#privacy',
+  var exact = {'/':'#home','/index.html':'#home','/login':'#signin','/signup':'#signup','/code':'#code','/new':'#new','/privacy':'#privacy','/guide':'#guide',
     '/teacher':'#teacher','/teacher/classes':'#teacher','/teacher/hex-space':'#teacher/editor','/teacher/hex-space/new':'#teacher/new',
     '/teacher/shared':'#teacher/shared','/teacher/library':'#teacher/library','/owner':'#owner','/student':'','/student/assignments':''};
   if (Object.prototype.hasOwnProperty.call(exact, path)) return exact[path];
   if ((m = path.match(/^\/code\/([^/]+)$/))) return '#c-' + decSeg(m[1]);
   if ((m = path.match(/^\/share\/([^/]+)$/))) return '#share-' + decSeg(m[1]);
   if ((m = path.match(/^\/gallery\/([^/]+)$/))) return '#gallery-' + decSeg(m[1]);
+  if ((m = path.match(/^\/guide\/([^/]+)$/))) return '#guide-' + decSeg(m[1]);
   if ((m = path.match(/^\/teacher\/folders\/([^/]+)$/))) return '#teacher/folder-' + encodeURIComponent(decSeg(m[1]));
   if ((m = path.match(/^\/teacher\/classes\/([^/]+)$/))) return '#teacher/class-' + encodeURIComponent(decSeg(m[1]));
   if ((m = path.match(/^\/teacher\/assignments\/([^/]+)$/))) return '#teacher/post-' + decSeg(m[1]);
@@ -5437,6 +5456,75 @@ checkReady=function(){
   var H=ST.H,names=f.off.slice(0,4).map(function(n){return H[n]?H[n].name:'?'});
   toast('Connect everything into one group first. Not linked to the rest yet: '+names.join(', ')+(f.off.length>4?' and '+(f.off.length-4)+' more':'')+'. Add an explained connection that joins each group to the others.');
   return false;
+};
+
+/* ===================== 4.11: How-to guide and homepage overview ===================== */
+var GUIDE=[
+ {id:'start',who:'teacher',t:'Get started',p:['Create a teacher account with Google, Microsoft (when available) or your email. Choose Teacher; the account type can’t be changed later.','Add a class: Classes → Import from Google Classroom (pick which courses to bring in), or Add a code-only class for students without Classroom.','Everything you do saves automatically and appears on your other devices and windows. The note at the bottom left shows “All changes saved”.']},
+ {id:'build',who:'teacher',t:'Build a Hex Space',p:['Choose + New Hex Space. Give it a title and directions, then add terms and definitions: type them, paste two columns from a spreadsheet, upload a CSV, or use Generate with AI for a starter list you review before adding.','Set the minimum number of terms students must use (blank means every term) and the minimum words per explanation.','Board layout: shape (honeycomb, wide, tall, open), how much room students get, pointy or flat hexagons, and whether students can rotate the board.','Try it as a student shows exactly what students will see.']},
+ {id:'dc',who:'teacher',t:'Depth & Complexity icons',p:['Tick Include Depth and Complexity icons and pick any of the 11 prompts. Each becomes an amber hexagon. When a student connects a term to an icon, they describe the term through that lens (for example, Patterns or Change Over Time).','Icon connections count toward the minimum, and icons can link groups together on a connected board.']},
+ {id:'folders',who:'teacher',t:'Folders and the Hex Spaces directory',p:['Menu → Hex Spaces opens your directory: folders as cards, then your Hex Spaces with their terms, classes and submissions.','Open a folder to see what’s inside; use + New folder or + Subfolder, and the ⋯ menu to rename, move or delete one (deleting a folder never deletes Hex Spaces).','Drag a Hex Space or folder onto a folder to move it, or use ⋯ → Move to folder. Search finds Hex Spaces by title or by any term in them.']},
+ {id:'assign',who:'teacher',t:'Assign to a class',p:['On any Hex Space choose Assign to class and pick a class (or Several classes…). You can also post from a class page.','Pick a start date (students can open it from that day) and an optional due date (end of that day in your time zone). Late work is accepted and marked Late.','Each posting is its own assignment with its own code. Post the same Hex Space again any time for another round.','Code-only classes: students go to the site, choose Enter a class code and type the code; Share to Classroom puts the link in Google Classroom. Classroom classes get the assignment in Google Classroom directly.']},
+ {id:'supports',who:'teacher',t:'Student supports and rules',p:['In the Post dialog, Student supports switches each one on or off for that class. Change them later from the posting page (Change).','Show definitions: off means students see only the terms; definitions never reach their device.','Sentence starters: tap-to-insert openers that use both terms’ names, or the icon’s lens.','Read aloud and Translate: a speaker button for terms, definitions and directions, and 14 languages.','Reflection when turning in: two optional questions; you see the answers when grading.','Block pasting: students must type explanations; blocked paste attempts are counted for you.','One connected board: every hexagon must link into one group through explained connections before turning in (on by default).','Allow a gallery walk: lets you open a gallery walk for this posting.']},
+ {id:'versions',who:'teacher',t:'Versions for different students',p:['In the Post dialog, Differentiate → Use versions of this assignment gives up to four versions with different terms (and sentence starters on or off).','Everyone starts in the first version. On the posting page, move each student to another version once they’ve opened the assignment. Students never see version names.']},
+ {id:'print',who:'teacher',t:'Printable tiles',p:['Print tiles (on a Hex Space’s Setup tab, the directory ⋯ menu or a posting page) opens a page of cut-out hexagons about 2.4 inches across, with or without definitions and icons.','Print it, or choose Save as PDF in the print dialog. Great for days without devices or a hands-on start before the online board.']},
+ {id:'gallery',who:'teacher',t:'Gallery walk',p:['On a posting’s page choose Open gallery walk. Students who have turned in their board see their classmates’ boards labelled Board A, B, C… with no names.','Students leave a Glow ✨ (something strong) or a Grow 🌱 (an idea to improve). They see the comments on their own board.','View gallery & comments shows you every board with names and who wrote each comment; Hide removes a comment from students. Close the gallery walk when you’re done.']},
+ {id:'review',who:'teacher',t:'Review and grade student work',p:['Open a class, then View submissions & groups on a posting. Each student shows their status (turned in, graded, still working) and grade.','Grade submissions opens a queue: the student’s board beside every connection and its reason. Score each connection 0 (needs work), 1 (partly) or 2 (strong); the grade fills in from the scores and you can change it.','Comment on any connection (or insert one from your comment bank) and add overall feedback. Return for revision reopens a code-only board for the student.','The grader also shows the student’s version, reflection, blocked paste attempts, and ▶ Watch how it was built: a replay of every placement and connection.','Students see your scores and comments above their board. Classroom grades return through Google Classroom.']},
+ {id:'insights',who:'teacher',t:'Class insights, Present mode and grades export',p:['Class insights: how many students started and finished, the most common connections, terms nobody used and very short reasons.','Present to class: a full-screen view for the projector with the class code, live progress, a network of everyone’s connections and a spotlight on one reason at a time (names hidden).','Download grades (CSV) opens in Google Sheets or Excel with terms used, connections, rubric counts, grade and feedback.']},
+ {id:'share',who:'teacher',t:'Share and the Hex Space library',p:['Share creates a link other teachers can preview and copy. Your classes, codes and student work are never shared.','In the Share dialog, Add to the public library lists it by subject, grade band and standards. Menu → Library lets any teacher search and save a copy. Hex Spaces reported by three teachers are hidden.']},
+ {id:'s-join',who:'student',t:'Join and open an assignment',p:['Sign in with your school Google account (or the account your teacher told you to use).','Open the assignment from Google Classroom, or choose Enter a class code and type the code your teacher gives you.','My assignments lists everything you’ve joined, with its due date and status.']},
+ {id:'s-build',who:'student',t:'Build your board',p:['Drag a hexagon from the tray onto the board, or tap it and then tap a spot.','When two hexagons touch, a box opens: explain how the two ideas connect. Sentence starters can help you begin. The pair locks together with a numbered connection.','Tap a hexagon to read its definition, hear it read aloud, or see it in another language (when your teacher turns these on).','If the board must be connected, every hexagon needs to join one group; ones that aren’t joined yet have a red outline.']},
+ {id:'s-turnin',who:'student',t:'Turn in, feedback and the gallery walk',p:['Your board saves as you work, even if the Wi-Fi drops. Choose Submit when you’re done; you may be asked two quick reflection questions.','Your teacher’s scores and comments appear above your board. If it’s returned for revision, make changes and submit again.','When your teacher opens a gallery walk, visit it from your board to see classmates’ boards (no names) and leave Glow and Grow comments.']}
+];
+var HOME_HOWTO=[['build','Build','Turn unit vocabulary into hexagons, add Depth & Complexity icons, set the rules.'],['folders','Organize','Folders and a searchable directory keep every unit tidy, synced on all your devices.'],['assign','Assign','Post to Google Classroom or a code-only class with start and due dates.'],['supports','Support','Definitions, sentence starters, read aloud, translation, reflection and paste blocking, switched per class.'],['versions','Differentiate','Up to four versions with different terms for different students.'],['print','Print','Cut-out hexagon tiles for a hands-on start or a no-device day.'],['gallery','Gallery walk','Students view anonymous boards and leave Glow and Grow comments.'],['review','Grade','Score each connection, comment, replay how a board was built, and return grades.'],['share','Share','Copy Hex Spaces from colleagues or the public library.']];
+function guideHref(id){return '#guide-'+id;}
+function renderGuide(section){
+  PX.routeId++;ST=null;caps.teacher=false;
+  var role=profileRole();
+  function sec(g){return el('section',{class:'guide-sec',id:'g-'+g.id,'aria-labelledby':'gh-'+g.id},el('h3',{id:'gh-'+g.id,text:g.t}),el('ul',null,g.p.map(function(x){return el('li',{text:x})})));}
+  function toc(list){return el('ol',{class:'guide-toc'},list.map(function(g){return el('li',null,el('a',{href:guideHref(g.id),onclick:function(e){if(e&&e.preventDefault)e.preventDefault();scrollToId('g-'+g.id);},text:g.t}))}));}
+  var teacher=GUIDE.filter(function(g){return g.who==='teacher'}),student=GUIDE.filter(function(g){return g.who==='student'});
+  var tPart=el('div',{class:'guide-part',id:'g-teachers'},el('h2',{text:'For teachers'}),toc(teacher),teacher.map(sec));
+  var sPart=el('div',{class:'guide-part',id:'g-students'},el('h2',{text:'For students'}),toc(student),student.map(sec));
+  fill(root,topBar(),el('main',{class:'guide'},
+    el('div',{class:'eyebrow',text:'How to use Hex Connections'}),
+    el('h2',{class:'guide-title',text:'Guide'}),
+    el('p',{class:'lede',text:'Everything teachers and students can do, from building a Hex Space to the gallery walk and grading.'}),
+    el('div',{class:'row',style:'gap:8px'},el('a',{class:'btn'+(role!=='student'?' primary':''),href:'#guide-start',onclick:function(e){if(e&&e.preventDefault)e.preventDefault();scrollToId('g-teachers')},text:'Teacher guide'}),el('a',{class:'btn'+(role==='student'?' primary':''),href:'#guide-s-join',onclick:function(e){if(e&&e.preventDefault)e.preventDefault();scrollToId('g-students')},text:'Student guide'})),
+    role==='student'?[sPart,tPart]:[tPart,sPart],
+    el('footer',{class:'foot'},el('span',null,'Questions about privacy? ',el('a',{href:'#privacy',text:'Read how student data is handled'}),'.'))));
+  if(section)setTimeout(function(){scrollToId('g-'+section)},50);
+}
+/* Homepage: a short "how teachers use it" overview that links into the guide. */
+function homeHowTo(){
+  return el('section',{class:'sec',id:'howto','aria-labelledby':'howto-h'},
+    el('div',{class:'sec-head'},el('div',{class:'eyebrow',text:'How to use it'}),el('h2',{id:'howto-h',text:'From vocabulary list to visible thinking'}),
+      el('p',{text:'A quick tour of what teachers can do. Each card opens the full guide.'})),
+    el('div',{class:'howto-grid'},HOME_HOWTO.map(function(c,i){return el('a',{class:'howto-card',href:guideHref(c[0])},el('span',{class:'step-n',text:String(i+1)}),el('b',{text:c[1]}),el('span',{text:c[2]}))})),
+    el('a',{class:'btn',href:'#guide',style:'align-self:flex-start',text:'Read the full guide →'}));
+}
+var v410Home=renderHome;
+renderHome=function(){
+  v410Home.apply(this,arguments);
+  var home=root.querySelector&&root.querySelector('.home');if(!home)return;
+  var dc=null,kids=home.children||[];for(var i=0;i<kids.length;i++){if(kids[i].id==='dc'||(kids[i].getAttribute&&kids[i].getAttribute('id')==='dc')){dc=kids[i];break;}}
+  var node=homeHowTo();if(dc&&home.insertBefore)home.insertBefore(node,dc);else add(home,node);
+  if(PX.scrollTo==='howto'){PX.scrollTo=null;setTimeout(function(){scrollToId('howto')},50);}
+};
+var v410Nav=navItems;
+navItems=function(){
+  var items=v410Nav(),dc=items.findIndex(function(x){return x&&x.label==='Depth & Complexity'}),i=dc>=0?dc+1:items.findIndex(function(x){return x&&x.cta});
+  items.splice(i<0?items.length:i,0,{label:'How to use',href:'#guide',match:/^#guide/});
+  /* Signed out: the guide replaces the shorter "How it works" link, so the header fits on one line. */
+  if(!profileRole())items=items.filter(function(x){return x.label!=='How it works'});
+  return items;
+};
+PUBLIC_KEYS=/^(#home|#signin|#signup|#code|#new|#privacy|#guide(-.+)?|#c-.+|#share-.+)$/;
+var v410Route=route;
+route=function(){
+  var h=NAV.hash||'',m=h.match(/^#guide(?:-(.+))?$/);
+  if(m){renderGuide(m[1]||null);return;}
+  v410Route();
 };
 
 /* The homepage is the starting page: a visit to the bare site address opens it,
