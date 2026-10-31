@@ -33,6 +33,7 @@ function make(){
  getData(){return DATA},setData(w){DATA=w},setView(fn){viewSubmission=fn},
  setWork(w){TW=w;TS.rows={};TS.sel=w.activities[0].id},setRenderTeacher(fn){renderTeacher=fn},
  setApi(fn){platformApi=fn},setTeacher(fn){startTeacher=fn;teacherDashboard=fn},
+ v414:{graderBoard,rosterPanel,termPictureButton,hexList},
  v413:{duplicateHexSpace,firstSteps},
  v412:{leastConnected,reteachCallout,openGalleryDialog},
  v410:{flowGroups,flowState,setChecker(fn){checkReady=fn},getChecker(){return checkReady}},
@@ -743,4 +744,27 @@ test('the getting-started checklist tracks progress and disappears when done or 
  let fs=h.v413.firstSteps();let txt=kids(fs).map(n=>n.textContent).join(' ');assert.match(txt,/Add a class \(done\)/);assert.match(txt,/Build a Hex Space \(done\)/);assert.doesNotMatch(txt,/Assign it to a class \(done\)/);
  h.v4.setPosts([{activityId:'a1',submissions:2}]);assert.equal(h.v413.firstSteps(),null);
  h.v4.setPosts([]);h.lsSet;t.store.set('hx-checklist-hidden','1');assert.equal(h.v413.firstSteps(),null);
+});
+
+// ---------------- 4.14 ----------------
+test('pictures travel with terms to the board and tray; the grader board zooms',()=>{
+ const t=make();const {h}=t;
+ const a={terms:[{id:1,n:1,term:'Seed',img:'abcdefghijklmnopqrstuvwx'},{id:2,n:2,term:'Root'}]};
+ const hl=h.v414.hexList(a);assert.equal(hl[0].img,'abcdefghijklmnopqrstuvwx');assert.equal(hl[1].img,'');
+ const gb=h.v414.graderBoard({title:'P',terms:a.terms,board:{shape:'open',size:'snug',orient:'pointy'}},{placements:{1:[0,0],2:[1,0]}},{'1-2':{why:'grows',at:1}});
+ const all=kids(gb);assert.ok(all.some(n=>n.tagName==='image'&&n.attrs.href==='/api/img/abcdefghijklmnopqrstuvwx'),'picture drawn on the board');
+ const zoomIn=all.find(n=>n.attrs?.['aria-label']==='Zoom in');zoomIn.listeners.click();zoomIn.listeners.click();
+ assert.equal(all.find(n=>String(n.attrs?.class||'').includes('gb-z')).textContent,'200%');
+ const r={term:'Leaf',img:''};const b=h.v414.termPictureButton(r,()=>{});assert.match(b.attrs['aria-label'],/Add a picture for Leaf/);
+});
+test('the roster panel shows who hasn’t opened it and plans versions for them',async()=>{
+ const t=make();const {h}=t;const calls=[];
+ h.setApi(async(path,body)=>{calls.push([path,body]);if(path.endsWith('/roster'))return {members:[{key:'u:b',name:'Bo',opened:false,planned:null},{key:'u:a',name:'Amy',opened:true,variant:0}],versions:['Core','Support'],classroom:'n/a',notOpened:1};return {}});
+ const box={tagName:'div',children:[],appendChild(n){this.children.push(n)},replaceChildren(){this.children=[]}};
+ const root=t.root;h.v414.rosterPanel('p1',{versions:[{name:'Core',terms:[1,2]},{name:'Support',terms:[1]}],manual:true},root);await settle();
+ const txt=kids(root).map(n=>n.textContent).join(' ');assert.match(txt,/1 of 2 haven’t opened it yet: Bo/);assert.match(txt,/not opened yet/);
+ const sel=kids(root).find(n=>n.tagName==='select'&&n.attrs['aria-label']==='Version for Bo');sel.value='1';sel.listeners.change();await settle();
+ assert.equal(calls[1][0],'posts/p1/version-plan');assert.equal(JSON.stringify(calls[1][1]),JSON.stringify({plan:{'u:b':1}}));
+ const sa=kids(root).find(n=>n.tagName==='select'&&n.attrs['aria-label']==='Version for Amy');sa.value='1';sa.listeners.change();await settle();
+ assert.equal(calls[2][0],'posts/p1/version');assert.equal(JSON.stringify(calls[2][1]),JSON.stringify({studentUids:['a'],version:1}));
 });

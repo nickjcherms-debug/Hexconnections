@@ -89,6 +89,7 @@ export async function handleTeachingRoutes(c){
     await run(db,'DELETE FROM submissions WHERE uid=?',user.uid);
     await run(db,'DELETE FROM posts WHERE owner_uid=?',user.uid);
     try{await run(db,'DELETE FROM shares WHERE owner_uid=?',user.uid)}catch{}
+    try{await run(db,'DELETE FROM images WHERE owner_uid=?',user.uid)}catch{}
     await run(db,'DELETE FROM workspaces WHERE owner_uid=?',user.uid);
     await run(db,'DELETE FROM users WHERE uid=?',user.uid);
     return json({deleted:true,postings:owned.length});

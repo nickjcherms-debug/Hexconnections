@@ -84,6 +84,17 @@ export function fitDraft(draft,act){
   return {...draft,place,conns};
 }
 
+/* ---------- versions planned before students open the posting ---------- */
+const PLAN_KEY=/^(u|g):[A-Za-z0-9_.@-]{1,128}$/;
+export async function applyVersionPlan(db,info,postId,user){
+  const plan=info?.asg?.versionPlan,versions=info?.asg?.versions;
+  if(!plan||!Array.isArray(versions)||versions.length<2)return null;
+  let v=plan['u:'+user.uid];if(v==null&&user.googleSub)v=plan['g:'+user.googleSub];
+  if(!Number.isInteger(v)||v<0||v>=versions.length)return null;
+  await run(db,'UPDATE submissions SET variant=? WHERE post_id=? AND uid=? AND variant IS NULL',v,postId,user.uid);
+  return v;
+}
+
 /* ---------- reflection and build history (kept inside the board draft) ---------- */
 export function cleanReflection(r){
   if(!r||typeof r!=='object')return null;
@@ -135,6 +146,49 @@ export async function handleClassToolRoutes(c){
     let changed=0;
     for(const uid of list)changed+=(await run(db,'UPDATE submissions SET variant=? WHERE post_id=? AND uid=?',b.version,post.id,uid)).meta.changes||0;
     return json({changed,version:b.version,name:versions[b.version].name});
+  }
+
+  /* ---- class roster: who hasn't opened it, and versions planned ahead ---- */
+  if((m=path.match(/^\/api\/posts\/([a-zA-Z0-9-]+)\/(roster|version-plan)$/))){
+    teacher();const post=await ownedPost(db,m[1],user,fail),info=parse(post.body)||{};
+    const versions=info.asg?.versions||[];
+    if(m[2]==='version-plan'&&method==='POST'){
+      if(versions.length<2)fail(400,'This assignment has only one version.');
+      const b=await input(request),plan={};
+      if(!b.plan||typeof b.plan!=='object'||Array.isArray(b.plan))fail(400,'Send a plan.');
+      for(const [k,v] of Object.entries(b.plan)){
+        if(!PLAN_KEY.test(k))fail(400,'Unknown student.');
+        if(v===null)continue;
+        if(!Number.isInteger(v)||v<0||v>=versions.length)fail(400,'Choose a version.');
+        plan[k]=v;
+      }
+      if(Object.keys(plan).length>400)fail(400,'Too many students.');
+      info.asg={...(info.asg||{}),versionPlan:{...(info.asg?.versionPlan||{}),...plan}};
+      for(const [k,v] of Object.entries(b.plan))if(v===null)delete info.asg.versionPlan[k];
+      await run(db,'UPDATE posts SET body=? WHERE id=? AND owner_uid=?',JSON.stringify(info),post.id,user.uid);
+      // Students who already opened it move now.
+      for(const [k,v] of Object.entries(plan))if(k.startsWith('u:'))await run(db,'UPDATE submissions SET variant=? WHERE post_id=? AND uid=?',v,post.id,k.slice(2));
+      return json({plan:info.asg.versionPlan});
+    }
+    if(method!=='GET')fail(405,'Unsupported method.');
+    const here=await rows(db,'SELECT s.uid,s.google_sub,s.variant,s.payload IS NOT NULL AS turned,u.name FROM submissions s JOIN users u ON u.uid=s.uid WHERE s.post_id=?',post.id);
+    const members=new Map(),bySub=new Map();
+    for(const r of here){members.set('u:'+r.uid,{key:'u:'+r.uid,name:r.name,opened:true,turnedIn:!!r.turned,variant:r.variant??null});if(r.google_sub)bySub.set(r.google_sub,'u:'+r.uid)}
+    // Classmates from this teacher's other postings to the same class.
+    const others=await rows(db,'SELECT DISTINCT s.uid,u.name FROM submissions s JOIN posts p ON p.id=s.post_id JOIN users u ON u.uid=s.uid WHERE p.owner_uid=? AND p.class_id=? AND p.id<>?',user.uid,post.class_id,post.id);
+    for(const r of others)if(!members.has('u:'+r.uid))members.set('u:'+r.uid,{key:'u:'+r.uid,name:r.name,opened:false,turnedIn:false,variant:null});
+    let classroom='n/a';
+    if(!isManualPost(post)){
+      if(!request.headers.get('X-Classroom-Token'))classroom='needs-token';
+      else try{
+        const g=await c.getGoogle();const list=await c.allPages(g,'/courses/'+encodeURIComponent(post.course_id)+'/students','students');
+        for(const st of list){const key=bySub.get(st.userId)||'g:'+st.userId;if(!members.has(key))members.set(key,{key,name:st.profile?.name?.fullName||'Student',opened:false,turnedIn:false,variant:null})}
+        classroom='ok';
+      }catch{classroom='unavailable'}
+    }
+    const plan=info.asg?.versionPlan||{};
+    const list=[...members.values()].map(x=>({...x,planned:plan[x.key]??null})).sort((a,b)=>(a.opened-b.opened)||String(a.name).localeCompare(String(b.name)));
+    return json({members:list,versions:versions.map(v=>v.name),classroom,notOpened:list.filter(x=>!x.opened).length});
   }
 
   /* ---- gallery walk ---- */

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Hexagonal thinking boards for classrooms: students arrange vocabulary hexagons and explain every connection, with optional Depth and Complexity icons.">
-<meta name="hex-connections-build" content="4.13.0">
+<meta name="hex-connections-build" content="4.14.0">
 <title>Hex Connections</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0F6E6E">
@@ -195,7 +195,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.45}
 .dcopt:has(input:checked){background:var(--honey-soft);border-color:var(--honey)}
 .dcopt svg{flex:none;width:20px;height:20px}
 .vt{display:flex;flex-direction:column;gap:6px}
-.vt-head,.vt-row{display:grid;grid-template-columns:48px minmax(0,1fr) minmax(0,2fr) 96px;gap:8px;align-items:center}
+.vt-head,.vt-row{display:grid;grid-template-columns:48px minmax(0,1fr) minmax(0,2fr) 56px 96px;gap:8px;align-items:center}
 .vt-head{font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
 .vt-num{font-family:var(--f-mono);font-weight:700;font-size:.8rem;color:var(--ink);text-align:center;border-radius:8px;padding:8px 0;background:var(--paper);border:1px dashed var(--line)}
 .vt-num.c1{background:var(--t1);border:0}.vt-num.c2{background:var(--t2);border:0}.vt-num.c3{background:var(--t3);border:0}.vt-num.c4{background:var(--t4);border:0}.vt-num.c5{background:var(--t5);border:0}.vt-num.c6{background:var(--t6);border:0}
@@ -211,6 +211,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.45}
   .vt-row .vt-num{grid-row:1 / 3}
   .vt-row .vt-def{grid-column:2;grid-row:2}
   .vt-row .vt-del{grid-column:3;grid-row:1}
+  .vt-row .vt-pic{grid-column:3;grid-row:2}
 }
 .gate{max-width:460px;margin:24px auto 0;display:flex;flex-direction:column;gap:14px}
 .gate .panel{display:flex;flex-direction:column;gap:12px}
@@ -715,6 +716,19 @@ h2,h3,.brand h1,.aitem b,.act-head h2,.modal h3{overflow-wrap:anywhere}
 .fs-list li.done b{color:var(--muted)}
 .skip-link{position:absolute;left:-9999px;top:8px;z-index:200;background:var(--ink);color:var(--paper);padding:8px 14px;border-radius:8px;font-weight:700}
 .skip-link:focus{left:8px}
+.vt-pic{padding:0;width:48px;height:40px;display:inline-flex;align-items:center;justify-content:center;overflow:hidden}
+.vt-pic img{width:100%;height:100%;object-fit:cover}
+.pic-preview{max-width:100%;max-height:240px;object-fit:contain;align-self:center;border-radius:10px;border:1px solid var(--line)}
+.tile-img{width:34px;height:24px;object-fit:contain;display:block;margin:0 auto;pointer-events:none}
+.detail-img{max-width:100%;max-height:160px;object-fit:contain;border-radius:10px;align-self:flex-start}
+.grader-board{display:flex;flex-direction:column;gap:6px}
+.gb-tools{display:flex;gap:6px;align-items:center;justify-content:flex-end}
+.gb-z{font-family:var(--f-mono);font-size:.85rem;min-width:44px;text-align:center}
+.gb-scroll{overflow:auto;max-height:62vh;border-radius:10px}
+.gb-scroll svg{display:block;width:100%;height:auto}
+.board-svg .badge.hl circle{fill:var(--honey);stroke:var(--ink);stroke-width:2}
+.gr-row.flash{box-shadow:0 0 0 3px var(--honey)}
+@media (pointer:coarse){.gb-hint{display:none}}
 </style>
 <div id="root"></div>
 <script type="application/json" id="hx-data">{"version":4,"classes":[],"activities":[]}</script>
@@ -999,7 +1013,7 @@ function termsUsedIn(conns){ var u = {}; (conns||[]).forEach(function(c){ if (c.
 var DEFAULT_INS = 'Drag every term onto the board. Each time two hexagons touch, explain how the two ideas are connected.';
 /* every hexagon in an activity: term hexes (T#) plus any Depth & Complexity hexes (DC#) */
 function hexList(act){
-  var out = (act.terms||[]).map(function(t, i){ return { id:t.id || t.n, kind:'term', label:'T'+(i+1), ci:(i%6)+1, name:t.term, def:t.def||'' }; });
+  var out = (act.terms||[]).map(function(t, i){ return { id:t.id || t.n, kind:'term', label:'T'+(i+1), ci:(i%6)+1, name:t.term, def:t.def||'', img:t.img||'' }; });
   if (act.dcOn) (act.dc||[]).filter(function(k){ return k in DCI; }).sort(function(a,b){ return DCI[a]-DCI[b]; }).forEach(function(k, i){
     var d = DC[DCI[k]]; out.push({ id:1001+DCI[k], kind:'dc', key:k, label:'DC'+(i+1), name:d.name, def:d.hint });
   });
@@ -1213,6 +1227,7 @@ function boardSVG(act, place, conns, opt){
     } else {
       var wt = wrapTerm(h.name);
       var startY = c[1] + 4 - (wt.lines.length-1)*wt.size*0.55;
+      if (h.img){ var im = sv('image',{x:(c[0]-20).toFixed(1),y:(c[1]-24).toFixed(1),width:40,height:28,preserveAspectRatio:'xMidYMid meet','aria-hidden':'true'}); im.setAttribute('href', imgUrl(h.img)); gg.appendChild(im); wt = wrapTerm(h.name); wt.size = Math.min(wt.size, 10); wt.lines = wrapText(h.name, 12, 2); startY = c[1] + 14; }
       var tx = sv('text',{class:'term','text-anchor':'middle','font-size':wt.size});
       wt.lines.forEach(function(line,i){ tx.appendChild(sv('tspan',{x:c[0],y:(startY + i*wt.size*1.1).toFixed(1),text:line})); });
       gg.appendChild(tx);
@@ -1405,6 +1420,7 @@ function updateStudent(){
   fill(refs.tray, unplaced.length ? unplaced.map(function(h){
     var tile = el('button',{class:'tile'+(h.kind==='dc'?' dc':' c'+h.ci)+(ST.sel===h.id?' sel':''),'data-n':h.id,'aria-label':h.label+' '+h.name,title:h.def||h.name},
       h.kind==='dc' ? glyphSVG(h.key, 18) : el('span',{class:'n',text:h.label}),
+      h.img ? el('img',{class:'tile-img',src:imgUrl(h.img),alt:'',draggable:'false'}) : null,
       el('span',{class:h.kind==='dc' ? 't' : fitCls(h.name),lang:'en',text:h.name}));
     tile.addEventListener('pointerdown', function(e){ beginDrag(h.id, e, 'tray'); });
     tile.addEventListener('keydown', function(e){ if (e.key==='Enter'||e.key===' '){ e.preventDefault(); select(h.id); } });
@@ -1833,7 +1849,7 @@ function setupPane(a){
   }
 
   /* vocabulary table: one row per term, blank rows are ignored */
-  if (!TS.rows[a.id]) TS.rows[a.id] = a.terms.map(function(t){ return { id:t.id || t.n, term:t.term, def:t.def||'' }; });
+  if (!TS.rows[a.id]) TS.rows[a.id] = a.terms.map(function(t){ return { id:t.id || t.n, term:t.term, def:t.def||'', img:t.img||'' }; });
   var rows = TS.rows[a.id];
   function padRows(){ while (rows.length < 5 || (rows.length < 60 && rows[rows.length-1].term.trim())) rows.push({ term:'', def:'' }); }
   padRows();
@@ -1843,7 +1859,7 @@ function setupPane(a){
     a.idSeq = Math.max(a.idSeq || 0, Object.keys(taken).reduce(function(m, k){ return Math.max(m, +k); }, 0));
     a.terms = rows.filter(function(r){ return r.term.trim(); }).slice(0,60).map(function(r, i){
       if (!r.id){ var nid = a.idSeq + 1; while (taken[nid] || nid >= 1000) nid = nid >= 1000 ? 1 : nid + 1; r.id = nid; taken[nid] = 1; a.idSeq = Math.max(a.idSeq, nid); }
-      return { n:i+1, id:r.id, term:r.term.trim().slice(0,60), def:r.def.trim().slice(0,400) };
+      var out = { n:i+1, id:r.id, term:r.term.trim().slice(0,60), def:r.def.trim().slice(0,400) }; if (r.img) out.img = r.img; return out;
     });
     if (!a.idSeq) delete a.idSeq;
     var n = 0;
@@ -1903,11 +1919,11 @@ function setupPane(a){
     function showDel(){ var on = !!(r.term.trim() || r.def.trim()); del.disabled = !on; del.title = on ? 'Delete this term' : 'Type a term first'; }
     showDel();
     term.addEventListener('input', showDel); def.addEventListener('input', showDel);
-    return el('div',{class:'vt-row'}, el('span',{class:'vt-num',text:'—'}), term, def, del);
+    return el('div',{class:'vt-row'}, el('span',{class:'vt-num',text:'—'}), term, def, termPictureButton(r, sync), del);
   }
   function renderRows(){
     padRows();
-    fill(vt, el('div',{class:'vt-head','aria-hidden':'true'}, el('span',{style:'text-align:center',text:'#'}), el('span',{text:'Term'}), el('span',{text:'Definition'}), el('span',{style:'text-align:center',text:'Delete'})));
+    fill(vt, el('div',{class:'vt-head','aria-hidden':'true'}, el('span',{style:'text-align:center',text:'#'}), el('span',{text:'Term'}), el('span',{text:'Definition'}), el('span',{style:'text-align:center',text:'Picture'}), el('span',{style:'text-align:center',text:'Delete'})));
     rows.forEach(function(r, i){ vt.appendChild(rowEl(r, i)); });
   }
   renderRows();
@@ -3452,7 +3468,7 @@ function copyShared(code,folderId,btn){
     TW.folders=TW.folders||[];
     if(folderId&&!folderById(folderId))folderId=null;
     var act={id:nid,title:t.title,instructions:t.instructions||'',minTerms:t.minTerms==null?null:t.minTerms,minWords:t.minWords||0,assign:{},dcOn:!!t.dcOn,dc:t.dc||[],board:t.board||{shape:'hexagon',size:'roomy',orient:'pointy',rotate:true},starters:t.starters!==false,reflect:t.reflect!==false,noPaste:t.noPaste===true,flow:t.flow!==false,createdAt:new Date().toISOString(),
-      terms:t.terms.map(function(x,i){return {n:i+1,id:x.id||i+1,term:x.term,def:x.def||''}}),folder:folderId,sharedFrom:{code:r.code,by:r.sharedBy||''}};
+      terms:t.terms.map(function(x,i){var o={n:i+1,id:x.id||i+1,term:x.term,def:x.def||''};if(x.img)o.img=x.img;return o}),folder:folderId,sharedFrom:{code:r.code,by:r.sharedBy||''}};
     act.idSeq=act.terms.reduce(function(m,x){return Math.max(m,x.id)},0);
     TW.activities.push(act);TS.sel=nid;TS.tab='setup';TS.folder=folderId;if(folderId)revealFolder(folderId);remember();saveWork();
     return saveWorkspaceCloud().then(function(){toast('Copied to your Hex Space.')},function(){toast('Copied. Select Save online to keep it on other devices.')}).then(function(){NAV.hash='teacher/edit-'+encodeURIComponent(nid)});
@@ -4403,7 +4419,7 @@ function openGrader(list,index){
       var b=el('button',{type:'button',class:'score-btn s'+v+(scores[k]===v?' on':''),role:'radio','aria-checked':scores[k]===v?'true':'false',text:v+' · '+SCORE_LABELS[v],onclick:function(){scores[k]=v;
         var sibs=seg.children||[];for(var i=0;i<sibs.length;i++){var on=i===v;sibs[i].classList&&sibs[i].classList.toggle('on',on);sibs[i].setAttribute('aria-checked',on?'true':'false')}autoGrade();}});return b;}));
     var chips=menuButton('Insert comment ▾',commentBank().map(function(t){return {label:t,onclick:function(){note.value=(note.value?note.value+' ':'')+t;comments[k]=note.value}}}),{btnCls:'ghost sm',cls:'bank-menu',aria:'Insert a saved comment for C'+k});
-    return el('li',{class:'gr-row'},el('div',{class:'gr-head'},el('span',{class:'cnum',text:'C'+k}),el('b',{text:la+' – '+lb})),el('p',{class:'gr-why',text:c.why}),seg,note,chips);
+    return el('li',{class:'gr-row',id:'gr-c-'+k,onmouseenter:function(){hlBadge(k)},onfocusin:function(){hlBadge(k)}},el('div',{class:'gr-head'},el('span',{class:'cnum',text:'C'+k}),el('b',{text:la+' – '+lb})),el('p',{class:'gr-why',text:c.why}),seg,note,chips);
   });}
   function payload(){var cm={};for(var k in comments)if(String(comments[k]||'').trim())cm[k]=String(comments[k]).trim();return {studentUid:p._studentUid,scores:scores,comments:cm,overall:overall.value,revise:revise.checked};}
   function save(next){
@@ -4425,7 +4441,7 @@ function openGrader(list,index){
       el('div',null,el('div',{class:'eyebrow',text:(index+1)+' of '+list.length+' · '+(rowClass(p)||'')+(p.submittedAt?' · '+fmtTime(p.submittedAt):'')+(p.late?' · Late':'')}),el('h3',{style:'font-size:1.3rem',text:p.name})),
       el('div',{class:'row'},el('button',{class:'btn sm',disabled:index===0,onclick:function(){openGrader(list,index-1)},text:'← Previous'}),el('button',{class:'btn sm',disabled:index>=list.length-1,onclick:function(){openGrader(list,index+1)},text:'Next →'}),el('button',{class:'btn primary sm gr-quick-save',onclick:function(){save(true)},text:index<list.length-1?'Save & next':'Save & finish'}),el('button',{class:'btn ghost sm',onclick:closeModal,text:'Close'}))),
     el('div',{class:'grader'},
-      el('div',{class:'board grader-board'},boardSVG(a,p.placements||{},conns,{})),
+      graderBoard(a,p,conns),
       el('div',{class:'grader-side'},
         el('p',{class:'muted',style:'margin:0'},(p.termsUsed!=null?p.termsUsed+' terms used · ':'')+cl.length+' connection'+(cl.length===1?'':'s')+'. Score each 0–2; the grade fills in from the scores.'),
         graderExtras(p,list,index),
@@ -4711,17 +4727,18 @@ function classroomShareButton(url,title){return el('a',{class:'btn sm',href:clas
 /* ---------- Printable tiles ---------- */
 function printTileHTML(a,opts){
   function esc(t){return String(t||'').replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
-  function tile(label,term,def,lens){
+  function tile(label,term,def,lens,img){
     var pts=[];for(var i=0;i<6;i++){var ang=Math.PI/180*(60*i-30);pts.push((100+96*Math.cos(ang)).toFixed(1)+','+(100+96*Math.sin(ang)).toFixed(1));}
     var tl=wrapText(term,14,3),dl=def?wrapText(def,26,6):[];
     var ty=(def?84-dl.length*5:100)-(tl.length-1)*9,out='<svg class="t" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><polygon points="'+pts.join(' ')+'" fill="'+(lens?'#FFF4D6':'#fff')+'" stroke="#333" stroke-width="1.5" stroke-dasharray="5 4"/>';
     out+='<text x="100" y="34" text-anchor="middle" font-size="11" fill="#666" font-family="monospace">'+esc(label)+'</text>';
+    if(img){out+='<image href="'+esc(location.origin+imgUrl(img))+'" x="62" y="40" width="76" height="'+(def?40:52)+'" preserveAspectRatio="xMidYMid meet"/>';ty+=def?34:30;}
     tl.forEach(function(l,i){out+='<text x="100" y="'+(ty+i*18)+'" text-anchor="middle" font-size="17" font-weight="700" font-family="Arial,sans-serif">'+esc(l)+'</text>'});
     dl.forEach(function(l,i){out+='<text x="100" y="'+(ty+tl.length*18+6+i*12)+'" text-anchor="middle" font-size="10" font-family="Arial,sans-serif" fill="#333">'+esc(l)+'</text>'});
     return out+'</svg>';
   }
   var H=hexMap(a),list=hexList(a).filter(function(h){return opts.lenses||h.kind!=='dc'});
-  var tiles=list.map(function(h){return tile(h.label,h.name,opts.defs?(h.def||''):'',h.kind==='dc')}).join('');
+  var tiles=list.map(function(h){return tile(h.label,h.name,opts.defs?(h.def||''):'',h.kind==='dc',h.img)}).join('');
   return '<!doctype html><html><head><meta charset="utf-8"><title>'+esc(a.title||'Hex tiles')+' · printable tiles</title><style>'+
     'body{font-family:Arial,sans-serif;margin:24px;color:#111}h1{font-size:18px;margin:0 0 4px}p{margin:0 0 12px;font-size:12px;color:#444}'+
     '.grid{display:flex;flex-wrap:wrap;gap:4px}.t{width:2.4in;height:2.4in;break-inside:avoid;page-break-inside:avoid}'+
@@ -4981,19 +4998,7 @@ function postExtras(postId,a){
         el('a',{class:'btn ghost',href:'#gallery-'+postId,text:'View gallery & comments'})],
       act?el('button',{class:'btn ghost',onclick:function(){printTiles(act)},text:'Print tiles'}):null),
     verBox);
-  if((a.versions||[]).length>1){
-    fill(verBox,el('p',{class:'hint',style:'margin:0',text:'Loading versions…'}));
-    platformApi('posts/'+postId+'/progress').then(function(r){
-      var vs=a.versions;
-      fill(verBox,el('h4',{text:'Versions'}),
-        el('p',{class:'hint',style:'margin:0',text:vs.map(function(v){return v.name+': '+v.terms.length+' terms'}).join(' · ')+'. Students appear here once they open the assignment.'}),
-        r.students.length?el('div',{class:'ver-list'},r.students.map(function(s){
-          var sel=el('select',{'aria-label':'Version for '+s.name},vs.map(function(v,i){return el('option',{value:i,text:v.name,selected:(s.variant||0)===i||null})}));
-          sel.addEventListener('change',function(){platformApi('posts/'+postId+'/version',{studentUids:[s.uid],version:+sel.value}).then(function(x){toast(s.name+' now has '+x.name+'.')}).catch(platformError)});
-          return el('label',{class:'ver-row'},el('span',{text:s.name}),sel);
-        })):el('p',{class:'muted',style:'margin:0',text:'No students have opened it yet.'}));
-    }).catch(function(e){fill(verBox,el('p',{class:'err',text:e.message}))});
-  }
+  rosterPanel(postId,a,verBox);
   return panel;
 }
 
@@ -5778,6 +5783,100 @@ renderStudentShell=function(){
   if(ST&&ST.act&&ST.act.lang&&!ST._langApplied&&on('translate')){ST._langApplied=true;if(!TR.lang&&rawGet('hx-lang')===null&&LANGS[ST.act.lang]){setLanguage(ST.act.lang,false);return;}}
   return v412Shell.apply(this,arguments);
 };
+
+/* ===================== 4.14: pictures on hexagons, class roster and planned versions, zoomable grader board ===================== */
+function imgUrl(id){return '/api/img/'+encodeURIComponent(id);}
+/* Resize in the browser so uploads stay small (about 320 px on the long side). */
+function resizeImage(file){
+  return new Promise(function(ok,no){
+    if(!file||!/^image\//.test(file.type||'')){no(new Error('Choose a picture file (PNG, JPEG or WebP).'));return;}
+    var url=URL.createObjectURL(file),im=new Image();
+    im.onload=function(){
+      var max=320,w=im.naturalWidth||im.width,h=im.naturalHeight||im.height,k=Math.min(1,max/Math.max(w,h));
+      var c=document.createElement('canvas');c.width=Math.max(1,Math.round(w*k));c.height=Math.max(1,Math.round(h*k));
+      var g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(url);
+      var q=0.85,data=c.toDataURL('image/webp',q);
+      if(!/^data:image\/webp/.test(data))data=c.toDataURL('image/jpeg',q);
+      while(data.length>230000&&q>0.4){q-=0.15;data=c.toDataURL(/webp/.test(data)?'image/webp':'image/jpeg',q);}
+      ok(data);
+    };
+    im.onerror=function(){URL.revokeObjectURL(url);no(new Error('That picture couldn’t be read. Try a PNG or JPEG.'));};
+    im.src=url;
+  });
+}
+function termPictureButton(r,sync){
+  var b=el('button',{type:'button',class:'btn vt-pic'});
+  function draw(){
+    b.setAttribute('title',r.img?'Change or remove the picture':'Add a picture (helps early readers)');
+    b.setAttribute('aria-label',(r.img?'Change the picture for ':'Add a picture for ')+(String(r.term||'').trim()||'this term'));
+    fill(b,r.img?el('img',{src:imgUrl(r.img),alt:''}):el('span',{'aria-hidden':'true',text:'🖼'}));
+  }
+  function pick(){
+    var f=el('input',{type:'file',accept:'image/png,image/jpeg,image/webp,image/gif'});
+    f.addEventListener('change',function(){var file=f.files&&f.files[0];if(!file)return;b.disabled=true;
+      resizeImage(file).then(function(data){return platformApi('images',{data:data})}).then(function(res){r.img=res.id;draw();sync();toast('Picture added.');})
+        .catch(platformError).then(function(){b.disabled=false;});});
+    if(f.click)f.click();
+  }
+  b.addEventListener('click',function(){
+    if(!r.img){pick();return;}
+    openModal([el('h3',{style:'font-size:1.2rem',text:'Picture for “'+(String(r.term||'').trim()||'this term')+'”'}),
+      el('img',{class:'pic-preview',src:imgUrl(r.img),alt:''}),
+      el('p',{class:'hint',style:'margin:0',text:'Pictures show on the hexagon, in the tray and on printed tiles. Use pictures you have the right to share.'}),
+      el('div',{class:'row',style:'justify-content:flex-end'},el('button',{class:'btn ghost',onclick:closeModal,text:'Cancel'}),
+        el('button',{class:'btn danger',onclick:function(){r.img='';draw();sync();closeModal();toast('Picture removed.');},text:'Remove'}),
+        el('button',{class:'btn primary',onclick:function(){closeModal();pick();},text:'Replace'}))]);
+  });
+  draw();return b;
+}
+var v413Detail=renderDetail;
+renderDetail=function(){
+  v413Detail.apply(this,arguments);
+  if(!ST||ST.sel==null||!ST.H[ST.sel]||!refs.detail)return;
+  var h=ST.H[ST.sel];
+  if(h.img&&refs.detail.insertBefore)refs.detail.insertBefore(el('img',{class:'detail-img',src:imgUrl(h.img),alt:h.name}),refs.detail.children[1]||null);
+};
+/* Class roster: who hasn't opened the posting yet, and versions chosen ahead of time. */
+function rosterPanel(postId,a,box){
+  var vs=a.versions||[],withClassroom=!a.manual&&classroomReady('teacher');
+  fill(box,el('p',{class:'hint',style:'margin:0',text:'Loading the class roster…'}));
+  platformApi('posts/'+postId+'/roster',undefined,withClassroom).then(function(r){
+    var notOpened=r.members.filter(function(m){return !m.opened});
+    var head=el('div',{class:'stack',style:'gap:6px'},el('h4',{text:'Class roster'}),
+      el('p',{class:'hint',style:'margin:0',text:r.members.length?(notOpened.length?notOpened.length+' of '+r.members.length+' haven’t opened it yet: '+notOpened.slice(0,12).map(function(m){return m.name}).join(', ')+(notOpened.length>12?'…':''):'Everyone on the roster has opened it.'):'Students appear once they open this or another assignment for this class.'}),
+      r.classroom==='needs-token'?el('button',{class:'btn sm',style:'align-self:flex-start',onclick:function(){connectClassroom('teacher',function(){rosterPanel(postId,a,box)})},text:'Check the Google Classroom roster'}):null,
+      r.classroom==='unavailable'?el('p',{class:'err',style:'margin:0',text:'Google Classroom didn’t return the roster. Reconnect Classroom and try again.'}):null);
+    if(vs.length<2){fill(box,head);return;}
+    fill(box,head,el('h4',{text:'Versions'}),
+      el('p',{class:'hint',style:'margin:0',text:vs.map(function(v){return v.name+': '+v.terms.length+' terms'}).join(' · ')+'. Choose a version for anyone, even before they open it; students never see version names.'}),
+      r.members.length?el('div',{class:'ver-list'},r.members.map(function(m){
+        var cur=m.opened&&m.variant!=null?m.variant:(m.planned!=null?m.planned:0);
+        var sel=el('select',{'aria-label':'Version for '+m.name},vs.map(function(v,i){return el('option',{value:i,text:v.name,selected:cur===i||null})}));
+        sel.addEventListener('change',function(){
+          var key=m.key,req=m.opened&&key.indexOf('u:')===0?platformApi('posts/'+postId+'/version',{studentUids:[key.slice(2)],version:+sel.value}):(function(){var plan={};plan[key]=+sel.value;return platformApi('posts/'+postId+'/version-plan',{plan:plan});})();
+          req.then(function(){toast(m.name+(m.opened?' now has ':' will start in ')+vs[+sel.value].name+'.')}).catch(platformError);
+        });
+        return el('label',{class:'ver-row'},el('span',null,m.name,m.opened?null:el('span',{class:'hint',text:' · not opened yet'})),sel);
+      })):el('p',{class:'muted',style:'margin:0',text:'No students on the roster yet.'}));
+  }).catch(function(e){fill(box,el('p',{class:'err',text:e.message}))});
+}
+/* Grader board: zoom, and links between each reason and its spot on the board. */
+function hlBadge(k){
+  var svg=document.querySelector&&document.querySelector('.grader-board svg');if(!svg||!svg.querySelectorAll)return;
+  [].slice.call(svg.querySelectorAll('.badge')).forEach(function(b){var on=(b.getAttribute('aria-label')||'').indexOf('Connection C'+k+':')===0;if(b.classList)b.classList.toggle('hl',on);});
+}
+function graderBoard(a,p,conns){
+  var z=1,svg=boardSVG(a,p.placements||{},conns,{onBadge:function(cn){var row=document.getElementById('gr-c-'+cn.num);if(row){if(row.scrollIntoView)row.scrollIntoView({block:'center',behavior:'smooth'});if(row.classList){row.classList.add('flash');setTimeout(function(){row.classList.remove('flash')},1200);}}hlBadge(cn.num);}});
+  var scroller=el('div',{class:'gb-scroll'},svg),label=el('span',{class:'gb-z',text:'100%'});
+  function set(v){z=Math.max(1,Math.min(4,v));svg.style.width=(z*100)+'%';svg.style.maxHeight=z>1?'none':'';label.textContent=Math.round(z*100)+'%';}
+  return el('div',{class:'board grader-board'},
+    el('div',{class:'gb-tools',role:'group','aria-label':'Zoom the board'},
+      el('button',{type:'button',class:'btn sm',onclick:function(){set(z-0.5)},'aria-label':'Zoom out',text:'−'}),label,
+      el('button',{type:'button',class:'btn sm',onclick:function(){set(z+0.5)},'aria-label':'Zoom in',text:'+'}),
+      el('button',{type:'button',class:'btn ghost sm',onclick:function(){set(1)},text:'Fit'})),
+    scroller,
+    el('p',{class:'hint gb-hint',style:'margin:0',text:'Tap a C-number on the board to jump to its reason; point at a reason to find it on the board.'}));
+}
 
 /* The homepage is the starting page: a visit to the bare site address opens it,
    signed in or not. In-app links to "#" still go to the student dashboard. */

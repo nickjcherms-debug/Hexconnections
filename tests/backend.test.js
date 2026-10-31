@@ -11,7 +11,7 @@ function harness(){
  sql.exec(readFileSync(new URL('../migrations/0003_group_boards.sql',import.meta.url),'utf8'));
  sql.exec(readFileSync(new URL('../migrations/0004_shares.sql',import.meta.url),'utf8'));
  sql.exec(readFileSync(new URL('../migrations/0005_multiple_posts.sql',import.meta.url),'utf8'));
- sql.exec(readFileSync(new URL('../migrations/0006_feedback.sql',import.meta.url),'utf8'));sql.exec(readFileSync(new URL('../migrations/0007_classroom_tools.sql',import.meta.url),'utf8'));
+ sql.exec(readFileSync(new URL('../migrations/0006_feedback.sql',import.meta.url),'utf8'));sql.exec(readFileSync(new URL('../migrations/0007_classroom_tools.sql',import.meta.url),'utf8'));sql.exec(readFileSync(new URL('../migrations/0008_images_roster.sql',import.meta.url),'utf8'));
  const DB = {
   prepare(query) {
    return {
@@ -724,4 +724,36 @@ test('a posting can set the translation language students start in',async()=>{
  assert.equal((await h.call('kid','posts/'+q.body.id,undefined,{access:false})).body.assignment.act.lang,'');
  await h.call('teacher','posts/'+p.body.id+'/edit',{options:{translate:false}},{access:false});
  assert.equal((await h.call('kid','posts/'+p.body.id,undefined,{access:false})).body.assignment.act.lang,'','no default language when Translate is off');
+});
+test('pictures: teachers upload small images, anyone can load them by address, terms only accept real picture ids',async()=>{
+ const h=harness();await h.call('teacher','profile',{role:'teacher'});
+ const png='data:image/png;base64,'+Buffer.from('\x89PNG fake bytes').toString('base64');
+ await h.call('kid','profile',{role:'student'},{access:false});assert.equal((await h.call('kid','images',{data:png},{access:false})).status,403);
+ assert.equal((await h.call('teacher','images',{data:'data:text/html;base64,PGI+'},{access:false})).status,400);
+ assert.equal((await h.call('teacher','images',{data:'data:image/png;base64,'+'A'.repeat(300000)},{access:false})).status,413);
+ const up=await h.call('teacher','images',{data:png},{access:false});assert.equal(up.status,201);assert.match(up.body.id,/^[A-Za-z0-9]{24}$/);
+ const res=await handle(new Request('https://hexconnections.com/api/img/'+up.body.id),h.env);assert.equal(res.status,200);assert.equal(res.headers.get('content-type'),'image/png');assert.match(res.headers.get('cache-control'),/immutable/);
+ assert.equal(Buffer.from(await res.arrayBuffer()).toString(),'\x89PNG fake bytes');
+ assert.equal((await handle(new Request('https://hexconnections.com/api/img/nope-nope-nope-nope'),h.env)).status,404);
+ const ws=threeTerms();ws.activities[0].terms[0].img=up.body.id;assert.equal((await h.call('teacher','workspace',{workspace:ws,revision:0})).status,200);
+ const bad=threeTerms();bad.activities[0].terms[0].img='javascript:alert(1)';assert.equal((await h.call('teacher','workspace',{workspace:bad,revision:1})).status,400);
+ const sh=await h.call('teacher','shares',{activityId:'act-m'},{access:false});assert.equal((await h.call('teacher','shares/'+sh.body.share.code)).body.activity.terms[0].img,up.body.id);
+ await h.call('teacher','account/delete',{confirm:'DELETE'},{access:false});assert.equal(h.sql.prepare('SELECT count(*) n FROM images').get().n,0);
+});
+test('class roster lists classmates who haven’t opened a posting, and versions can be planned before they open it',async()=>{
+ const h=harness();await h.call('teacher','profile',{role:'teacher'});await h.call('teacher','workspace',{workspace:threeTerms(),revision:0});
+ const first=await h.call('teacher','posts/new',{activityId:'act-m',classId:'club',tz:'UTC'},{access:false});
+ for(const k of ['kA','kB','kC'])await kidJoin(h,k,first.body.code);
+ const p=await h.call('teacher','posts/new',{activityId:'act-m',classId:'club',tz:'UTC',versions:[{name:'Core',terms:[1,2,3]},{name:'Support',terms:[1,2]}]},{access:false});
+ await kidJoin(h,'kA',p.body.code);
+ let r=(await h.call('teacher','posts/'+p.body.id+'/roster',undefined,{access:false})).body;
+ assert.equal(r.notOpened,2);assert.deepEqual(r.members.map(m=>m.name+':'+m.opened),['Name kB:false','Name kC:false','Name kA:true']);assert.deepEqual(r.versions,['Core','Support']);assert.equal(r.classroom,'n/a');
+ assert.equal((await h.call('kA','posts/'+p.body.id+'/roster',undefined,{access:false})).status,403);
+ assert.equal((await h.call('teacher','posts/'+p.body.id+'/version-plan',{plan:{'u:kB':5}},{access:false})).status,400);
+ assert.equal((await h.call('teacher','posts/'+p.body.id+'/version-plan',{plan:{'u:kB':1,'u:kA':1}},{access:false})).status,200);
+ assert.deepEqual((await h.call('kA','posts/'+p.body.id,undefined,{access:false})).body.assignment.act.terms.map(t=>t.id),[1,2],'already opened: moved now');
+ await kidJoin(h,'kB',p.body.code);
+ assert.deepEqual((await h.call('kB','posts/'+p.body.id,undefined,{access:false})).body.assignment.act.terms.map(t=>t.id),[1,2],'planned version applied on first open');
+ await kidJoin(h,'kC',p.body.code);assert.equal((await h.call('kC','posts/'+p.body.id,undefined,{access:false})).body.assignment.act.terms.length,3);
+ r=(await h.call('teacher','posts/'+p.body.id+'/roster',undefined,{access:false})).body;assert.equal(r.notOpened,0);assert.equal(r.members.find(m=>m.key==='u:kB').variant,1);
 });
