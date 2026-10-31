@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Hexagonal thinking boards for classrooms: students arrange vocabulary hexagons and explain every connection, with optional Depth and Complexity icons.">
-<meta name="hex-connections-build" content="4.11.1">
+<meta name="hex-connections-build" content="4.14.0">
 <title>Hex Connections</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0F6E6E">
@@ -195,7 +195,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.45}
 .dcopt:has(input:checked){background:var(--honey-soft);border-color:var(--honey)}
 .dcopt svg{flex:none;width:20px;height:20px}
 .vt{display:flex;flex-direction:column;gap:6px}
-.vt-head,.vt-row{display:grid;grid-template-columns:48px minmax(0,1fr) minmax(0,2fr) 96px;gap:8px;align-items:center}
+.vt-head,.vt-row{display:grid;grid-template-columns:48px minmax(0,1fr) minmax(0,2fr) 56px 96px;gap:8px;align-items:center}
 .vt-head{font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
 .vt-num{font-family:var(--f-mono);font-weight:700;font-size:.8rem;color:var(--ink);text-align:center;border-radius:8px;padding:8px 0;background:var(--paper);border:1px dashed var(--line)}
 .vt-num.c1{background:var(--t1);border:0}.vt-num.c2{background:var(--t2);border:0}.vt-num.c3{background:var(--t3);border:0}.vt-num.c4{background:var(--t4);border:0}.vt-num.c5{background:var(--t5);border:0}.vt-num.c6{background:var(--t6);border:0}
@@ -211,6 +211,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.45}
   .vt-row .vt-num{grid-row:1 / 3}
   .vt-row .vt-def{grid-column:2;grid-row:2}
   .vt-row .vt-del{grid-column:3;grid-row:1}
+  .vt-row .vt-pic{grid-column:3;grid-row:2}
 }
 .gate{max-width:460px;margin:24px auto 0;display:flex;flex-direction:column;gap:14px}
 .gate .panel{display:flex;flex-direction:column;gap:12px}
@@ -677,6 +678,57 @@ h2,h3,.brand h1,.aitem b,.act-head h2,.modal h3{overflow-wrap:anywhere}
 .gr-quick-save{display:none}
 @media (max-width:900px){.gr-head{position:sticky;top:-24px;z-index:3;background:var(--panel);margin:-12px -12px 0;padding:12px;border-bottom:1px solid var(--line)}.gr-quick-save{display:inline-flex}}
 @media (pointer:coarse){input[type=checkbox],input[type=radio]{width:24px;height:24px}}
+.subs-table-wrap{display:flex;flex-direction:column;gap:10px}
+.subs-tools{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center}
+.filter-chips{display:flex;flex-wrap:wrap;gap:6px}
+.filter-chip{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:.9rem;font-weight:700;cursor:pointer;min-height:36px}
+.filter-chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.subs-table select{width:auto}
+.subs-tools select{width:auto;min-height:40px}
+.subs-table{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.subs-row{display:grid;grid-template-columns:minmax(140px,1.6fr) minmax(120px,1.1fr) 60px 60px minmax(110px,1fr) minmax(120px,1.4fr) 90px 90px;gap:10px;align-items:center;padding:9px 14px;border-top:1px solid var(--line)}
+.subs-row:first-child{border-top:0}
+.subs-head{background:var(--t1);font-size:.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding-top:8px;padding-bottom:8px}
+.subs-name{overflow-wrap:anywhere}
+.subs-time{font-size:.88rem;color:var(--muted)}
+.subs-act{justify-self:end}
+.status-pill{display:inline-block;border-radius:999px;padding:2px 10px;font-size:.82rem;font-weight:700;background:var(--t1)}
+.status-pill.needs{background:var(--honey-soft);color:var(--honey-ink)}
+.status-pill.graded{background:var(--teal-soft);color:var(--teal)}
+.status-pill.returned{background:var(--t4)}
+.status-pill.working{background:var(--t2)}
+@media (max-width:820px){.subs-head{display:none}.subs-row{grid-template-columns:1fr auto;grid-auto-flow:row;gap:4px 10px}
+ .subs-row>[data-label]{font-size:.86rem;color:var(--muted)}.subs-row>[data-label]::before{content:attr(data-label) ': ';font-weight:700}
+ .subs-act{grid-column:2;grid-row:1/span 2;align-self:center}}
+@media (pointer:coarse){.gr-keys{display:none}}
+.gal-goal{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.gal-progress{display:flex;flex-wrap:wrap;gap:6px}
+.gal-prog{border-radius:999px;padding:3px 10px;background:var(--t2);font-size:.88rem}
+.gal-prog.ok{background:var(--teal-soft);color:var(--teal)}
+.reteach{background:var(--honey-soft);color:var(--honey-ink);border-radius:12px;padding:8px 12px;font-size:.95rem}
+.reteach.big{font-size:clamp(1.05rem,1.6vw,1.4rem)}
+.warn-text{color:var(--honey-ink,#8A5A00)}
+.first-steps{display:flex;flex-direction:column;gap:8px;border-color:var(--blue)}
+.fs-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+.fs-list li{display:grid;grid-template-columns:26px 1fr auto;gap:10px;align-items:center}
+.fs-check{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);display:inline-flex;align-items:center;justify-content:center;font-weight:700;color:var(--teal)}
+.fs-list li.done .fs-check{border-color:var(--teal);background:var(--teal-soft)}
+.fs-list li.done b{color:var(--muted)}
+.skip-link{position:absolute;left:-9999px;top:8px;z-index:200;background:var(--ink);color:var(--paper);padding:8px 14px;border-radius:8px;font-weight:700}
+.skip-link:focus{left:8px}
+.vt-pic{padding:0;width:48px;height:40px;display:inline-flex;align-items:center;justify-content:center;overflow:hidden}
+.vt-pic img{width:100%;height:100%;object-fit:cover}
+.pic-preview{max-width:100%;max-height:240px;object-fit:contain;align-self:center;border-radius:10px;border:1px solid var(--line)}
+.tile-img{width:34px;height:24px;object-fit:contain;display:block;margin:0 auto;pointer-events:none}
+.detail-img{max-width:100%;max-height:160px;object-fit:contain;border-radius:10px;align-self:flex-start}
+.grader-board{display:flex;flex-direction:column;gap:6px}
+.gb-tools{display:flex;gap:6px;align-items:center;justify-content:flex-end}
+.gb-z{font-family:var(--f-mono);font-size:.85rem;min-width:44px;text-align:center}
+.gb-scroll{overflow:auto;max-height:62vh;border-radius:10px}
+.gb-scroll svg{display:block;width:100%;height:auto}
+.board-svg .badge.hl circle{fill:var(--honey);stroke:var(--ink);stroke-width:2}
+.gr-row.flash{box-shadow:0 0 0 3px var(--honey)}
+@media (pointer:coarse){.gb-hint{display:none}}
 </style>
 <div id="root"></div>
 <script type="application/json" id="hx-data">{"version":4,"classes":[],"activities":[]}</script>
@@ -961,7 +1013,7 @@ function termsUsedIn(conns){ var u = {}; (conns||[]).forEach(function(c){ if (c.
 var DEFAULT_INS = 'Drag every term onto the board. Each time two hexagons touch, explain how the two ideas are connected.';
 /* every hexagon in an activity: term hexes (T#) plus any Depth & Complexity hexes (DC#) */
 function hexList(act){
-  var out = (act.terms||[]).map(function(t, i){ return { id:t.id || t.n, kind:'term', label:'T'+(i+1), ci:(i%6)+1, name:t.term, def:t.def||'' }; });
+  var out = (act.terms||[]).map(function(t, i){ return { id:t.id || t.n, kind:'term', label:'T'+(i+1), ci:(i%6)+1, name:t.term, def:t.def||'', img:t.img||'' }; });
   if (act.dcOn) (act.dc||[]).filter(function(k){ return k in DCI; }).sort(function(a,b){ return DCI[a]-DCI[b]; }).forEach(function(k, i){
     var d = DC[DCI[k]]; out.push({ id:1001+DCI[k], kind:'dc', key:k, label:'DC'+(i+1), name:d.name, def:d.hint });
   });
@@ -1175,6 +1227,7 @@ function boardSVG(act, place, conns, opt){
     } else {
       var wt = wrapTerm(h.name);
       var startY = c[1] + 4 - (wt.lines.length-1)*wt.size*0.55;
+      if (h.img){ var im = sv('image',{x:(c[0]-20).toFixed(1),y:(c[1]-24).toFixed(1),width:40,height:28,preserveAspectRatio:'xMidYMid meet','aria-hidden':'true'}); im.setAttribute('href', imgUrl(h.img)); gg.appendChild(im); wt = wrapTerm(h.name); wt.size = Math.min(wt.size, 10); wt.lines = wrapText(h.name, 12, 2); startY = c[1] + 14; }
       var tx = sv('text',{class:'term','text-anchor':'middle','font-size':wt.size});
       wt.lines.forEach(function(line,i){ tx.appendChild(sv('tspan',{x:c[0],y:(startY + i*wt.size*1.1).toFixed(1),text:line})); });
       gg.appendChild(tx);
@@ -1367,6 +1420,7 @@ function updateStudent(){
   fill(refs.tray, unplaced.length ? unplaced.map(function(h){
     var tile = el('button',{class:'tile'+(h.kind==='dc'?' dc':' c'+h.ci)+(ST.sel===h.id?' sel':''),'data-n':h.id,'aria-label':h.label+' '+h.name,title:h.def||h.name},
       h.kind==='dc' ? glyphSVG(h.key, 18) : el('span',{class:'n',text:h.label}),
+      h.img ? el('img',{class:'tile-img',src:imgUrl(h.img),alt:'',draggable:'false'}) : null,
       el('span',{class:h.kind==='dc' ? 't' : fitCls(h.name),lang:'en',text:h.name}));
     tile.addEventListener('pointerdown', function(e){ beginDrag(h.id, e, 'tray'); });
     tile.addEventListener('keydown', function(e){ if (e.key==='Enter'||e.key===' '){ e.preventDefault(); select(h.id); } });
@@ -1748,7 +1802,7 @@ function renderTeacher(){
   function tab(k, label){ return el('button',{class:'tab'+(TS.tab===k?' on':''),role:'tab','aria-selected':String(TS.tab===k),onclick:function(){ TS.tab=k; remember(); renderTeacher(); },text:label}); }
   var main = a ? el('div',{style:'min-width:0'},
     el('div',{class:'eyebrow',text:'Hex Space'}),
-    el('div',{class:'row',style:'justify-content:space-between;align-items:flex-start'}, el('h2',{text:a.title || 'Untitled Hex Space'}), el('div',{class:'row'}, folderPicker(a), assignMenu(a), el('button',{class:'btn sm',onclick:function(){ openShare(a); },text:'Share'}), el('button',{class:'btn ghost sm danger-text','aria-label':'Delete this Hex Space',onclick:function(){ deleteHexSpace(a); },text:'Delete'}))),
+    el('div',{class:'row',style:'justify-content:space-between;align-items:flex-start'}, el('h2',{text:a.title || 'Untitled Hex Space'}), el('div',{class:'row'}, folderPicker(a), assignMenu(a), el('button',{class:'btn sm',onclick:function(){ openShare(a); },text:'Share'}), el('button',{class:'btn ghost sm',onclick:function(){ duplicateHexSpace(a); },text:'Duplicate'}), el('button',{class:'btn ghost sm danger-text','aria-label':'Delete this Hex Space',onclick:function(){ deleteHexSpace(a); },text:'Delete'}))),
     el('div',{class:'tabs',role:'tablist'}, tab('setup','Setup'), tab('codes','Post (' + postsFor(a.id).length + ')'), tab('subs','Submissions (' + rowsFor(a.id).length + ')')),
     TS.tab === 'setup' ? setupPane(a) : TS.tab === 'codes' ? codesPane(a) : subsPane(a)
   ) : el('div',{class:'panel'}, el('h3',{text:'No activities yet'}), el('p',{class:'muted',text:'Create one to paste in your unit vocabulary.'}), el('button',{class:'btn primary',onclick:newActivity,text:'New activity'}));
@@ -1795,7 +1849,7 @@ function setupPane(a){
   }
 
   /* vocabulary table: one row per term, blank rows are ignored */
-  if (!TS.rows[a.id]) TS.rows[a.id] = a.terms.map(function(t){ return { id:t.id || t.n, term:t.term, def:t.def||'' }; });
+  if (!TS.rows[a.id]) TS.rows[a.id] = a.terms.map(function(t){ return { id:t.id || t.n, term:t.term, def:t.def||'', img:t.img||'' }; });
   var rows = TS.rows[a.id];
   function padRows(){ while (rows.length < 5 || (rows.length < 60 && rows[rows.length-1].term.trim())) rows.push({ term:'', def:'' }); }
   padRows();
@@ -1805,7 +1859,7 @@ function setupPane(a){
     a.idSeq = Math.max(a.idSeq || 0, Object.keys(taken).reduce(function(m, k){ return Math.max(m, +k); }, 0));
     a.terms = rows.filter(function(r){ return r.term.trim(); }).slice(0,60).map(function(r, i){
       if (!r.id){ var nid = a.idSeq + 1; while (taken[nid] || nid >= 1000) nid = nid >= 1000 ? 1 : nid + 1; r.id = nid; taken[nid] = 1; a.idSeq = Math.max(a.idSeq, nid); }
-      return { n:i+1, id:r.id, term:r.term.trim().slice(0,60), def:r.def.trim().slice(0,400) };
+      var out = { n:i+1, id:r.id, term:r.term.trim().slice(0,60), def:r.def.trim().slice(0,400) }; if (r.img) out.img = r.img; return out;
     });
     if (!a.idSeq) delete a.idSeq;
     var n = 0;
@@ -1865,11 +1919,11 @@ function setupPane(a){
     function showDel(){ var on = !!(r.term.trim() || r.def.trim()); del.disabled = !on; del.title = on ? 'Delete this term' : 'Type a term first'; }
     showDel();
     term.addEventListener('input', showDel); def.addEventListener('input', showDel);
-    return el('div',{class:'vt-row'}, el('span',{class:'vt-num',text:'—'}), term, def, del);
+    return el('div',{class:'vt-row'}, el('span',{class:'vt-num',text:'—'}), term, def, termPictureButton(r, sync), del);
   }
   function renderRows(){
     padRows();
-    fill(vt, el('div',{class:'vt-head','aria-hidden':'true'}, el('span',{style:'text-align:center',text:'#'}), el('span',{text:'Term'}), el('span',{text:'Definition'}), el('span',{style:'text-align:center',text:'Delete'})));
+    fill(vt, el('div',{class:'vt-head','aria-hidden':'true'}, el('span',{style:'text-align:center',text:'#'}), el('span',{text:'Term'}), el('span',{text:'Definition'}), el('span',{style:'text-align:center',text:'Picture'}), el('span',{style:'text-align:center',text:'Delete'})));
     rows.forEach(function(r, i){ vt.appendChild(rowEl(r, i)); });
   }
   renderRows();
@@ -2049,6 +2103,7 @@ function setupPane(a){
     el('div',{class:'grid2'},
       el('div',{class:'stack'},
         field('f-title','Title', bind(el('input',{type:'text',id:'f-title',value:a.title,maxlength:80,placeholder:'e.g. Unit 3: Cells'}),'title')),
+        el('p',{id:'f-title-warn',class:'hint warn-text',hidden:String(a.title||'').length<=60,style:'margin:0',text:'Long titles wrap on phones and in Google Classroom. Under 60 characters reads best.'}),
         el('p',{class:'hint',style:'margin:0',text:'When it’s ready, choose Assign to class above. You pick the dates and student supports when you assign it.'})),
       field('f-ins','Directions for students', bind(el('textarea',{id:'f-ins',rows:3,value:a.instructions||'',maxlength:600,placeholder:DEFAULT_INS}),'instructions'), 'Leave blank to use the standard directions shown.')
     ),
@@ -2729,18 +2784,7 @@ function teacherPostDashboard(postId){
   var subs=r[1].submissions||[];PX.gradeList=subs;
   dashboardAdd(body,postToolsRow(a,subs));
   dashboardAdd(body,postExtras(postId,a,subs));
-  if(!subs.length)dashboardMessage(body,'No student submissions yet.');
-  subs.forEach(function(p){dashboardAdd(body,el('div',{class:'panel row sub-row',style:'justify-content:space-between'},el('div',{style:'min-width:0'},el('b',{text:p.name}),
-    el('p',{class:'muted',style:'margin:2px 0 0',text:(p.group?p.group.name+' · ':'')+({TURNED_IN:'Turned in',GRADED:'Graded',DRAFT:'Unsubmitted · still working',SAVED_PENDING_CLASSROOM:'Turning in…'}[p._status]||String(p._status||'').replace(/_/g,' ').toLowerCase())+(p._grade==null?'':' · '+p._grade+' / '+p._maxPoints)}),
-    el('div',{class:'sub-meta'},
-      p.termsUsed!=null?el('span',{text:p.termsUsed+' terms'}):null,el('span',{text:(p.connections||[]).length+' connections'}),
-      p.submittedAt?el('span',{text:fmtTime(p.submittedAt)}):null,
-      p.late?el('span',{class:'sub-flag late',text:'Late'}):null,
-      p.version?el('span',{text:p.version}):null,
-      p._feedback?el('span',{class:'sub-flag ok',text:p._feedback.revise?'Returned for revision':'Feedback given'}):null,
-      p.reflection?el('span',{text:'Reflection ✓'}):null,
-      p.pasteAttempts?el('span',{class:'sub-flag late',text:'⚠ '+p.pasteAttempts+' paste attempt'+(p.pasteAttempts===1?'':'s')}):null)),
-    el('button',{class:'btn primary',onclick:function(){openGrader(subs,subs.indexOf(p))},text:p._feedback||p._grade!=null?'Review feedback':'View board & grade'})))});
+  dashboardAdd(body,submissionsTable(postId,a,subs));
   dashboardAdd(body,el('h3',{text:'Group project boards'}),el('p',{class:'muted',text:a.manual?'Create a group and give its code to the students in it. They build one shared board, and each member turns in their own copy.':'Create a group and share its code with enrolled students. Each member turns in their own Classroom assignment.'}),el('button',{class:'btn primary',style:'align-self:flex-start',disabled:!!r[2].setupError,onclick:function(){createProjectGroup(postId)},text:'Create group'}));
   if(r[2].setupError)dashboardMessage(body,r[2].setupError);
   (r[2].groups||[]).forEach(function(g){dashboardAdd(body,el('div',{class:'panel stack'},el('h3',{text:g.name}),el('p',{text:g.members.length+' / '+g.maxMembers+' members'+(g.members.length?' · '+g.members.map(function(m){return m.name}).join(', '):'')}),el('div',{class:'row'},el('code',{class:'linkcode',text:groupCode(g.code)}),el('button',{class:'btn sm',onclick:function(){copyText(groupCode(g.code),'Group code')},text:'Copy group code'}),el('button',{class:'btn sm',onclick:function(){viewSubmission(r[2].activity,{name:g.name,placements:g.draft.place,connections:activeConns(g.draft.place,g.draft.conns),period:a.className})},text:'View shared board'}))))});
@@ -3424,7 +3468,7 @@ function copyShared(code,folderId,btn){
     TW.folders=TW.folders||[];
     if(folderId&&!folderById(folderId))folderId=null;
     var act={id:nid,title:t.title,instructions:t.instructions||'',minTerms:t.minTerms==null?null:t.minTerms,minWords:t.minWords||0,assign:{},dcOn:!!t.dcOn,dc:t.dc||[],board:t.board||{shape:'hexagon',size:'roomy',orient:'pointy',rotate:true},starters:t.starters!==false,reflect:t.reflect!==false,noPaste:t.noPaste===true,flow:t.flow!==false,createdAt:new Date().toISOString(),
-      terms:t.terms.map(function(x,i){return {n:i+1,id:x.id||i+1,term:x.term,def:x.def||''}}),folder:folderId,sharedFrom:{code:r.code,by:r.sharedBy||''}};
+      terms:t.terms.map(function(x,i){var o={n:i+1,id:x.id||i+1,term:x.term,def:x.def||''};if(x.img)o.img=x.img;return o}),folder:folderId,sharedFrom:{code:r.code,by:r.sharedBy||''}};
     act.idSeq=act.terms.reduce(function(m,x){return Math.max(m,x.id)},0);
     TW.activities.push(act);TS.sel=nid;TS.tab='setup';TS.folder=folderId;if(folderId)revealFolder(folderId);remember();saveWork();
     return saveWorkspaceCloud().then(function(){toast('Copied to your Hex Space.')},function(){toast('Copied. Select Save online to keep it on other devices.')}).then(function(){NAV.hash='teacher/edit-'+encodeURIComponent(nid)});
@@ -4375,7 +4419,7 @@ function openGrader(list,index){
       var b=el('button',{type:'button',class:'score-btn s'+v+(scores[k]===v?' on':''),role:'radio','aria-checked':scores[k]===v?'true':'false',text:v+' · '+SCORE_LABELS[v],onclick:function(){scores[k]=v;
         var sibs=seg.children||[];for(var i=0;i<sibs.length;i++){var on=i===v;sibs[i].classList&&sibs[i].classList.toggle('on',on);sibs[i].setAttribute('aria-checked',on?'true':'false')}autoGrade();}});return b;}));
     var chips=menuButton('Insert comment ▾',commentBank().map(function(t){return {label:t,onclick:function(){note.value=(note.value?note.value+' ':'')+t;comments[k]=note.value}}}),{btnCls:'ghost sm',cls:'bank-menu',aria:'Insert a saved comment for C'+k});
-    return el('li',{class:'gr-row'},el('div',{class:'gr-head'},el('span',{class:'cnum',text:'C'+k}),el('b',{text:la+' – '+lb})),el('p',{class:'gr-why',text:c.why}),seg,note,chips);
+    return el('li',{class:'gr-row',id:'gr-c-'+k,onmouseenter:function(){hlBadge(k)},onfocusin:function(){hlBadge(k)}},el('div',{class:'gr-head'},el('span',{class:'cnum',text:'C'+k}),el('b',{text:la+' – '+lb})),el('p',{class:'gr-why',text:c.why}),seg,note,chips);
   });}
   function payload(){var cm={};for(var k in comments)if(String(comments[k]||'').trim())cm[k]=String(comments[k]).trim();return {studentUid:p._studentUid,scores:scores,comments:cm,overall:overall.value,revise:revise.checked};}
   function save(next){
@@ -4397,7 +4441,7 @@ function openGrader(list,index){
       el('div',null,el('div',{class:'eyebrow',text:(index+1)+' of '+list.length+' · '+(rowClass(p)||'')+(p.submittedAt?' · '+fmtTime(p.submittedAt):'')+(p.late?' · Late':'')}),el('h3',{style:'font-size:1.3rem',text:p.name})),
       el('div',{class:'row'},el('button',{class:'btn sm',disabled:index===0,onclick:function(){openGrader(list,index-1)},text:'← Previous'}),el('button',{class:'btn sm',disabled:index>=list.length-1,onclick:function(){openGrader(list,index+1)},text:'Next →'}),el('button',{class:'btn primary sm gr-quick-save',onclick:function(){save(true)},text:index<list.length-1?'Save & next':'Save & finish'}),el('button',{class:'btn ghost sm',onclick:closeModal,text:'Close'}))),
     el('div',{class:'grader'},
-      el('div',{class:'board grader-board'},boardSVG(a,p.placements||{},conns,{})),
+      graderBoard(a,p,conns),
       el('div',{class:'grader-side'},
         el('p',{class:'muted',style:'margin:0'},(p.termsUsed!=null?p.termsUsed+' terms used · ':'')+cl.length+' connection'+(cl.length===1?'':'s')+'. Score each 0–2; the grade fills in from the scores.'),
         graderExtras(p,list,index),
@@ -4447,11 +4491,11 @@ function postToolsRow(a,subs){
 }
 function words(t){return String(t||'').trim().split(/\s+/).filter(Boolean).length;}
 function exportGrades(a,subs){
-  var rows=[['Student','Email','Status','Terms used','Connections','Average words per reason','Strong (2)','Partly (1)','Needs work (0)','Grade','Out of','Late','Submitted','Overall feedback']];
+  var rows=[['Student','Email','Status','Terms used','Connections','Average words per reason','Strong (2)','Partly (1)','Needs work (0)','Grade','Out of','Late','Submitted','Version','Paste attempts blocked','Reflection: proudest','Reflection: hardest','Overall feedback']];
   subs.forEach(function(p){
     var cl=p.connections||[],fb=p._feedback||{},sc=fb.scores||{},cnt=[0,0,0];for(var k in sc)cnt[sc[k]]++;
     var avg=cl.length?Math.round(cl.reduce(function(n,c){return n+words(c.why)},0)/cl.length*10)/10:0;
-    rows.push([p.name,p.email||'',({TURNED_IN:'Turned in',GRADED:'Graded',DRAFT:'Unsubmitted'}[p._status]||p._status||''),p.termsUsed==null?'':p.termsUsed,cl.length,avg,cnt[2],cnt[1],cnt[0],p._grade==null?'':p._grade,p._maxPoints||'',p.late?'Yes':'No',p.submittedAt||'',fb.overall||'']);
+    rows.push([p.name,p.email||'',({TURNED_IN:'Turned in',GRADED:'Graded',DRAFT:'Unsubmitted'}[p._status]||p._status||''),p.termsUsed==null?'':p.termsUsed,cl.length,avg,cnt[2],cnt[1],cnt[0],p._grade==null?'':p._grade,p._maxPoints||'',p.late?'Yes':'No',p.submittedAt||'',p.version||'',p.pasteAttempts||0,(p.reflection&&p.reflection.proud)||'',(p.reflection&&p.reflection.hard)||'',fb.overall||'']);
   });
   var name=(a.title||'assignment').replace(/[^\w\- ]+/g,'').trim().replace(/\s+/g,'-').slice(0,60)||'grades';
   downloadBlob(name+'-grades.csv',toCSV(rows),'text/csv');
@@ -4481,6 +4525,7 @@ function openInsights(a){
     openModal([el('div',{class:'eyebrow',text:'Class insights'}),el('h3',{style:'font-size:1.3rem',text:a.title}),
       el('div',{class:'ins-stats'},
         stat(d.total,'joined'),stat(d.started,'started'),stat(d.done,'turned in'),stat(d.avg,'words per reason'),stat(d.short,'reasons under 6 words')),
+      reteachCallout(d),
       el('div',{class:'ins-grid'},
         el('div',{class:'panel stack'},el('h3',{text:'How many students used each term'}),
           el('ul',{class:'bars'},d.terms.slice().sort(function(x,y){return x.n-y.n}).map(function(t){return el('li',null,el('span',{class:'bar-label',text:t.term}),el('span',{class:'bar'},el('span',{class:'bar-fill',style:'width:'+Math.round(t.n/most*100)+'%'})),el('b',{text:t.n}))})),
@@ -4530,6 +4575,7 @@ function openPresent(a){
       fill(body,
         el('div',{class:'present-stats'},
           stat(d.total,'students joined'),stat(all,'placed every term'),stat(d.reasons.length,'connections made'),stat(d.done,'turned in')),
+        reteachCallout(d,true),
         el('div',{class:'present-net'},networkSVG(d),el('p',{class:'hint',text:'Thicker lines = more students made that connection. Updates every 15 seconds.'})));
       PRESENT.timer=setTimeout(load,15000);
     }).catch(function(e){fill(body,el('p',{class:'err',text:e.message}));PRESENT.timer=setTimeout(load,30000);});
@@ -4640,8 +4686,10 @@ function supportsEditor(opts,act){
     return el('label',{class:'sup-row',for:'ps-'+s.k},cb,el('span',null,el('b',{text:s.label}),el('span',{class:'hint',text:s.hint})));
   });
   count();
-  var node=el('details',{class:'sup-box'},sum,el('div',{class:'sup-grid'},rowsEl));
-  return {node:node,value:function(){var o={};SUPPORTS.forEach(function(s){o[s.k]=!!boxes[s.k].checked});return o;}};
+  var langSel=el('select',{id:'ps-lang'},el('option',{value:'',text:'English (students choose)'}),Object.keys(LANGS).map(function(k){return el('option',{value:k,text:LANGS[k],selected:opts&&opts.lang===k||null})}));
+  var node=el('details',{class:'sup-box'},sum,el('div',{class:'sup-grid'},rowsEl),
+    el('label',{class:'fld',for:'ps-lang',style:'margin-top:8px'},'Translation students start in',langSel,el('span',{class:'hint',text:'Used when Translate is on. Students can still switch languages.'})));
+  return {node:node,value:function(){var o={};SUPPORTS.forEach(function(s){o[s.k]=!!boxes[s.k].checked});o.lang=langSel.value||'';return o;}};
 }
 function versionsEditor(act){
   act=act||{terms:[]};var terms=act.terms||[],list=[],holder=el('div',{class:'stack',style:'gap:8px'});
@@ -4679,17 +4727,18 @@ function classroomShareButton(url,title){return el('a',{class:'btn sm',href:clas
 /* ---------- Printable tiles ---------- */
 function printTileHTML(a,opts){
   function esc(t){return String(t||'').replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
-  function tile(label,term,def,lens){
+  function tile(label,term,def,lens,img){
     var pts=[];for(var i=0;i<6;i++){var ang=Math.PI/180*(60*i-30);pts.push((100+96*Math.cos(ang)).toFixed(1)+','+(100+96*Math.sin(ang)).toFixed(1));}
     var tl=wrapText(term,14,3),dl=def?wrapText(def,26,6):[];
     var ty=(def?84-dl.length*5:100)-(tl.length-1)*9,out='<svg class="t" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><polygon points="'+pts.join(' ')+'" fill="'+(lens?'#FFF4D6':'#fff')+'" stroke="#333" stroke-width="1.5" stroke-dasharray="5 4"/>';
     out+='<text x="100" y="34" text-anchor="middle" font-size="11" fill="#666" font-family="monospace">'+esc(label)+'</text>';
+    if(img){out+='<image href="'+esc(location.origin+imgUrl(img))+'" x="62" y="40" width="76" height="'+(def?40:52)+'" preserveAspectRatio="xMidYMid meet"/>';ty+=def?34:30;}
     tl.forEach(function(l,i){out+='<text x="100" y="'+(ty+i*18)+'" text-anchor="middle" font-size="17" font-weight="700" font-family="Arial,sans-serif">'+esc(l)+'</text>'});
     dl.forEach(function(l,i){out+='<text x="100" y="'+(ty+tl.length*18+6+i*12)+'" text-anchor="middle" font-size="10" font-family="Arial,sans-serif" fill="#333">'+esc(l)+'</text>'});
     return out+'</svg>';
   }
   var H=hexMap(a),list=hexList(a).filter(function(h){return opts.lenses||h.kind!=='dc'});
-  var tiles=list.map(function(h){return tile(h.label,h.name,opts.defs?(h.def||''):'',h.kind==='dc')}).join('');
+  var tiles=list.map(function(h){return tile(h.label,h.name,opts.defs?(h.def||''):'',h.kind==='dc',h.img)}).join('');
   return '<!doctype html><html><head><meta charset="utf-8"><title>'+esc(a.title||'Hex tiles')+' · printable tiles</title><style>'+
     'body{font-family:Arial,sans-serif;margin:24px;color:#111}h1{font-size:18px;margin:0 0 4px}p{margin:0 0 12px;font-size:12px;color:#444}'+
     '.grid{display:flex;flex-wrap:wrap;gap:4px}.t{width:2.4in;height:2.4in;break-inside:avoid;page-break-inside:avoid}'+
@@ -4731,8 +4780,8 @@ function boardTexts(){
   (ST.act.terms||[]).forEach(function(t){out.push(t.term||'');if(t.def)out.push(t.def)});
   return out.filter(function(x,i,arr){return x&&arr.indexOf(x)===i});
 }
-function setLanguage(lang){
-  TR.lang=lang;rawSet('hx-lang',lang||null);
+function setLanguage(lang,keep){
+  TR.lang=lang;if(keep!==false)rawSet('hx-lang',lang||null);
   if(!lang||!ST){renderStudentShell();return;}
   var texts=boardTexts(),cache=TR.cache[lang]=TR.cache[lang]||{},need=texts.filter(function(t){return !cache[t]});
   if(!need.length){renderStudentShell();return;}
@@ -4895,7 +4944,7 @@ function drawGallery(body,id,r,teacher){
   add(body,el('div',{class:'panel stack',style:'gap:6px'},el('h3',{text:r.title}),
     el('p',{style:'margin:0',text:teacher?'Students see every turned-in board labelled Board A, B, C… without names. They leave a Glow (something strong) or a Grow (an idea to improve). You see who wrote each comment and can hide any of them.':'Look closely at your classmates’ boards. Leave a Glow ✨ for something strong and a Grow 🌱 for an idea to make it better. Be specific and kind. Names are hidden.'}),
     teacher?el('div',{class:'row'},el('span',{class:'chip',text:r.open?'Open to students':'Closed to students'}),
-      el('button',{class:'btn sm',onclick:function(){platformApi('posts/'+id+'/gallery/open',{open:!r.open}).then(function(){toast(r.open?'Gallery walk closed.':'Gallery walk opened.');renderGallery(id)}).catch(platformError)},text:r.open?'Close gallery walk':'Open gallery walk'})):null));
+      el('button',{class:'btn sm',onclick:function(){if(!r.open){openGalleryDialog(id,function(){renderGallery(id)});return;}platformApi('posts/'+id+'/gallery/open',{open:!r.open}).then(function(){toast(r.open?'Gallery walk closed.':'Gallery walk opened.');renderGallery(id)}).catch(platformError)},text:r.open?'Close gallery walk':'Open gallery walk'})):null));
   if(!r.boards.length){dashboardMessage(body,'No turned-in boards yet.');return;}
   var grid=el('div',{class:'gallery-grid'});add(body,grid);
   var mineFirst=r.boards.slice().sort(function(x,y){return (y.mine?1:0)-(x.mine?1:0)});
@@ -4945,23 +4994,11 @@ function postExtras(postId,a){
       el('button',{class:'btn ghost sm',text:'Change',onclick:function(){openPostDialog(act||{id:a.activityId,title:a.title,terms:[]},a)}})),
     el('div',{class:'row'},
       o.gallery===false?el('span',{class:'hint',text:'Gallery walk is switched off for this posting.'}):[
-        el('button',{class:a.gallery?'btn':'btn honey',text:a.gallery?'Close gallery walk':'Open gallery walk',onclick:function(e){var btn=e.currentTarget||e.target;btn.disabled=true;platformApi('posts/'+postId+'/gallery/open',{open:!a.gallery}).then(function(){toast(a.gallery?'Gallery walk closed.':'Gallery walk opened. Students who turned in can visit it from their board.');route()}).catch(function(err){btn.disabled=false;platformError(err)})}}),
+        el('button',{class:a.gallery?'btn':'btn honey',text:a.gallery?'Close gallery walk':'Open gallery walk…',onclick:function(e){if(!a.gallery){openGalleryDialog(postId,function(){route()});return;}var btn=e.currentTarget||e.target;btn.disabled=true;platformApi('posts/'+postId+'/gallery/open',{open:!a.gallery}).then(function(){toast(a.gallery?'Gallery walk closed.':'Gallery walk opened. Students who turned in can visit it from their board.');route()}).catch(function(err){btn.disabled=false;platformError(err)})}}),
         el('a',{class:'btn ghost',href:'#gallery-'+postId,text:'View gallery & comments'})],
       act?el('button',{class:'btn ghost',onclick:function(){printTiles(act)},text:'Print tiles'}):null),
     verBox);
-  if((a.versions||[]).length>1){
-    fill(verBox,el('p',{class:'hint',style:'margin:0',text:'Loading versions…'}));
-    platformApi('posts/'+postId+'/progress').then(function(r){
-      var vs=a.versions;
-      fill(verBox,el('h4',{text:'Versions'}),
-        el('p',{class:'hint',style:'margin:0',text:vs.map(function(v){return v.name+': '+v.terms.length+' terms'}).join(' · ')+'. Students appear here once they open the assignment.'}),
-        r.students.length?el('div',{class:'ver-list'},r.students.map(function(s){
-          var sel=el('select',{'aria-label':'Version for '+s.name},vs.map(function(v,i){return el('option',{value:i,text:v.name,selected:(s.variant||0)===i||null})}));
-          sel.addEventListener('change',function(){platformApi('posts/'+postId+'/version',{studentUids:[s.uid],version:+sel.value}).then(function(x){toast(s.name+' now has '+x.name+'.')}).catch(platformError)});
-          return el('label',{class:'ver-row'},el('span',{text:s.name}),sel);
-        })):el('p',{class:'muted',style:'margin:0',text:'No students have opened it yet.'}));
-    }).catch(function(e){fill(verBox,el('p',{class:'err',text:e.message}))});
-  }
+  rosterPanel(postId,a,verBox);
   return panel;
 }
 
@@ -5323,6 +5360,7 @@ function actMenu(a){
     {label:'Open',onclick:function(){openHexSpace(a)}},
     {label:'Assign to class…',onclick:function(){assignTo(a,[])}},
     {label:'Share…',onclick:function(){openShare(a)}},
+    {label:'Duplicate',onclick:function(){duplicateHexSpace(a)}},
     {label:'Print tiles',onclick:function(){printTiles(a)}},
     {label:'Move to folder…',onclick:function(){moveActDialog(a)}},
     {sep:true},
@@ -5542,6 +5580,303 @@ route=function(){
   if(m){renderGuide(m[1]||null);return;}
   v410Route();
 };
+
+/* ===================== 4.12: grading big classes ===================== */
+var SUBS_VIEW={filter:'all',sort:rawGet('hx-subs-sort')||'name'};
+function needsGrading(p){return !!p._payload&&p._grade==null&&!p._feedback;}
+function subStatus(p){
+  if(!p._payload)return {t:'Still working',c:'working'};
+  if(p._feedback&&p._feedback.revise)return {t:'Returned for revision',c:'returned'};
+  if(p._grade!=null)return {t:'Graded',c:'graded'};
+  if(p._feedback)return {t:'Feedback given',c:'graded'};
+  if(p._status==='SAVED_PENDING_CLASSROOM')return {t:'Turning in…',c:'working'};
+  return {t:'Needs grading',c:'needs'};
+}
+/* One row per student in the class: turned-in work plus students still working (from live progress). */
+function submissionsTable(postId,a,subs){
+  var wrap=el('section',{class:'subs-table-wrap','aria-label':'Student work'});
+  var rows=subs.map(function(p){return Object.assign(p,{_payload:true})});
+  function draw(){
+    var counts={all:rows.length,needs:0,graded:0,late:0,working:0};
+    rows.forEach(function(p){var st=subStatus(p).c;if(st==='needs')counts.needs++;if(st==='graded'||st==='returned')counts.graded++;if(p.late)counts.late++;if(st==='working')counts.working++;});
+    var shown=rows.filter(function(p){var st=subStatus(p).c;return SUBS_VIEW.filter==='all'||(SUBS_VIEW.filter==='needs'&&st==='needs')||(SUBS_VIEW.filter==='graded'&&(st==='graded'||st==='returned'))||(SUBS_VIEW.filter==='late'&&p.late)||(SUBS_VIEW.filter==='working'&&st==='working');});
+    var s=SUBS_VIEW.sort;
+    shown.sort(function(x,y){
+      if(s==='recent')return String(y.submittedAt||y._updatedAt||'').localeCompare(String(x.submittedAt||x._updatedAt||''));
+      if(s==='fewest')return (x.connections||[]).length-(y.connections||[]).length;
+      if(s==='grade')return (x._grade==null?1e9:x._grade)-(y._grade==null?1e9:y._grade);
+      if(s==='status'){var o={needs:0,returned:1,graded:2,working:3};return o[subStatus(x).c]-o[subStatus(y).c]||String(x.name).localeCompare(String(y.name));}
+      return String(x.name||'').localeCompare(String(y.name||''),undefined,{sensitivity:'base'});
+    });
+    var gradable=shown.filter(function(p){return p._payload});
+    var queue=rows.filter(needsGrading).sort(function(x,y){return shown.indexOf(x)-shown.indexOf(y)});
+    function chip(k,label){return el('button',{type:'button',class:'filter-chip'+(SUBS_VIEW.filter===k?' on':''),'aria-pressed':SUBS_VIEW.filter===k?'true':'false',onclick:function(){SUBS_VIEW.filter=k;draw();},text:label+' ('+counts[k]+')'});}
+    var sort=el('select',{'aria-label':'Sort students',id:'subs-sort'},[['name','Name'],['status','Needs grading first'],['recent','Recently turned in'],['fewest','Fewest connections'],['grade','Grade']].map(function(o){return el('option',{value:o[0],text:'Sort: '+o[1],selected:s===o[0]||null})}));
+    sort.addEventListener('change',function(){SUBS_VIEW.sort=sort.value;rawSet('hx-subs-sort',sort.value);draw();});
+    fill(wrap,
+      el('div',{class:'subs-tools'},
+        el('div',{class:'filter-chips',role:'group','aria-label':'Show'},chip('all','All'),chip('needs','Needs grading'),chip('graded','Graded'),chip('late','Late'),chip('working','Still working')),
+        el('div',{class:'row',style:'gap:8px'},sort,
+          el('button',{class:'btn primary',disabled:!queue.length,onclick:function(){openGrader(queue,0)},text:queue.length?'Grade next ungraded ('+queue.length+')':(rows.some(function(x){return x._payload})?'All graded ✓':'Nothing to grade yet')}))),
+      shown.length?el('div',{class:'subs-table',role:'table','aria-label':'Students'},
+        el('div',{class:'subs-row subs-head',role:'row'},['Student','Status','Terms','Links','Turned in','Notes','Grade',''].map(function(h){return el('span',{role:'columnheader',text:h})})),
+        shown.map(function(p){
+          var st=subStatus(p),cl=(p.connections||[]).length;
+          var notes=[p.late?el('span',{class:'sub-flag late',text:'Late'}):null,p.version?el('span',{text:p.version}):null,p.reflection?el('span',{title:(p.reflection.proud||'')+' / '+(p.reflection.hard||''),text:'Reflection'}):null,p.pasteAttempts?el('span',{class:'sub-flag late',text:'⚠ '+p.pasteAttempts+' paste'}):null,p.group?el('span',{text:p.group.name}):null].filter(Boolean);
+          return el('div',{class:'subs-row st-'+st.c,role:'row'},
+            el('b',{class:'subs-name',role:'cell',text:p.name||'(no name)'}),
+            el('span',{role:'cell'},el('span',{class:'status-pill '+st.c,text:st.t})),
+            el('span',{role:'cell','data-label':'Terms',text:p.termsUsed!=null?String(p.termsUsed):'—'}),
+            el('span',{role:'cell','data-label':'Links',text:String(cl)}),
+            el('span',{role:'cell','data-label':p._payload?'Turned in':'Last saved',class:'subs-time',text:p.submittedAt?fmtTime(p.submittedAt):(p._updatedAt?'saved '+fmtTime(p._updatedAt):'—')}),
+            el('span',{role:'cell',class:'sub-meta'},notes),
+            el('span',{role:'cell','data-label':'Grade',text:p._grade!=null?p._grade+' / '+p._maxPoints:'—'}),
+            el('span',{role:'cell',class:'subs-act'},p._payload?el('button',{class:'btn sm'+(st.c==='needs'?' primary':''),onclick:function(){openGrader(gradable,gradable.indexOf(p))},text:st.c==='needs'?'Grade':'Review'})
+              :el('button',{class:'btn sm',onclick:function(){peekBoard(p)},text:'Peek'})));
+        })):el('p',{class:'muted',text:SUBS_VIEW.filter==='all'?'No student work yet. Students appear here as soon as they open the assignment.':'No students in this view.'}),
+      el('p',{class:'hint',style:'margin:0',text:'Still working = opened the assignment but hasn’t turned it in. Peek shows their board as last saved; they can’t see that you looked.'}));
+  }
+  draw();
+  /* Students who have opened it but not turned in yet. */
+  platformApi('posts/'+postId+'/progress').then(function(r){
+    var have={};rows.forEach(function(p){have[p._studentUid]=1});
+    var act={id:'peek',title:r.act.title,terms:r.act.terms,dcOn:(r.act.dc||[]).length>0,dc:r.act.dc||[],board:{shape:'open',size:'roomy',orient:'pointy'}};
+    (r.students||[]).forEach(function(s){
+      if(have[s.uid]||s.turnedIn)return;
+      rows.push({name:s.name,_studentUid:s.uid,_payload:false,_updatedAt:s.updatedAt,placements:s.place||{},termsUsed:null,
+        connections:(s.conns||[]).map(function(c){var ab=c.pair.split('-');return {a:+ab[0],b:+ab[1],why:c.why}}),_peekAct:act,_maxPoints:a.maxPoints});
+    });
+    draw();
+  }).catch(function(){});
+  return wrap;
+}
+function peekBoard(p){
+  var a=p._peekAct;if(!a){toast('This board isn’t available.');return;}
+  viewSubmission(a,{name:p.name+' · still working',placements:p.placements||{},connections:p.connections||[],period:'',submittedAt:p._updatedAt});
+}
+/* Keyboard grading: 0/1/2 score the next unscored connection, Enter saves and moves on, arrows change student. */
+var v411GraderExtras=graderExtras;
+graderExtras=function(p,list,index){
+  var base=v411GraderExtras(p,list,index);
+  var hint=el('p',{class:'hint gr-keys',style:'margin:0',text:'Keys: 0 1 2 score the next unscored connection · Enter saves and opens the next student · ← → change student'});
+  return el('div',{class:'stack',style:'gap:8px'},base,hint);
+};
+function graderKeys(e){
+  if(!document.querySelector('.grader'))return;
+  var t=e.target||{},tag=(t.tagName||'').toUpperCase();
+  if(tag==='TEXTAREA'||tag==='INPUT'||tag==='SELECT'||e.ctrlKey||e.metaKey||e.altKey)return;
+  var k=e.key;
+  if(k==='0'||k==='1'||k==='2'){
+    var rows=[].slice.call(document.querySelectorAll('.gr-row')),r=rows.find(function(x){return !x.querySelector('.score-btn.on')});
+    if(!r)return;var b=r.querySelectorAll('.score-btn')[+k];if(b){b.click();e.preventDefault();var nx=rows.find(function(x){return !x.querySelector('.score-btn.on')});if(nx&&nx.scrollIntoView)nx.scrollIntoView({block:'nearest',behavior:'smooth'});}
+    return;
+  }
+  var btns=[].slice.call(document.querySelectorAll('.modal button'));
+  function by(re){return btns.find(function(b){return re.test(b.textContent||'')&&!b.disabled})}
+  if(k==='Enter'){var s=by(/^Save & (next student|finish)$/);if(s){e.preventDefault();s.click();}}
+  else if(k==='ArrowRight'){var n=by(/^Next →$/);if(n){e.preventDefault();n.click();}}
+  else if(k==='ArrowLeft'){var pv=by(/^← Previous$/);if(pv){e.preventDefault();pv.click();}}
+}
+if(document.addEventListener)document.addEventListener('keydown',graderKeys);
+
+
+/* ===================== 4.12b: gallery walk assignments, least-connected terms ===================== */
+function openGalleryDialog(postId,done){
+  var visits=el('select',{id:'gw-visits'},[[0,'Every turned-in board'],[2,'2 classmates’ boards'],[3,'3 classmates’ boards'],[4,'4 classmates’ boards']].map(function(o){return el('option',{value:o[0],text:o[1],selected:o[0]===2||null})}));
+  var min=el('select',{id:'gw-min'},[[0,'No minimum'],[1,'At least 1 comment'],[2,'At least 2 comments'],[3,'At least 3 comments']].map(function(o){return el('option',{value:o[0],text:o[1],selected:o[0]===2||null})}));
+  var err=el('p',{class:'err',role:'alert'});
+  openModal([el('div',{class:'eyebrow',text:'Gallery walk'}),el('h3',{style:'font-size:1.2rem',text:'Open the gallery walk'}),
+    el('p',{style:'margin:0',text:'Students who have turned in see classmates’ boards without names and leave Glow and Grow comments.'}),
+    el('label',{class:'fld',for:'gw-visits'},'Each student visits',visits,el('span',{class:'hint',text:'With a number, each student gets the next boards in a fixed rotation, so every board gets the same number of visitors.'})),
+    el('label',{class:'fld',for:'gw-min'},'Comments each student should leave',min,el('span',{class:'hint',text:'You’ll see who has met it on the gallery page.'})),
+    err,
+    el('div',{class:'row',style:'justify-content:flex-end'},el('button',{class:'btn ghost',onclick:closeModal,text:'Cancel'}),
+      el('button',{class:'btn honey','data-autofocus':true,onclick:function(e){var b=e&&(e.currentTarget||e.target);if(b)b.disabled=true;
+        platformApi('posts/'+postId+'/gallery/open',{open:true,visits:+visits.value,minComments:+min.value}).then(function(){closeModal();toast('Gallery walk opened. Students who turned in can visit it from their board.');if(done)done();}).catch(function(x){if(b)b.disabled=false;err.textContent=x.message;});},text:'Open gallery walk'}))]);
+}
+var v412DrawGallery=drawGallery;
+drawGallery=function(body,id,r,teacher){
+  v412DrawGallery.apply(this,arguments);
+  var st=r.settings||{},parts=[];
+  if(!teacher&&(st.visits||st.minComments)){
+    var txt=(st.visits?'Visit the '+st.visits+' board'+(st.visits===1?'':'s')+' below':'Visit your classmates’ boards')+(st.minComments?' and leave at least '+st.minComments+' comment'+(st.minComments===1?'':'s'):'')+'.';
+    var mine=el('b',{id:'gal-progress',text:progressText(r)});
+    parts.push(el('div',{class:'banner gal-goal',role:'status'},el('span',{text:txt+' '}),mine));
+  }
+  if(teacher&&r.progress){
+    var need=st.minComments||0;
+    parts.push(el('div',{class:'panel stack',style:'gap:8px'},el('h3',{text:'Comments left by each student'+(need?' (goal: '+need+')':'')}),
+      el('div',{class:'gal-progress'},r.progress.map(function(p){var ok=need?p.comments>=need:p.comments>0;return el('span',{class:'gal-prog'+(ok?' ok':'')},el('b',{text:p.name}),el('span',{text:' '+p.comments+(ok?' ✓':'')}))}))));
+  }
+  var grid=body.querySelector&&body.querySelector('.gallery-grid');
+  parts.forEach(function(n){if(grid&&body.insertBefore)body.insertBefore(n,grid);else add(body,n);});
+};
+function progressText(r){if(r.myComments==null)return '';var need=(r.settings||{}).minComments||0;return 'You’ve left '+r.myComments+(need?' of '+need:'')+'.'+(need&&r.myComments>=need?' ✓ Done':'');}
+var v412Card=galleryCard;
+galleryCard=function(id,r,b,teacher){
+  var card=v412Card.apply(this,arguments);
+  /* Count this student's comments as they post. */
+  var post=card.querySelector&&[].slice.call(card.querySelectorAll?card.querySelectorAll('button'):[]).find(function(x){return x.textContent==='Post'});
+  if(post&&post.addEventListener&&r.myComments!=null){var before=b.comments.length;post.addEventListener('click',function(){var tries=0;(function wait(){if(b.comments.length>before){r.myComments++;var g=document.getElementById('gal-progress');if(g)g.textContent=progressText(r);return;}if(tries++<20)setTimeout(wait,150);})();});}
+  return card;
+};
+/* Terms few students have connected yet: worth reteaching. */
+function leastConnected(d){
+  var base=Math.max(1,d.started);
+  return d.terms.filter(function(t){return t.n<base*0.5}).sort(function(x,y){return x.n-y.n}).slice(0,4);
+}
+function reteachCallout(d,big){
+  var list=leastConnected(d);if(!list.length||!d.started)return null;
+  return el('div',{class:'reteach'+(big?' big':''),role:'note'},el('b',{text:'Least connected so far: '}),
+    list.map(function(t,i){return el('span',{class:'reteach-term'},(i?' · ':''),t.term+' ('+t.n+' of '+d.started+')')}),
+    big?null:el('span',{class:'hint',text:' Worth a quick reteach or a class discussion.'}));
+}
+
+
+/* ===================== 4.13: quick conveniences ===================== */
+function duplicateHexSpace(a){
+  if(!TW)return;
+  var c=clone(a),nid=uid();c.id=nid;c.title=(String(a.title||'Untitled Hex Space').trim()+' (copy)').slice(0,80);c.assign={};delete c.sharedFrom;
+  c.createdAt=c.updatedAt=new Date().toISOString();
+  var i=TW.activities.findIndex(function(x){return x.id===a.id});TW.activities.splice(i<0?TW.activities.length:i+1,0,c);
+  TS.sel=nid;TS.tab='setup';remember();ensureBar();
+  toast('Duplicated. You’re editing the copy; the original and its postings are unchanged.');
+  NAV.hash='teacher/edit-'+encodeURIComponent(nid);
+}
+/* Live long-title hint and checklist bookkeeping ride on every edit. */
+var v412Bar=ensureBar;
+ensureBar=function(){var r=v412Bar.apply(this,arguments);try{var w=document.getElementById('f-title-warn'),a=TW&&curAct();if(w&&a)w.hidden=String(a.title||'').length<=60;}catch(e){}return r;};
+/* First-time checklist on the Hex Spaces page. */
+function firstSteps(){
+  if(rawGet('hx-checklist-hidden')||!TW)return null;
+  var hexes=TW.activities.filter(function(a){return String(a.title||'').trim()&&(a.terms||[]).length}),posts=PX.posts||[];
+  var steps=[
+    {done:(TW.classes||[]).length>0,t:'Add a class',d:'Import from Google Classroom or add a code-only class.',go:function(){NAV.hash='teacher'}},
+    {done:hexes.length>0,t:'Build a Hex Space',d:'A title and your unit’s terms. Definitions are optional.',go:function(){newHexSpaceIn(dirFolderId())}},
+    {done:posts.length>0,t:'Assign it to a class',d:'Use Assign on a Hex Space; you choose the dates and supports.',go:function(){if(hexes[0])assignTo(hexes[0],[]);else toast('Build a Hex Space first.')}},
+    {done:posts.some(function(p){return (p.submissions||0)>0}),t:'Review student work',d:'Classes → View submissions & groups, then Grade next ungraded.',go:function(){NAV.hash='teacher'}}];
+  if(steps.every(function(x){return x.done}))return null;
+  return el('div',{class:'panel first-steps'},
+    el('div',{class:'row',style:'justify-content:space-between'},el('h3',{text:'Getting started'}),el('button',{class:'btn ghost sm',onclick:function(){rawSet('hx-checklist-hidden',1);renderDirectory();},text:'Hide'})),
+    el('ol',{class:'fs-list'},steps.map(function(x){return el('li',{class:x.done?'done':''},el('span',{class:'fs-check','aria-hidden':'true',text:x.done?'✓':''}),
+      el('div',null,el('b',{text:x.t+(x.done?' (done)':'')}),el('span',{class:'hint',text:' '+x.d})),x.done?null:el('button',{class:'btn sm',onclick:x.go,text:'Start'}))})),
+    el('a',{href:'#guide',class:'hint',text:'Read the full guide →'}));
+}
+var v412Dir=renderDirectory;
+renderDirectory=function(){
+  v412Dir.apply(this,arguments);
+  var fs=firstSteps(),d=root.querySelector&&root.querySelector('.directory');
+  if(fs&&d){var top=d.querySelector&&d.querySelector('.dir-tools');if(top&&d.insertBefore)d.insertBefore(fs,top);else add(d,fs);}
+};
+/* Skip link for keyboard users. */
+function addSkipLink(){
+  if(document.getElementById('skip-link')||!document.body||!document.body.insertBefore)return;
+  var a=el('a',{id:'skip-link',class:'skip-link',href:'#',text:'Skip to main content',onclick:function(e){if(e&&e.preventDefault)e.preventDefault();
+    var t=root.querySelector&&(root.querySelector('main')||root.querySelector('.directory')||root.querySelector('.teach')||root.querySelector('h2'));
+    if(t){if(!t.getAttribute('tabindex'))t.setAttribute('tabindex','-1');t.focus();}}});
+  document.body.insertBefore(a,document.body.firstChild);
+}
+addSkipLink();
+/* Students start in the posting's translation language unless they've picked one themselves. */
+var v412Shell=renderStudentShell;
+renderStudentShell=function(){
+  if(ST&&ST.act&&ST.act.lang&&!ST._langApplied&&on('translate')){ST._langApplied=true;if(!TR.lang&&rawGet('hx-lang')===null&&LANGS[ST.act.lang]){setLanguage(ST.act.lang,false);return;}}
+  return v412Shell.apply(this,arguments);
+};
+
+/* ===================== 4.14: pictures on hexagons, class roster and planned versions, zoomable grader board ===================== */
+function imgUrl(id){return '/api/img/'+encodeURIComponent(id);}
+/* Resize in the browser so uploads stay small (about 320 px on the long side). */
+function resizeImage(file){
+  return new Promise(function(ok,no){
+    if(!file||!/^image\//.test(file.type||'')){no(new Error('Choose a picture file (PNG, JPEG or WebP).'));return;}
+    var url=URL.createObjectURL(file),im=new Image();
+    im.onload=function(){
+      var max=320,w=im.naturalWidth||im.width,h=im.naturalHeight||im.height,k=Math.min(1,max/Math.max(w,h));
+      var c=document.createElement('canvas');c.width=Math.max(1,Math.round(w*k));c.height=Math.max(1,Math.round(h*k));
+      var g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(url);
+      var q=0.85,data=c.toDataURL('image/webp',q);
+      if(!/^data:image\/webp/.test(data))data=c.toDataURL('image/jpeg',q);
+      while(data.length>230000&&q>0.4){q-=0.15;data=c.toDataURL(/webp/.test(data)?'image/webp':'image/jpeg',q);}
+      ok(data);
+    };
+    im.onerror=function(){URL.revokeObjectURL(url);no(new Error('That picture couldn’t be read. Try a PNG or JPEG.'));};
+    im.src=url;
+  });
+}
+function termPictureButton(r,sync){
+  var b=el('button',{type:'button',class:'btn vt-pic'});
+  function draw(){
+    b.setAttribute('title',r.img?'Change or remove the picture':'Add a picture (helps early readers)');
+    b.setAttribute('aria-label',(r.img?'Change the picture for ':'Add a picture for ')+(String(r.term||'').trim()||'this term'));
+    fill(b,r.img?el('img',{src:imgUrl(r.img),alt:''}):el('span',{'aria-hidden':'true',text:'🖼'}));
+  }
+  function pick(){
+    var f=el('input',{type:'file',accept:'image/png,image/jpeg,image/webp,image/gif'});
+    f.addEventListener('change',function(){var file=f.files&&f.files[0];if(!file)return;b.disabled=true;
+      resizeImage(file).then(function(data){return platformApi('images',{data:data})}).then(function(res){r.img=res.id;draw();sync();toast('Picture added.');})
+        .catch(platformError).then(function(){b.disabled=false;});});
+    if(f.click)f.click();
+  }
+  b.addEventListener('click',function(){
+    if(!r.img){pick();return;}
+    openModal([el('h3',{style:'font-size:1.2rem',text:'Picture for “'+(String(r.term||'').trim()||'this term')+'”'}),
+      el('img',{class:'pic-preview',src:imgUrl(r.img),alt:''}),
+      el('p',{class:'hint',style:'margin:0',text:'Pictures show on the hexagon, in the tray and on printed tiles. Use pictures you have the right to share.'}),
+      el('div',{class:'row',style:'justify-content:flex-end'},el('button',{class:'btn ghost',onclick:closeModal,text:'Cancel'}),
+        el('button',{class:'btn danger',onclick:function(){r.img='';draw();sync();closeModal();toast('Picture removed.');},text:'Remove'}),
+        el('button',{class:'btn primary',onclick:function(){closeModal();pick();},text:'Replace'}))]);
+  });
+  draw();return b;
+}
+var v413Detail=renderDetail;
+renderDetail=function(){
+  v413Detail.apply(this,arguments);
+  if(!ST||ST.sel==null||!ST.H[ST.sel]||!refs.detail)return;
+  var h=ST.H[ST.sel];
+  if(h.img&&refs.detail.insertBefore)refs.detail.insertBefore(el('img',{class:'detail-img',src:imgUrl(h.img),alt:h.name}),refs.detail.children[1]||null);
+};
+/* Class roster: who hasn't opened the posting yet, and versions chosen ahead of time. */
+function rosterPanel(postId,a,box){
+  var vs=a.versions||[],withClassroom=!a.manual&&classroomReady('teacher');
+  fill(box,el('p',{class:'hint',style:'margin:0',text:'Loading the class roster…'}));
+  platformApi('posts/'+postId+'/roster',undefined,withClassroom).then(function(r){
+    var notOpened=r.members.filter(function(m){return !m.opened});
+    var head=el('div',{class:'stack',style:'gap:6px'},el('h4',{text:'Class roster'}),
+      el('p',{class:'hint',style:'margin:0',text:r.members.length?(notOpened.length?notOpened.length+' of '+r.members.length+' haven’t opened it yet: '+notOpened.slice(0,12).map(function(m){return m.name}).join(', ')+(notOpened.length>12?'…':''):'Everyone on the roster has opened it.'):'Students appear once they open this or another assignment for this class.'}),
+      r.classroom==='needs-token'?el('button',{class:'btn sm',style:'align-self:flex-start',onclick:function(){connectClassroom('teacher',function(){rosterPanel(postId,a,box)})},text:'Check the Google Classroom roster'}):null,
+      r.classroom==='unavailable'?el('p',{class:'err',style:'margin:0',text:'Google Classroom didn’t return the roster. Reconnect Classroom and try again.'}):null);
+    if(vs.length<2){fill(box,head);return;}
+    fill(box,head,el('h4',{text:'Versions'}),
+      el('p',{class:'hint',style:'margin:0',text:vs.map(function(v){return v.name+': '+v.terms.length+' terms'}).join(' · ')+'. Choose a version for anyone, even before they open it; students never see version names.'}),
+      r.members.length?el('div',{class:'ver-list'},r.members.map(function(m){
+        var cur=m.opened&&m.variant!=null?m.variant:(m.planned!=null?m.planned:0);
+        var sel=el('select',{'aria-label':'Version for '+m.name},vs.map(function(v,i){return el('option',{value:i,text:v.name,selected:cur===i||null})}));
+        sel.addEventListener('change',function(){
+          var key=m.key,req=m.opened&&key.indexOf('u:')===0?platformApi('posts/'+postId+'/version',{studentUids:[key.slice(2)],version:+sel.value}):(function(){var plan={};plan[key]=+sel.value;return platformApi('posts/'+postId+'/version-plan',{plan:plan});})();
+          req.then(function(){toast(m.name+(m.opened?' now has ':' will start in ')+vs[+sel.value].name+'.')}).catch(platformError);
+        });
+        return el('label',{class:'ver-row'},el('span',null,m.name,m.opened?null:el('span',{class:'hint',text:' · not opened yet'})),sel);
+      })):el('p',{class:'muted',style:'margin:0',text:'No students on the roster yet.'}));
+  }).catch(function(e){fill(box,el('p',{class:'err',text:e.message}))});
+}
+/* Grader board: zoom, and links between each reason and its spot on the board. */
+function hlBadge(k){
+  var svg=document.querySelector&&document.querySelector('.grader-board svg');if(!svg||!svg.querySelectorAll)return;
+  [].slice.call(svg.querySelectorAll('.badge')).forEach(function(b){var on=(b.getAttribute('aria-label')||'').indexOf('Connection C'+k+':')===0;if(b.classList)b.classList.toggle('hl',on);});
+}
+function graderBoard(a,p,conns){
+  var z=1,svg=boardSVG(a,p.placements||{},conns,{onBadge:function(cn){var row=document.getElementById('gr-c-'+cn.num);if(row){if(row.scrollIntoView)row.scrollIntoView({block:'center',behavior:'smooth'});if(row.classList){row.classList.add('flash');setTimeout(function(){row.classList.remove('flash')},1200);}}hlBadge(cn.num);}});
+  var scroller=el('div',{class:'gb-scroll'},svg),label=el('span',{class:'gb-z',text:'100%'});
+  function set(v){z=Math.max(1,Math.min(4,v));svg.style.width=(z*100)+'%';svg.style.maxHeight=z>1?'none':'';label.textContent=Math.round(z*100)+'%';}
+  return el('div',{class:'board grader-board'},
+    el('div',{class:'gb-tools',role:'group','aria-label':'Zoom the board'},
+      el('button',{type:'button',class:'btn sm',onclick:function(){set(z-0.5)},'aria-label':'Zoom out',text:'−'}),label,
+      el('button',{type:'button',class:'btn sm',onclick:function(){set(z+0.5)},'aria-label':'Zoom in',text:'+'}),
+      el('button',{type:'button',class:'btn ghost sm',onclick:function(){set(1)},text:'Fit'})),
+    scroller,
+    el('p',{class:'hint gb-hint',style:'margin:0',text:'Tap a C-number on the board to jump to its reason; point at a reason to find it on the board.'}));
+}
 
 /* The homepage is the starting page: a visit to the bare site address opens it,
    signed in or not. In-app links to "#" still go to the student dashboard. */
