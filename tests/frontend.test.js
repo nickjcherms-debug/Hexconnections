@@ -34,6 +34,7 @@ function make(){
  setWork(w){TW=w;TS.rows={};TS.sel=w.activities[0].id},setRenderTeacher(fn){renderTeacher=fn},
  setApi(fn){platformApi=fn},setTeacher(fn){startTeacher=fn;teacherDashboard=fn},
  v414:{graderBoard,rosterPanel,termPictureButton,hexList},
+ v416:{studentAssignmentCard,saveAndFinishLater,GUIDE_IMG,renderGuide},
  v415:{gameScore,renderGames,renderGameConsole,renderPlay,drawHud,GS,GAME_CACHE,graderExtras,keyToPath,pathToKey,GUIDE,saveDraft,setST(v){ST=v},getST(){return ST}},
  v413:{duplicateHexSpace,firstSteps},
  v412:{leastConnected,reteachCallout,openGalleryDialog},
@@ -693,7 +694,7 @@ test('one connected board: groups are joined only by explained, touching connect
 // ---------------- 4.11 ----------------
 test('the How to use guide is public, covers teacher and student features, and the homepage links into it',()=>{
  const t=make();const {h,text,location}=t;h.GA.ready=true;location.hash='#guide';h.route();
- for(const s of ['For teachers','For students','Gallery walk','Printable tiles','Student supports and rules','Versions for different students','Review and grade student work','Watch how it was built','Turn in, feedback and the gallery walk'])assert.ok(text().includes(s),s);
+ for(const s of ['For teachers','For students','Run a gallery walk','Print hexagon tiles','Supports and rules for each class','Different versions for different kids','Grade fast','Watch how it was built','Turn it in and see feedback','Save now, finish later','Save & finish later'])assert.ok(text().includes(s),s);
  location.hash='#home';h.route();assert.match(text(),/From vocabulary list to visible thinking/);assert.match(text(),/Read the full guide/);
  assert.ok(t.flatten().some(n=>n.attrs?.href==='#guide-gallery'),'homepage card links to the gallery walk guide');
  const labels=h.v4.navItems().map(i=>i.label);assert.ok(labels.includes('How to use'));
@@ -818,4 +819,25 @@ test('saving keeps when each connection was first explained, even after its reas
  h.v415.saveDraft();assert.equal(st.d.conns['1-2'].first,111);
  st.d.conns['1-2']={why:'edited reason',at:999};h.v415.saveDraft();assert.equal(st.d.conns['1-2'].first,111);
  delete st.d.conns['1-2'];h.v415.saveDraft();st.d.conns['1-2']={why:'new again',at:2000};h.v415.saveDraft();assert.equal(st.d.conns['1-2'].first,2000);
+});
+
+/* ---------- 4.16 save progress and guide pictures ---------- */
+test('My assignments shows saved progress with Continue',()=>{
+ const t=make(),{h}=t;
+ const c=h.v416.studentAssignmentCard({id:'p1',title:'Cells',className:'P3',status:'DRAFT',classroomStatus:'NEW',progress:{placed:3,links:2,terms:6,savedAt:'2026-10-30T20:14:00Z'}});
+ const all=[c];(function walk(n){(n.children||[]).forEach(x=>{all.push(x);walk(x)})})(c);
+ const txt=all.map(n=>n.textContent||'').join(' ');assert.match(txt,/Saved progress: 3 of 6 terms · 2 connections · last saved/);
+ assert.ok(all.some(n=>n.tagName==='a'&&n.textContent==='Continue'));
+ const done=h.v416.studentAssignmentCard({id:'p2',title:'Done',className:'P3',status:'TURNED_IN',classroomStatus:'TURNED_IN',progress:{placed:6,links:5,terms:6}});
+ const d2=[];(function walk(n){(n.children||[]).forEach(x=>{d2.push(x);walk(x)})})(done);assert.ok(!d2.some(n=>/Saved progress/.test(n.textContent||'')),'no progress line once turned in');
+});
+test('Save & finish later saves online and confirms; the guide has pictures',async()=>{
+ const t=make(),{h}=t;const calls=[];h.setApi(async(path,body)=>{calls.push(path);return {}});
+ h.GA.user={uid:'s1',getIdToken:async()=>'tok'};h.PX.activePost='p1';
+ h.v415.setST({act:{id:'a',terms:[]},cls:{id:'c'},d:{place:{1:[0,0]},conns:{}},preview:false});
+ h.v416.saveAndFinishLater();await settle();
+ assert.ok(calls.includes('posts/p1/draft'));const txt=everything(t).map(n=>n.textContent||'').join(' ');assert.match(txt,/Your progress is saved/);assert.match(txt,/Back to my assignments/);
+ assert.ok(Object.keys(h.v416.GUIDE_IMG).length>=12);
+ h.GA.ready=true;t.location.hash='#guide';h.route();
+ assert.ok(everything(t).some(n=>n.tagName==='img'&&/^\/guide\/s-save\.webp$/.test(n.attrs?.src||'')),'guide shows the save picture');
 });

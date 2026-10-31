@@ -1,10 +1,16 @@
-VERIFICATION — VERSION 4.15.0
+VERIFICATION — VERSION 4.16.0
 ============================
 108 automated tests pass (52 backend, 56 frontend) using in-memory SQLite,
 simulated Firebase/Classroom responses, and execution of the actual frontend
 script in a DOM test harness. No real Google Classroom assignment was created
 or modified by these tests.
 
+New in 4.16: 155 tests (saved progress on the student dashboard, the board
+coming back exactly as saved, Continue/progress card, Save & finish later saving
+and confirming, guide pictures). Chromium: Save & finish later, progress and
+Continue on My assignments, a move made right before closing the tab still
+reaches the account, the board reopens on a phone, all 15 guide pictures load,
+guide fits a phone and reads well in dark mode, header on one line at 1100-1440.
 New in 4.15: 152 tests (game points, levels, badges, timed rounds with clock
 correction, nickname leaderboard and visibility settings, team race, debate in live
 and self-paced modes with anonymous voting and revealed winners, browser scoring
