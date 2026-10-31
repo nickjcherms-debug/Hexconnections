@@ -845,3 +845,11 @@ test('debate in self-paced mode: a group can vote once everyone in it has defend
  await kidJoin(h,'a3',(await h.call('teacher','teacher/dashboard',undefined,{access:false})).body.assignments[0].code);
  const late=(await h.call('a3','posts/'+id+'/game',undefined,{access:false})).body.round;assert.equal(late.groupSize,3,'late joiner added to a group');
 });
+test('My assignments shows saved progress so students can pick up where they left off',async()=>{
+ const h=harness(),id=await gameSetup(h,['sp1']);
+ let d=(await h.call('sp1','student/dashboard',undefined,{access:false})).body;assert.equal(d.active[0].progress,null,'nothing saved yet');
+ await h.call('sp1','posts/'+id+'/draft',{draft:{name:'',place:{1:[0,0],2:[1,0]},conns:{'1-2':{why:'Both are inside the cell',at:1}},view:{}}},{access:false});
+ d=(await h.call('sp1','student/dashboard',undefined,{access:false})).body;const pr=d.active[0].progress;
+ assert.deepEqual([pr.placed,pr.links,pr.terms],[2,1,3]);assert.match(pr.savedAt,/^\d{4}-/);
+ assert.deepEqual((await h.call('sp1','posts/'+id,undefined,{access:false})).body.draft.place,{1:[0,0],2:[1,0]},'the board comes back exactly as saved');
+});

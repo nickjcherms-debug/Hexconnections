@@ -116,6 +116,21 @@ Tiles and text retain their original size, and zoom/scroll remain available.
 A hexagon still has six sides: extra space supports more arrangements, not more
 than six simultaneous neighboring tiles per hexagon.
 
+SAVE PROGRESS AND A FRIENDLIER GUIDE (4.16)
+- Students' boards already saved to the browser and their account as they work.
+  Now that's visible and harder to lose: "💾 Save & finish later" on the board saves
+  online right away and confirms it; the status note shows the time of the last
+  online save (or warns when only this device has it); the board is also saved
+  when the tab is hidden or closed (keepalive request); a "Welcome back" note
+  appears when work from an earlier day is reopened.
+- My assignments shows "In progress", a progress bar, terms/connections saved and
+  when, with a Continue button. It works from any device the student signs in on.
+- The How to use guide is rewritten in a casual voice with 15 screenshots
+  (public/guide/*.webp, about 420 KB in total, loaded lazily). A new student
+  section covers saving and finishing later.
+- Signed-in menus fold into the Menu button below 1240 px so the header stays on
+  one line; under 1500 px the Display button shows only its icon.
+
 GAMES AND DEFEND THE LINK (4.15)
 Menu > Games (/games) lists the teacher's assignments; Open game console
 (/teacher/games/<posting>) runs everything for one posting:

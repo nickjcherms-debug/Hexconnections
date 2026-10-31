@@ -1,3 +1,8 @@
+SAVE PROGRESS AND GUIDE 4.16.0
+==============================
+No database migration. New static files in public/guide/ (screenshots for the
+guide) deploy with the site.
+
 GAMES 4.15.0
 ============
 Database: migrations/0009_games.sql (additive: debate_members, debate_entries,
