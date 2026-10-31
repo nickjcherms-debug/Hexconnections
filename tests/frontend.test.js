@@ -514,6 +514,21 @@ test('the grader scores each connection, fills the grade from the scores and mov
  assert.equal(calls[1][0],'posts/p1/grade');assert.equal(calls[1][1].grade,15);
  assert.match(text(),/2 of 2/);assert.match(text(),/Ben/);
 });
+test('AI suggestions fill unscored connections, stay marked until the teacher decides, and save only on Save',async()=>{
+ const t=make();const {h,text}=t;teacherWork(h);const v=h.v4;const calls=[];
+ h.setApi(async(path,body)=>{calls.push([path,JSON.parse(JSON.stringify(body||{}))]);if(path.endsWith('/ai-suggest'))return {suggestions:{connections:{1:{score:2,comment:'Clear link.',misconception:false},2:{score:0,comment:'Say how they work.',misconception:true}},overall:'Good start.'},model:'Llama 3.1 8B',remaining:{teacher:3,site:90}};return {}});
+ const s=sub('Ava','s1',{_feedback:{scores:{2:1},comments:{}}});v.openGrader([s],0);
+ everything(t).find(n=>n.tagName==='button'&&n.textContent==='✨ Suggest scores').listeners.click();await settle();
+ assert.equal(calls[0][0],'posts/p1/ai-suggest');assert.equal(JSON.stringify(calls[0][1]),JSON.stringify({studentUid:'s1'}));
+ assert.equal(calls.length,1,'nothing saved yet');
+ assert.match(text(),/AI suggestion/);assert.match(text(),/Possible misconception/);assert.match(text(),/Suggested by Llama 3.1 8B/);
+ const on=everything(t).filter(n=>n.tagName==='button'&&String(n.attrs?.class||'').includes('score-btn')&&String(n.attrs?.class).includes(' on')).map(n=>n.textContent);
+ assert.equal(JSON.stringify(on),JSON.stringify(['2 · Strong','1 · Partly']),'teacher score kept, AI fills the empty one');
+ assert.equal(everything(t).find(n=>n.attrs?.id==='gr-grade').value,15);
+ assert.equal(everything(t).find(n=>n.attrs?.id==='gr-overall').value,'Good start.');
+ everything(t).find(n=>n.textContent==='Save & finish').listeners.click();await settle();
+ const fb=calls.find(c=>c[0]==='posts/p1/feedback');assert.equal(JSON.stringify(fb[1].scores),JSON.stringify({1:2,2:1}));assert.equal(fb[1].comments['1'],'Clear link.');
+});
 test('returning a code-only board for revision saves feedback without a grade',async()=>{
  const t=make();const {h}=t;teacherWork(h);const v=h.v4;const calls=[];h.setApi(async(path,body)=>{calls.push(path);return {}});
  v.openGrader([sub('Ava','s1')],0);everything(t).find(n=>n.attrs?.id==='gr-revise').checked=true;everything(t).find(n=>n.attrs?.id==='gr-grade').value='12';
