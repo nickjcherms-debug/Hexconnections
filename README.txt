@@ -116,24 +116,6 @@ Tiles and text retain their original size, and zoom/scroll remain available.
 A hexagon still has six sides: extra space supports more arrangements, not more
 than six simultaneous neighboring tiles per hexagon.
 
-AI-SUGGESTED SCORES (4.6)
-In the grader, "Suggest scores" asks Cloudflare Workers AI (free allowance, no API
-key) to draft a 0-2 rubric score, a short comment and a possible-misconception flag
-for each connection, plus an overall comment. Only the activity title, directions,
-terms, definitions and the student's reasons are sent: never names, emails or ids.
-Suggestions fill only connections you have not scored yet, are marked "AI
-suggestion" until you choose a score, and nothing is saved or shown to the student
-until you press Save. "Suggest for each student" runs it automatically as you move
-through the queue. Student accounts cannot call it.
-
-Default model: Llama 3.1 8B (about 30 Neurons per board), 60 boards per teacher and
-150 site-wide per day (00:00 UTC reset). Set AI_GRADING_MODEL to
-@cf/meta/llama-4-scout-17b-16e-instruct (30/60 per day) or
-@cf/meta/llama-3.3-70b-instruct-fp8-fast (20/35 per day) for stronger but costlier
-judgments; AI_GRADING_TEACHER_LIMIT / AI_GRADING_SITE_LIMIT can lower the caps.
-These share the account's 10,000 daily Neurons with vocabulary generation.
-Failed attempts still count. AI suggestions are a starting point, not a grade.
-
 FREE-ALLOWANCE VOCABULARY GENERATION
 Enable the AI binding and apply migration 0002 as described in DEPLOYMENT.txt.
 The generator accepts a topic, grade, subject, 5-40 terms and optional notes.
