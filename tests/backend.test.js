@@ -647,9 +647,20 @@ test('student supports chosen when posting: definitions are removed for students
  assert.equal((await h.call('teacher','posts/'+id,undefined,{access:false})).body.assignment.act.terms[0].def,'Control center','teacher still sees them');
  assert.equal((await h.call('teacher','posts/'+id+'/gallery/open',{open:true},{access:false})).body.code,'gallery-off');
  const ed=await h.call('teacher','posts/'+id+'/edit',{options:{defs:true,gallery:true}},{access:false});
- assert.deepEqual(ed.body.options,{defs:true,starters:false,readAloud:true,translate:true,reflect:true,gallery:true});
+ assert.deepEqual(ed.body.options,{defs:true,starters:false,readAloud:true,translate:true,reflect:true,gallery:true,noPaste:false});
  a=(await h.call('kid','posts/'+id,undefined,{access:false})).body.assignment.act;assert.equal(a.terms[0].def,'Control center');
  assert.equal((await h.call('teacher','posts/'+id+'/gallery/open',{open:true},{access:false})).status,200);
  assert.equal((await h.call('kid','posts/'+id+'/submit',{draft:{name:'',place:{1:[0,0],2:[1,0],3:[0,1]},conns:{'1-2':{why:'Two words.',at:1},'1-3':{why:'Two more.',at:2}},view:{}}},{access:false})).status,200);
  const sub=(await h.call('teacher','submissions?postId='+id,undefined,{access:false})).body.submissions[0];assert.equal(sub.activitySnapshot.terms[0].def,'Control center');
+});
+test('paste blocking: Hex Space default, posting override, and blocked attempts reach the teacher',async()=>{
+ const h=harness();await h.call('teacher','profile',{role:'teacher'});const ws=threeTerms();ws.activities[0].noPaste=true;await h.call('teacher','workspace',{workspace:ws,revision:0});
+ const p1=await h.call('teacher','posts/new',{activityId:'act-m',classId:'club',tz:'UTC'},{access:false});
+ const p2=await h.call('teacher','posts/new',{activityId:'act-m',classId:'club',tz:'UTC',options:{noPaste:false}},{access:false});
+ await kidJoin(h,'kid',p1.body.code);await kidJoin(h,'kid',p2.body.code);
+ assert.equal((await h.call('kid','posts/'+p1.body.id,undefined,{access:false})).body.assignment.act.noPaste,true);
+ assert.equal((await h.call('kid','posts/'+p2.body.id,undefined,{access:false})).body.assignment.act.noPaste,false);
+ const board={name:'',place:{1:[0,0],2:[1,0],3:[0,1]},conns:{'1-2':{why:'Two words.',at:1},'1-3':{why:'Two more.',at:2}},view:{},pasteBlocked:3};
+ assert.equal((await h.call('kid','posts/'+p1.body.id+'/submit',{draft:board},{access:false})).status,200);
+ const sub=(await h.call('teacher','submissions?postId='+p1.body.id,undefined,{access:false})).body.submissions[0];assert.equal(sub.pasteAttempts,3);
 });

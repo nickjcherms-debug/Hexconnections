@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Hexagonal thinking boards for classrooms: students arrange vocabulary hexagons and explain every connection, with optional Depth and Complexity icons.">
-<meta name="hex-connections-build" content="4.8.0">
+<meta name="hex-connections-build" content="4.9.0">
 <title>Hex Connections</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0F6E6E">
@@ -621,6 +621,38 @@ h2,h3,.brand h1,.aitem b,.act-head h2,.modal h3{overflow-wrap:anywhere}
 .btn.microsoft{background:var(--panel);border:1px solid var(--line);color:var(--ink);gap:10px}
 @media (max-width:600px){.gallery-grid,.lib-grid{grid-template-columns:minmax(0,1fr)}.ver-card input[type=text]{max-width:none}}
 .assign-nudge{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border-color:var(--blue);background:var(--t1)}
+.sync-pill{position:fixed;left:16px;bottom:16px;z-index:40;display:inline-flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:.88rem;font-weight:700;box-shadow:0 4px 14px var(--shadow)}
+.sync-pill .dot{width:9px;height:9px;border-radius:50%;background:var(--ok)}
+.sync-pill.saving .dot,.sync-pill.pending .dot{background:var(--honey,#F2B33D)}
+.sync-pill.error .dot,.sync-pill.offline .dot{background:var(--danger)}
+.post-update-bar{position:fixed;right:16px;bottom:16px;z-index:40;display:flex;flex-wrap:wrap;gap:8px;align-items:center;max-width:min(560px,calc(100vw - 32px));box-shadow:0 6px 20px var(--shadow)}
+.paste-note{margin:4px 0 0;color:var(--danger);font-weight:700;font-size:.88rem}
+.paste-flag{margin:0;color:var(--danger);font-weight:700}
+.crumbs{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:.9rem;font-weight:700}
+.crumbs a{color:var(--blue);text-decoration:none}.crumbs a:hover{text-decoration:underline}
+.crumb-sep{color:var(--muted)}
+.editor-crumbs{margin:0 0 10px}
+.directory{padding-bottom:64px}
+.dir-top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.dir-top h2{margin:4px 0 2px}
+.dir-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.dir-tools input[type=search]{flex:1;min-width:200px;min-height:40px;padding:6px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);font:inherit}.dir-tools select{width:auto;min-height:40px}
+.dir-h{font-size:1rem;margin:0;color:var(--muted)}
+.dir-folders{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.dir-folder{display:flex;align-items:center;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:6px 6px 6px 0}
+.dir-folder.drop{border-color:var(--blue);background:var(--t1)}
+.dir-folder-link{flex:1;min-width:0;display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:center;padding:8px 0 8px 12px;color:var(--ink);text-decoration:none}
+.dir-folder-link svg{grid-row:span 2;color:var(--honey-ink,#8A5A00)}
+.dir-folder-name{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dir-list{display:flex;flex-direction:column;gap:8px;min-height:40px;border-radius:14px}
+.dir-list.drop,.dir-folders.drop-root,.dir-list.drop-root{outline:2px dashed var(--blue);outline-offset:4px}
+.dir-row{display:grid;grid-template-columns:minmax(0,2.2fr) minmax(0,1.4fr) auto auto;gap:12px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.dir-row:hover{border-color:var(--blue)}
+.dir-main{display:flex;flex-direction:column;gap:2px;color:var(--ink);text-decoration:none;min-width:0}
+.dir-main b{font-size:1.02rem;overflow-wrap:anywhere}
+.dir-classes{display:flex;flex-wrap:wrap;gap:4px}
+.dir-subs{white-space:nowrap}
+.dir-empty{display:flex;flex-direction:column;gap:10px;align-items:flex-start;background:var(--panel);border:1px dashed var(--line);border-radius:14px;padding:16px}
+@media (max-width:700px){.dir-row{grid-template-columns:minmax(0,1fr) auto}.dir-classes{grid-column:1/-1;order:3}.dir-subs{display:none}.sync-pill{left:8px;bottom:8px}}
 </style>
 <div id="root"></div>
 <script type="application/json" id="hx-data">{"version":4,"classes":[],"activities":[]}</script>
@@ -674,6 +706,7 @@ function keyToPath(key){
   if (key === 'teacher/new') return '/teacher/hex-space/new';
   if (key === 'teacher/shared') return '/teacher/shared';
   if (key === 'teacher/library') return '/teacher/library';
+  if ((m = key.match(/^teacher\/folder-(.+)$/))) return '/teacher/folders/' + encSeg(decSeg(m[1]));
   if (key === 'owner') return '/owner';
   if ((m = key.match(/^gallery-(.+)$/))) return '/gallery/' + encSeg(m[1]);
   if ((m = key.match(/^c-(.+)$/))) return '/code/' + encSeg(m[1]);
@@ -695,6 +728,7 @@ function pathToKey(path){
   if ((m = path.match(/^\/code\/([^/]+)$/))) return '#c-' + decSeg(m[1]);
   if ((m = path.match(/^\/share\/([^/]+)$/))) return '#share-' + decSeg(m[1]);
   if ((m = path.match(/^\/gallery\/([^/]+)$/))) return '#gallery-' + decSeg(m[1]);
+  if ((m = path.match(/^\/teacher\/folders\/([^/]+)$/))) return '#teacher/folder-' + encodeURIComponent(decSeg(m[1]));
   if ((m = path.match(/^\/teacher\/classes\/([^/]+)$/))) return '#teacher/class-' + encodeURIComponent(decSeg(m[1]));
   if ((m = path.match(/^\/teacher\/assignments\/([^/]+)$/))) return '#teacher/post-' + decSeg(m[1]);
   if ((m = path.match(/^\/teacher\/hex-space\/([^/]+)$/))) return '#teacher/edit-' + encodeURIComponent(decSeg(m[1]));
@@ -2305,8 +2339,7 @@ function loadPlatform(){
       PX.teacherData=clone(w.workspace);DATA=clone(w.workspace);PX.revision=w.revision;
       var local=lsGet('hx-teacher-work');
       var localBase=lsGet('hx-workspace-base');
-      if(local && localBase!==null && localBase!==w.revision){lsSet('hx-workspace-conflict-backup',local);lsSet('hx-teacher-work',w.workspace);}
-      lsSet('hx-workspace-base',w.revision);
+      reconcileLocal(w);
     });
     PX.teacherData=null;DATA={version:4,classes:[],activities:[]};
   }).then(function(){if(!GA.user||GA.user.uid!==loadingUid)return;PX.loaded=true;PX.loading=false;if(PX.profile.role==='teacher'&&!NAV.hash)NAV.hash='teacher';route();}).catch(function(e){if(!GA.user||GA.user.uid!==loadingUid)return;PX.loading=false;PX.error=e.message;route();});
@@ -3353,7 +3386,7 @@ function copyShared(code,folderId,btn){
     if(!TW){if(PX.teacherData)DATA=clone(PX.teacherData);TW=clone(DATA);var local=lsGet('hx-teacher-work');if(local&&Array.isArray(local.activities))TW=local;}
     TW.folders=TW.folders||[];
     if(folderId&&!folderById(folderId))folderId=null;
-    var act={id:nid,title:t.title,instructions:t.instructions||'',minTerms:t.minTerms==null?null:t.minTerms,minWords:t.minWords||0,assign:{},dcOn:!!t.dcOn,dc:t.dc||[],board:t.board||{shape:'hexagon',size:'roomy',orient:'pointy',rotate:true},starters:t.starters!==false,reflect:t.reflect!==false,createdAt:new Date().toISOString(),
+    var act={id:nid,title:t.title,instructions:t.instructions||'',minTerms:t.minTerms==null?null:t.minTerms,minWords:t.minWords||0,assign:{},dcOn:!!t.dcOn,dc:t.dc||[],board:t.board||{shape:'hexagon',size:'roomy',orient:'pointy',rotate:true},starters:t.starters!==false,reflect:t.reflect!==false,noPaste:t.noPaste===true,createdAt:new Date().toISOString(),
       terms:t.terms.map(function(x,i){return {n:i+1,id:x.id||i+1,term:x.term,def:x.def||''}}),folder:folderId,sharedFrom:{code:r.code,by:r.sharedBy||''}};
     act.idSeq=act.terms.reduce(function(m,x){return Math.max(m,x.id)},0);
     TW.activities.push(act);TS.sel=nid;TS.tab='setup';TS.folder=folderId;if(folderId)revealFolder(folderId);remember();saveWork();
@@ -3565,8 +3598,7 @@ loadPlatform=function(){
     if(r.profile.role==='teacher')return platformApi('workspace').then(function(w){
       PX.teacherData=clone(w.workspace);DATA=clone(w.workspace);PX.revision=w.revision;
       var local=lsGet('hx-teacher-work'),localBase=lsGet('hx-workspace-base');
-      if(local&&localBase!==null&&localBase!==w.revision){lsSet('hx-workspace-conflict-backup',local);lsSet('hx-teacher-work',w.workspace);}
-      lsSet('hx-workspace-base',w.revision);
+      reconcileLocal(w);
     });
     PX.teacherData=null;DATA={version:4,classes:[],activities:[]};
   }).then(function(){if(!GA.user||GA.user.uid!==loadingUid)return;PX.loaded=true;PX.loading=false;if(PX.profile.role==='teacher'&&!NAV.hash)NAV.hash='teacher';route();})
@@ -3599,7 +3631,7 @@ navItems=function(){
     {label:'New Hex Space',href:'#new',cta:true,hint:'For teachers'}].filter(Boolean);
   if(role==='teacher')return [home,
     {label:'Classes',href:'#teacher',match:/^#teacher(\/class-.*|\/post-.*|)$/},
-    {label:'Hex Space',href:'#teacher/editor',match:/^#teacher\/(editor|edit-.*)$/},
+    {label:'Hex Spaces',href:'#teacher/editor',match:/^#teacher\/(editor|edit-.*|folder-.*)$/},
     {label:'Shared links',href:'#teacher/shared',match:/^#teacher\/shared$/},
     {label:'Library',href:'#teacher/library',match:/^#teacher\/library$/},
     {label:'+ New Hex Space',href:'#teacher/new',cta:true}];
@@ -4090,7 +4122,7 @@ function deleteHexSpace(a){
 
 
 /* ---------- Editing Hex Spaces: clear Edit buttons, and pushing edits to open postings ---------- */
-function contentOf(a){return JSON.stringify({title:a.title||'',instructions:a.instructions||'',terms:(a.terms||[]).map(function(t){return [t.id,t.term,t.def||'']}),minTerms:a.minTerms==null?null:a.minTerms,minWords:a.minWords||0,dcOn:!!a.dcOn,dc:a.dc||[],board:a.board||null,starters:a.starters!==false,reflect:a.reflect!==false});}
+function contentOf(a){return JSON.stringify({title:a.title||'',instructions:a.instructions||'',terms:(a.terms||[]).map(function(t){return [t.id,t.term,t.def||'']}),minTerms:a.minTerms==null?null:a.minTerms,minWords:a.minWords||0,dcOn:!!a.dcOn,dc:a.dc||[],board:a.board||null,starters:a.starters!==false,reflect:a.reflect!==false,noPaste:a.noPaste===true});}
 function openPostingsFor(ids){return (PX.posts||[]).filter(function(p){return ids.indexOf(p.activityId)>=0&&p.open!==false&&p.status==='PUBLISHED'});}
 function refreshPostings(list,done){
   if(!list.length)return;
@@ -4529,7 +4561,8 @@ var SUPPORTS=[
   {k:'readAloud',label:'Read aloud',hint:'A speaker button reads terms, definitions and directions.'},
   {k:'translate',label:'Translate',hint:'Students can see terms and definitions in another language.'},
   {k:'reflect',label:'Reflection when turning in',hint:'Two short, optional questions before turning in.'},
-  {k:'gallery',label:'Allow a gallery walk',hint:'You choose when to open it from the posting’s page.'}];
+  {k:'gallery',label:'Allow a gallery walk',hint:'You choose when to open it from the posting’s page.'},
+  {k:'noPaste',label:'Block pasting',hint:'Students must type their connections. You see how many paste attempts were blocked.'}];
 var LANGS={es:'Español',zh:'中文',vi:'Tiếng Việt',ar:'العربية',tl:'Tagalog',ko:'한국어',ru:'Русский',pt:'Português',fr:'Français',ht:'Kreyòl ayisyen',hi:'हिन्दी',ja:'日本語',uk:'Українська',so:'Soomaali'};
 function on(k){return !ST||!ST.act||ST.act[k]!==false;}
 function canSpeak(){return typeof window!=='undefined'&&!!window.speechSynthesis&&typeof SpeechSynthesisUtterance!=='undefined';}
@@ -4546,20 +4579,21 @@ function fireInput(ta){
 
 /* ---------- Hex Space defaults (editor) ---------- */
 function supportPanel(a,changed){
-  function box(key,label,hint){
-    var cb=el('input',{type:'checkbox',id:'f-'+key,checked:a[key]!==false});
+  function box(key,label,hint,offByDefault){
+    var cb=el('input',{type:'checkbox',id:'f-'+key,checked:offByDefault?a[key]===true:a[key]!==false});
     cb.addEventListener('change',function(){a[key]=cb.checked;changed();});
     return el('label',{class:'sup-row',for:'f-'+key},cb,el('span',null,el('b',{text:label}),el('span',{class:'hint',text:hint})));
   }
   return el('div',{class:'panel stack',style:'gap:8px'},el('h3',{text:'Student supports'}),
     el('p',{class:'hint',style:'margin:0',text:'Defaults for new postings. You can switch any support (including definitions, read aloud and translation) on or off each time you post.'}),
     box('starters','Sentence starters','Tap-to-insert openers that use the two terms’ names.'),
-    box('reflect','Reflection when turning in','“Which connection are you proudest of?” and “Which was hardest?” Both optional.'));
+    box('reflect','Reflection when turning in','“Which connection are you proudest of?” and “Which was hardest?” Both optional.'),
+    box('noPaste','Block pasting in connection explanations','Students must type each explanation. Paste attempts are blocked and counted for you.',true));
 }
 /* ---------- Post dialog: student supports and versions ---------- */
 function supportsEditor(opts,act){
   act=act||{};var boxes={};
-  function dflt(k){if(opts&&typeof opts[k]==='boolean')return opts[k];if(k==='starters')return act.starters!==false;if(k==='reflect')return act.reflect!==false;return true;}
+  function dflt(k){if(opts&&typeof opts[k]==='boolean')return opts[k];if(k==='starters')return act.starters!==false;if(k==='reflect')return act.reflect!==false;if(k==='noPaste')return act.noPaste===true;return true;}
   var sum=el('summary',null);
   function count(){var n=SUPPORTS.filter(function(s){return boxes[s.k].checked}).length;sum.textContent='Student supports · '+n+' of '+SUPPORTS.length+' on';}
   var rowsEl=SUPPORTS.map(function(s){
@@ -5039,6 +5073,331 @@ function assignNudgeBody(a){
     el('div',{class:'row',style:'gap:6px'},classes.length?classes.map(function(c){return el('button',{class:'btn sm',onclick:function(){assignTo(a,[c.id])},text:c.name})}):el('button',{class:'btn sm',onclick:addManualClass,text:'+ Add a class'}),
       classes.length>1?el('button',{class:'btn ghost sm',onclick:function(){assignTo(a,[])},text:'Several…'}):null));
 }
+
+/* ===================== 4.9: auto-saved Hex Spaces that sync across windows, paste blocking, Hex Space directory ===================== */
+
+/* ---------- Merging: keep every change, from this window and from others ----------
+   base = the last copy this window got from the server; mine = this window's copy;
+   theirs = the server's newest copy. Per Hex Space, folder and class: whoever changed
+   it wins; an edit beats a delete; new items from both sides are kept. Objects in
+   "mine" are updated in place so an open editor keeps working on the same object. */
+function sameJSON(a,b){return JSON.stringify(a)===JSON.stringify(b);}
+function replaceInPlace(target,src){Object.keys(target).forEach(function(k){delete target[k]});Object.assign(target,clone(src));return target;}
+function mergeList(baseList,mineList,theirList){
+  function byId(l){var m={};(l||[]).forEach(function(x){if(x&&x.id!=null)m[x.id]=x});return m;}
+  var B=byId(baseList),M=byId(mineList),T=byId(theirList),out=[],seen={};
+  (theirList||[]).forEach(function(t){
+    var id=t.id,m=M[id],b=B[id];seen[id]=1;
+    if(m){if(b&&sameJSON(m,b))out.push(replaceInPlace(m,t));else out.push(m);}
+    else if(b){if(!sameJSON(b,t))out.push(clone(t));}
+    else out.push(clone(t));
+  });
+  (mineList||[]).forEach(function(m){
+    if(seen[m.id])return;var b=B[m.id];
+    if(b){if(!sameJSON(m,b))out.push(m);}
+    else out.push(m);
+  });
+  return out;
+}
+function mergeInto(mine,base,theirs){
+  base=base||{};theirs=theirs||{};
+  ['activities','folders','classes'].forEach(function(k){mine[k]=mergeList(base[k]||[],mine[k]||[],theirs[k]||[]);});
+  var fids={};(mine.folders||[]).forEach(function(f){fids[f.id]=1});
+  (mine.folders||[]).forEach(function(f){if(f.parent&&!fids[f.parent])f.parent=null;});
+  (mine.activities||[]).forEach(function(a){if(a.folder&&!fids[a.folder])a.folder=null;});
+  /* A folder loop can only appear if two windows moved folders into each other; break it. */
+  (mine.folders||[]).forEach(function(f){var seen={},cur=f;while(cur&&cur.parent){if(seen[cur.id]){f.parent=null;break;}seen[cur.id]=1;cur=(mine.folders||[]).find(function(x){return x.id===cur.parent});}});
+  return mine;
+}
+/* Called while loading: unsaved work from an earlier visit is merged, never dropped. */
+function reconcileLocal(w){
+  var local=lsGet('hx-teacher-work'),base=lsGet('hx-workspace-base'),snap=lsGet('hx-workspace-snap');
+  if(local&&Array.isArray(local.activities)&&base!==null&&base!==w.revision){
+    if(snap){mergeInto(local,snap,w.workspace);lsSet('hx-teacher-work',local);}
+    else{lsSet('hx-workspace-conflict-backup',local);lsSet('hx-teacher-work',w.workspace);}
+  }
+  lsSet('hx-workspace-base',w.revision);lsSet('hx-workspace-snap',w.workspace);
+}
+
+/* ---------- Saving: queued, merged on conflict, never "already running" ---------- */
+var SYNC={state:'saved',timer:null,chain:null,pullTimer:null,lastPull:0,err:''};
+function adoptServer(ws,rev){
+  PX.revision=rev;PX.teacherData=clone(ws);DATA=clone(ws);
+  lsSet('hx-workspace-base',rev);lsSet('hx-workspace-snap',ws);
+}
+function attemptSave(target,tries){
+  /* Never upload an untouched blank Hex Space. */
+  var out=target===TW?publishable():clone(target),account=GA.user&&GA.user.uid;
+  return platformApi('workspace',{workspace:out,revision:PX.revision}).then(function(r){
+    if(!GA.user||GA.user.uid!==account)return r;
+    adoptServer(out,r.revision);if(!TW||target===TW)lsSet('hx-teacher-work',clone(out));
+    return r;
+  },function(e){
+    if(!e||e.code!=='workspace-conflict'||tries>=3)throw e;
+    return platformApi('workspace').then(function(w){
+      mergeInto(target,PX.teacherData,w.workspace);if(target===TW)SYNC.needRender=true;
+      PX.revision=w.revision;PX.teacherData=clone(w.workspace);
+      return attemptSave(target,tries+1);
+    });
+  });
+}
+saveWorkspaceCloud=function(ws){
+  var target=ws||TW;
+  if(!target)return Promise.resolve({});
+  clearTimeout(SYNC.timer);
+  var job=(SYNC.chain||Promise.resolve()).catch(function(){}).then(function(){
+    PX.saving=true;setSync('saving');
+    return attemptSave(target,0);
+  });
+  SYNC.chain=job.then(function(r){PX.saving=false;setSync(TW&&dirty()?'pending':'saved');afterAutoSave();
+    /* Changes from another window were merged in while saving: show them. */
+    if(SYNC.needRender){SYNC.needRender=false;if(TW&&caps.teacher&&!document.querySelector('.modal')){if(typingNow())SYNC.renderLater=true;else renderTeacher();}}
+    return r;},function(e){
+    PX.saving=false;setSync(typeof navigator!=='undefined'&&navigator.onLine===false?'offline':'error',e&&e.message);throw e;});
+  return SYNC.chain;
+};
+function scheduleSave(){
+  if(!TW||!GA.user||profileRole()!=='teacher'||!PX.loaded)return;
+  if(!dirty()){if(SYNC.state!=='saving')setSync('saved');return;}
+  setSync(SYNC.state==='saving'?'saving':'pending');
+  clearTimeout(SYNC.timer);
+  SYNC.timer=setTimeout(function(){saveWorkspaceCloud().catch(function(){});},1200);
+}
+var v48SaveWork=saveWork;
+saveWork=function(){var r=v48SaveWork.apply(this,arguments);try{scheduleSave()}catch(e){}return r;};
+/* Status pill instead of the "Save workspace online" bar. */
+function syncText(){return {saving:'Saving…',pending:'Saving…',saved:'All changes saved',offline:'Offline · saved on this device',error:'Couldn’t save online'}[SYNC.state]||'';}
+function syncPill(){
+  var retry=SYNC.state==='error'||SYNC.state==='offline';
+  return el('div',{class:'sync-pill '+SYNC.state,id:'sync-pill',role:'status',title:SYNC.err||''},el('span',{class:'dot','aria-hidden':'true'}),el('span',{text:syncText()}),
+    retry?el('button',{class:'btn ghost sm',onclick:function(){saveWorkspaceCloud().catch(function(){})},text:'Retry'}):null);
+}
+function setSync(state,err){
+  SYNC.state=state;SYNC.err=err||'';
+  var old=document.getElementById('sync-pill');if(old&&old.replaceWith)old.replaceWith(syncPill());
+}
+saveBar=function(){return syncPill();};
+ensureBar=function(){
+  saveWork();
+  var bar=document.getElementById('sync-pill');
+  if(!bar&&root.appendChild&&(isTeacherHash()||caps.teacher))root.appendChild(syncPill());
+  try{var slot=document.getElementById('assign-nudge'),a=TW&&curAct();if(slot&&a){var had=!!slot.firstChild,body=assignNudgeBody(a);if(had!==!!body)fill(slot,body);}}catch(e){}
+};
+/* After saving, offer to push content changes to open postings (once per Hex Space until done). */
+var POSTED_SEEN={};
+function afterAutoSave(){
+  if(!TW||typeof openPostingsFor!=='function')return;
+  var ids=[];
+  TW.activities.forEach(function(a){
+    var open=openPostingsFor([a.id]);if(!open.length)return;
+    var c=contentOf(a);if(POSTED_SEEN[a.id]===undefined){POSTED_SEEN[a.id]=c;return;}
+    if(POSTED_SEEN[a.id]!==c)ids.push(a.id);
+  });
+  var bar=document.getElementById('post-update-bar');
+  if(!ids.length){if(bar&&bar.remove)bar.remove();return;}
+  var node=el('div',{class:'panel post-update-bar',id:'post-update-bar',role:'status'},
+    el('span',{text:'This Hex Space is posted. Students see your changes after you update the posting.'}),
+    el('button',{class:'btn primary sm',onclick:function(){ids.forEach(function(id){var a=twAct(id);if(a)POSTED_SEEN[id]=contentOf(a)});var b=document.getElementById('post-update-bar');if(b&&b.remove)b.remove();offerPostingUpdate(ids);},text:'Update postings'}),
+    el('button',{class:'btn ghost sm',onclick:function(){ids.forEach(function(id){var a=twAct(id);if(a)POSTED_SEEN[id]=contentOf(a)});var b=document.getElementById('post-update-bar');if(b&&b.remove)b.remove();},text:'Not now'}));
+  if(bar&&bar.replaceWith)bar.replaceWith(node);else if(root.appendChild&&caps.teacher)root.appendChild(node);
+}
+
+/* ---------- Pulling: other windows and devices ---------- */
+function typingNow(){var a=document.activeElement;return !!(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName||'')&&root.contains&&root.contains(a));}
+function pullWorkspace(force){
+  if(!GA.user||profileRole()!=='teacher'||!PX.loaded||PX.saving)return Promise.resolve(false);
+  if(!force&&Date.now()-SYNC.lastPull<4000)return Promise.resolve(false);
+  SYNC.lastPull=Date.now();var account=GA.user.uid;
+  return platformApi('workspace').then(function(w){
+    if(!GA.user||GA.user.uid!==account||PX.saving)return false;
+    if(w.revision===PX.revision)return false;
+    if(TW){mergeInto(TW,PX.teacherData,w.workspace);lsSet('hx-teacher-work',clone(TW));}
+    adoptServer(w.workspace,w.revision);
+    if(TW&&dirty())scheduleSave();
+    if(TW&&caps.teacher&&!document.querySelector('.modal')){
+      if(typingNow())SYNC.renderLater=true;
+      else if(TS.sel&&!twAct(TS.sel)&&/^#teacher\/edit-/.test(NAV.hash||'')){toast('That Hex Space was deleted in another window.');NAV.hash='teacher/editor';}
+      else renderTeacher();
+    }
+    return true;
+  }).catch(function(){return false;});
+}
+function startSyncWatch(){
+  if(SYNC.watching||typeof window==='undefined'||!window.addEventListener)return;SYNC.watching=true;
+  window.addEventListener('focus',function(){pullWorkspace(false)});
+  if(document.addEventListener)document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')pullWorkspace(false);});
+  if(document.addEventListener)document.addEventListener('focusout',function(){if(SYNC.renderLater){setTimeout(function(){if(SYNC.renderLater&&!typingNow()&&caps.teacher&&!document.querySelector('.modal')){SYNC.renderLater=false;renderTeacher();}},400);}});
+  window.addEventListener('online',function(){if(TW&&dirty())saveWorkspaceCloud().catch(function(){});});
+  window.addEventListener('storage',function(e){if(e&&/hx-workspace-base/.test(e.key||''))pullWorkspace(true);});
+  if(typeof setInterval==='function')SYNC.pullTimer=setInterval(function(){if(document.visibilityState!=='hidden'&&caps.teacher)pullWorkspace(false);},20000);
+}
+
+/* ---------- Paste blocking in connection explanations ---------- */
+function blockPaste(ta){
+  if(!ta||ta._noPaste||!ta.addEventListener)return;ta._noPaste=true;
+  var note=el('p',{class:'paste-note',role:'alert',hidden:true,text:'Pasting is turned off for this assignment. Type the connection in your own words.'});
+  function stop(e){
+    if(e&&e.preventDefault)e.preventDefault();
+    if(ST){ST.d.pasteBlocked=(ST.d.pasteBlocked||0)+1;saveDraft();}
+    note.hidden=false;
+  }
+  ta.addEventListener('paste',stop);ta.addEventListener('drop',stop);
+  ta.addEventListener('beforeinput',function(e){if(e&&/^insertFrom(Paste|Drop)/.test(e.inputType||''))stop(e);});
+  ta.setAttribute('autocomplete','off');
+  if(ta.parentNode)ta.parentNode.insertBefore(note,ta.nextSibling||null);
+}
+var v48Helps=writingHelps;
+writingHelps=function(taId,x,y){
+  v48Helps.apply(this,arguments);
+  if(ST&&ST.act&&ST.act.noPaste===true)blockPaste(document.getElementById(taId));
+};
+var v48GraderExtras=graderExtras;
+graderExtras=function(p,list,index){
+  var base=v48GraderExtras(p,list,index);
+  if(!p||!p.pasteAttempts)return base;
+  var chip=el('p',{class:'paste-flag',text:'⚠ '+p.pasteAttempts+' paste attempt'+(p.pasteAttempts===1?'':'s')+' blocked while writing connections'});
+  return el('div',{class:'stack',style:'gap:8px'},chip,base);
+};
+
+/* ---------- Hex Space directory ---------- */
+var DIR={q:'',sort:rawGet('hx-dir-sort')||'recent'};
+function isDirHash(h){h=h==null?(NAV.hash||''):h;return h==='#teacher/editor'||/^#teacher\/folder-/.test(h);}
+function dirFolderId(){var m=(NAV.hash||'').match(/^#teacher\/folder-(.+)$/);return m?decodeURIComponent(m[1]):null;}
+function actPostings(a){return (PX.posts||[]).filter(function(p){return p.activityId===a.id});}
+function actStamp(a){return a.updatedAt||a.createdAt||'';}
+function sortActs(list){
+  var s=DIR.sort;
+  return list.slice().sort(function(x,y){
+    if(s==='title')return String(x.title||'').localeCompare(String(y.title||''),undefined,{numeric:true,sensitivity:'base'});
+    if(s==='subs'){var d=actPostings(y).reduce(function(n,p){return n+(p.submissions||0)},0)-actPostings(x).reduce(function(n,p){return n+(p.submissions||0)},0);if(d)return d;}
+    return actStamp(y).localeCompare(actStamp(x));
+  });
+}
+function openHexSpace(a){NAV.hash='teacher/edit-'+encodeURIComponent(a.id);}
+function newHexSpaceIn(folderId){
+  PX.forceEditor=true;
+  try{TS.folder=folderId||null;newActivity();var a=curAct();if(a&&folderId&&!a.folder){a.folder=folderId;ensureBar();}}finally{PX.forceEditor=false;}
+  var a2=curAct();if(a2)NAV.hash='teacher/edit-'+encodeURIComponent(a2.id);
+}
+function actMenu(a){
+  return menuButton('⋯',[
+    {label:'Open',onclick:function(){openHexSpace(a)}},
+    {label:'Assign to class…',onclick:function(){assignTo(a,[])}},
+    {label:'Share…',onclick:function(){openShare(a)}},
+    {label:'Print tiles',onclick:function(){printTiles(a)}},
+    {label:'Move to folder…',onclick:function(){moveActDialog(a)}},
+    {sep:true},
+    {label:'Delete…',danger:true,onclick:function(){deleteHexSpace(a)}}],{aria:'More actions for '+(a.title||'Untitled Hex Space')});
+}
+function moveActDialog(a){
+  var sel=el('select',{id:'hx-move-act'},el('option',{value:'',text:'Top level (no folder)'}),folderOptions(null,0));sel.value=a.folder||'';
+  openModal([el('h3',{style:'font-size:1.2rem',text:'Move “'+(a.title||'Untitled')+'”'}),el('label',{class:'fld',for:'hx-move-act'},'Move into',sel),
+    el('div',{class:'row',style:'justify-content:flex-end'},el('button',{class:'btn ghost',onclick:closeModal,text:'Cancel'}),
+      el('button',{class:'btn primary',onclick:function(){closeModal();moveActivity(a,sel.value||null)},text:'Move'}))]);
+}
+function folderCard(f){
+  var n=countIn(f.id),k=childFolders(f.id).length;
+  var card=el('div',{class:'dir-folder'},
+    el('a',{class:'dir-folder-link',href:'#teacher/folder-'+encodeURIComponent(f.id)},folderIcon(),el('span',{class:'dir-folder-name',text:f.name}),
+      el('span',{class:'hint',text:n+' Hex Space'+(n===1?'':'s')+(k?' · '+k+' folder'+(k===1?'':'s'):'')})),
+    menuButton('⋯',[{label:'Rename…',onclick:function(){renameFolder(f)}},{label:'Move…',onclick:function(){moveFolderDialog(f)}},{label:'New subfolder…',onclick:function(){newFolder(f.id)}},{sep:true},{label:'Delete folder…',danger:true,onclick:function(){deleteFolder(f)}}],{aria:'More actions for folder '+f.name}));
+  dragSource(card,'folder',f.id);
+  return dropTarget(card,f.id);
+}
+function actRowDir(a,showPath){
+  var posts=actPostings(a),subs=posts.reduce(function(n,p){return n+(p.submissions||0)},0);
+  var classes=[];posts.forEach(function(p){if(classes.indexOf(p.className)<0)classes.push(p.className)});
+  var ready=readyActivity(a);
+  var row=el('div',{class:'dir-row'},
+    el('a',{class:'dir-main',href:'#teacher/edit-'+encodeURIComponent(a.id)},
+      el('b',{text:a.title||'Untitled Hex Space'}),
+      el('span',{class:'hint',text:(showPath&&a.folder?'📁 '+folderPath(a.folder).join(' › ')+' · ':'')+(a.terms||[]).length+' term'+((a.terms||[]).length===1?'':'s')+(a.dcOn&&(a.dc||[]).length?' · '+a.dc.length+' D&C':'')+(actStamp(a)?' · edited '+fmtTime(actStamp(a)):'')})),
+    el('div',{class:'dir-classes'},classes.length?classes.slice(0,3).map(function(c){return el('span',{class:'chip',text:c})}).concat(classes.length>3?[el('span',{class:'chip',text:'+'+(classes.length-3)})]:[]):el('span',{class:'hint',text:ready?'Not assigned':'Draft'})),
+    el('span',{class:'dir-subs hint',text:subs+' submission'+(subs===1?'':'s')}),
+    el('div',{class:'row dir-actions',style:'gap:6px'},ready?el('button',{class:'btn sm',onclick:function(){assignTo(a,[])},text:'Assign'}):null,actMenu(a)));
+  return dragSource(row,'act',a.id);
+}
+function renderDirectory(){
+  if(!TW)return;
+  caps.teacher=true;ST=null;
+  var fid=dirFolderId();if(fid&&!folderById(fid)){navReplace('teacher/editor');fid=null;}
+  var cur=fid?folderById(fid):null,q=String(DIR.q||'').trim().toLowerCase();
+  var crumbs=[el('a',{href:'#teacher/editor',text:'All Hex Spaces'})],f=cur,chain=[];
+  while(f){chain.unshift(f);f=folderById(f.parent);}
+  chain.forEach(function(x,i){crumbs.push(el('span',{class:'crumb-sep','aria-hidden':'true',text:'›'}));crumbs.push(i===chain.length-1?el('span',{'aria-current':'page',text:x.name}):el('a',{href:'#teacher/folder-'+encodeURIComponent(x.id),text:x.name}));});
+  var search=el('input',{type:'search',id:'dir-q',placeholder:'Search all Hex Spaces',value:DIR.q,'aria-label':'Search all Hex Spaces'});
+  var sort=el('select',{id:'dir-sort','aria-label':'Sort'},[['recent','Recently edited'],['title','Title A–Z'],['subs','Most submissions']].map(function(o){return el('option',{value:o[0],text:o[1],selected:DIR.sort===o[0]||null})}));
+  var listBox=el('div',{class:'stack',style:'gap:14px'});
+  function draw(){
+    q=String(DIR.q||'').trim().toLowerCase();
+    var acts=TW.activities.filter(function(a){return String(a.title||'').trim()||(a.terms||[]).length||String(a.instructions||'').trim()});
+    if(q){
+      var hits=sortActs(acts.filter(function(a){return (String(a.title||'')+' '+(a.terms||[]).map(function(t){return t.term}).join(' ')).toLowerCase().indexOf(q)>=0}));
+      var fhits=folders().filter(function(x){return x.name.toLowerCase().indexOf(q)>=0});
+      fill(listBox,fhits.length?el('div',{class:'dir-folders'},fhits.map(folderCard)):null,
+        el('div',{class:'dir-list'},hits.length?hits.map(function(a){return actRowDir(a,true)}):el('p',{class:'muted',style:'margin:0',text:'No Hex Spaces match “'+DIR.q+'”.'})));
+      return;
+    }
+    var subs=childFolders(fid),here=sortActs(acts.filter(function(a){return (a.folder||null)===(fid||null)}));
+    fill(listBox,
+      subs.length?el('section',{class:'stack',style:'gap:8px'},el('h3',{class:'dir-h',text:'Folders'}),dropTarget(el('div',{class:'dir-folders'},subs.map(folderCard)),fid)):null,
+      (!cur&&subs.length&&!here.length)?null:el('section',{class:'stack',style:'gap:8px'},el('h3',{class:'dir-h',text:cur?'Hex Spaces in this folder':(subs.length?'Hex Spaces not in a folder':'Hex Spaces')}),
+        dropTarget(el('div',{class:'dir-list'},here.length?here.map(function(a){return actRowDir(a,false)}):el('div',{class:'dir-empty'},el('p',{class:'muted',style:'margin:0',text:cur?'This folder is empty.':'No Hex Spaces yet.'}),el('button',{class:'btn primary sm',onclick:function(){newHexSpaceIn(fid)},text:'+ New Hex Space'+(cur?' here':'')}))),fid)));
+  }
+  search.addEventListener('input',function(){DIR.q=search.value;draw();});
+  sort.addEventListener('change',function(){DIR.sort=sort.value;rawSet('hx-dir-sort',DIR.sort);draw();});
+  var total=TW.activities.filter(function(a){return String(a.title||'').trim()||(a.terms||[]).length}).length;
+  fill(root,topBar(),el('div',{class:'directory stack'},
+    el('div',{class:'dir-top'},
+      el('div',{style:'min-width:0'},el('nav',{class:'crumbs','aria-label':'Folder path'},crumbs),el('h2',{text:cur?cur.name:'My Hex Spaces'}),
+        el('p',{class:'muted',style:'margin:0',text:cur?countIn(cur.id)+' Hex Space'+(countIn(cur.id)===1?'':'s')+' in this folder and its subfolders':total+' Hex Space'+(total===1?'':'s')+' · '+folders().length+' folder'+(folders().length===1?'':'s')})),
+      el('div',{class:'row',style:'gap:8px'},el('button',{class:'btn',onclick:function(){newFolder(fid)},text:cur?'+ Subfolder':'+ New folder'}),
+        el('button',{class:'btn primary',onclick:function(){newHexSpaceIn(fid)},text:'+ New Hex Space'+(cur?' here':'')}))),
+    el('div',{class:'row dir-tools'},search,sort,cur?el('a',{class:'btn ghost sm',href:cur.parent?'#teacher/folder-'+encodeURIComponent(cur.parent):'#teacher/editor',text:'↑ Up a level'}):null),
+    listBox,
+    el('p',{class:'hint',style:'margin:0',text:'Drag a Hex Space or folder onto a folder to move it. Everything saves automatically and shows up in your other windows and devices.'})),syncPill());
+  draw();
+}
+/* The "Hex Space" page is the directory; a Hex Space opens in the editor. */
+var v48Render=renderTeacher;
+renderTeacher=function(){
+  if(isDirHash()&&!PX.forceEditor&&TW){renderDirectory();return;}
+  v48Render.apply(this,arguments);
+  /* Keep the address on the Hex Space that's open (e.g. after picking one in the sidebar). */
+  if(TW&&TS.sel){var em=(NAV.hash||'').match(/^#teacher\/edit-(.+)$/);if(em&&decodeURIComponent(em[1])!==TS.sel&&twAct(TS.sel))navReplace('teacher/edit-'+encodeURIComponent(TS.sel));}
+  if(TW&&caps.teacher){
+    var a=curAct(),main=root.querySelector&&root.querySelector('.teach');
+    if(a&&main){
+      var crumbs=[el('a',{href:'#teacher/editor',text:'← All Hex Spaces'})];
+      if(a.folder&&folderById(a.folder)){var f=folderById(a.folder);crumbs.push(el('span',{class:'crumb-sep','aria-hidden':'true',text:'·'}));crumbs.push(el('a',{href:'#teacher/folder-'+encodeURIComponent(f.id),text:'📁 '+folderPath(f.id).join(' › ')}));}
+      if(main.parentNode===root)root.insertBefore(el('nav',{class:'crumbs editor-crumbs','aria-label':'Back to the directory'},crumbs),main);
+    }
+    if(!document.getElementById('sync-pill')&&root.appendChild)root.appendChild(syncPill());
+  }
+};
+var v48NewActivity=newActivity;
+newActivity=function(){
+  PX.forceEditor=true;try{v48NewActivity.apply(this,arguments)}finally{PX.forceEditor=false;}
+  var a=curAct();if(a)navReplace('teacher/edit-'+encodeURIComponent(a.id));
+};
+/* Track when each Hex Space was last edited, for "Recently edited". */
+var v48Bar2=ensureBar;
+ensureBar=function(){var a=TW&&caps.teacher&&!isDirHash()&&curAct();if(a){var c=contentOf(a)+'|'+(a.folder||'');if(a._sig!==undefined&&a._sig!==c)a.updatedAt=new Date().toISOString();try{Object.defineProperty(a,'_sig',{value:c,writable:true,enumerable:false,configurable:true})}catch(e){}}return v48Bar2.apply(this,arguments);};
+/* Routes: directory and folders; new Hex Spaces open straight in the editor. */
+var v48Route49=route;
+route=function(){
+  var h=NAV.hash||'';
+  if(GA.ready&&GA.user&&PX.loaded&&PX.profile&&PX.profile.role==='teacher'){
+    startSyncWatch();
+    if(isDirHash(h)){
+      PX.forceEditor=true;try{v48Route49()}finally{PX.forceEditor=false;}
+      /* A new Hex Space request moves the address to the editor; otherwise show the directory. */
+      if(TW&&isDirHash())renderDirectory();
+      return;
+    }
+  }
+  v48Route49();
+};
 
 /* The homepage is the starting page: a visit to the bare site address opens it,
    signed in or not. In-app links to "#" still go to the student dashboard. */

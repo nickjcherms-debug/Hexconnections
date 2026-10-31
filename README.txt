@@ -116,6 +116,25 @@ Tiles and text retain their original size, and zoom/scroll remain available.
 A hexagon still has six sides: extra space supports more arrangements, not more
 than six simultaneous neighboring tiles per hexagon.
 
+HEX SPACE DIRECTORY, AUTO-SAVE AND PASTE BLOCKING (4.9)
+- Menu > Hex Spaces opens a directory instead of the last Hex Space: folder
+  cards (open, rename, move, new subfolder, delete), then Hex Space rows with
+  terms, assigned classes and submissions, plus Assign and a ⋯ menu (open,
+  assign, share, print tiles, move, delete). Search covers titles and terms;
+  sort by recently edited, title or submissions. Drag rows and folders onto a
+  folder to move them. "+ New Hex Space" (or "here" inside a folder) opens a
+  new Hex Space straight in the editor; "← All Hex Spaces" returns.
+- Everything saves automatically about a second after each change (status at
+  the bottom left). Other windows and devices pick changes up when focused and
+  every 20 seconds. Simultaneous edits are merged per Hex Space, folder and
+  class: whoever changed an item wins and an edit beats a delete, so nothing is
+  set aside. Unsaved work from an earlier visit is merged on the next login.
+- Block pasting: a Hex Space setting (Setup > Student supports) sets the
+  default; the Post dialog's Student supports can turn it on or off per posting.
+  Paste and drag-in are blocked with a note to type it in their own words, and
+  the grader shows how many attempts were blocked. (It stops copying into the
+  box; it can't stop a student retyping text from elsewhere.)
+
 ASSIGN TO CLASS (4.8)
 Every Hex Space has an "Assign to class" button beside Share. Pick one class
 (or several) and the Post dialog opens with that class ticked, ready for dates

@@ -22,17 +22,17 @@ export const boardKey=(postId,uid)=>sha(postId+':'+uid).then(h=>h.slice(0,12));
 
 /* ---------- student supports chosen when posting ----------
    Each switch defaults to on (or to the Hex Space's own setting) and can be changed later. */
-export const OPTION_KEYS=['defs','starters','readAloud','translate','reflect','gallery'];
+export const OPTION_KEYS=['defs','starters','readAloud','translate','reflect','gallery','noPaste'];
 export function cleanOptions(o,act){
   const src=o&&typeof o==='object'?o:{},out={};
-  const dflt={starters:act?.starters!==false,reflect:act?.reflect!==false};
+  const dflt={starters:act?.starters!==false,reflect:act?.reflect!==false,noPaste:act?.noPaste===true};
   for(const k of OPTION_KEYS)out[k]=typeof src[k]==='boolean'?src[k]:(k in dflt?dflt[k]:true);
   return out;
 }
 // What a student's browser receives: their version, with switched-off supports removed.
 export function studentAct(info,variant){
   const act=variantAct(info,variant),o=cleanOptions(info?.asg?.options,info?.act);
-  const out={...act,starters:act.starters!==false&&o.starters,reflect:act.reflect!==false&&o.reflect,readAloud:o.readAloud,translate:o.translate,gallery:o.gallery,showDefs:o.defs};
+  const out={...act,starters:act.starters!==false&&o.starters,reflect:act.reflect!==false&&o.reflect,readAloud:o.readAloud,translate:o.translate,gallery:o.gallery,showDefs:o.defs,noPaste:o.noPaste};
   if(!o.defs)out.terms=(act.terms||[]).map(t=>({...t,def:''}));
   return out;
 }

@@ -20,6 +20,7 @@ export function shareTemplate(act){
   dcOn:!!act.dcOn,
   starters:act.starters!==false,
   reflect:act.reflect!==false,
+  noPaste:act.noPaste===true,
   dc:(Array.isArray(act.dc)?act.dc:[]).filter(k=>DC.includes(k)),
   board:{shape:['hexagon','wide','tall','open'].includes(board.shape)?board.shape:'hexagon',size:['snug','roomy','spacious','expansive'].includes(board.size)?board.size:'roomy',orient:board.orient==='flat'?'flat':'pointy',rotate:board.rotate!==false},
   terms:(act.terms||[]).slice(0,60).map((t,i)=>({n:i+1,id:Number(t.id||t.n)||i+1,term:String(t.term||'').slice(0,100),def:String(t.def||'').slice(0,1000)}))
