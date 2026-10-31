@@ -6,6 +6,7 @@
 // on the leaderboard unless the teacher chooses names; votes are cast on anonymous labels.
 import {scoreBoard,nicknames,shortName,BADGES,LEVELS,POINTS,LEVEL_STEP} from './gamescore.js';
 import {variantAct,fitDraft,cleanOptions} from './classtools.js';
+import {partyPointsForPost} from './party.js';
 const one=(db,sql,...args)=>db.prepare(sql).bind(...args).first();
 const rows=async(db,sql,...args)=>(await db.prepare(sql).bind(...args).all()).results;
 const run=(db,sql,...args)=>db.prepare(sql).bind(...args).run();
@@ -262,7 +263,7 @@ export async function handleGameRoutes(c){
           entries:ents.map(e=>({label:e.label,name:names.get(e.uid)||'Student',pair:e.pair,defense:e.defense,votes:e.votes,winner:r.phase==='results'&&e.winner}))});
       }
     }
-    return json({...head,game:publicGame,debate:publicDebate,terms,standings,teams:race,debateGroups:members.length?Math.max(...members.map(x=>x.grp))+1:0,debateView,badges:BADGES,levels:LEVELS,points:POINTS,now:NOW()});
+    return json({...head,party:await partyPointsForPost(db,id),game:publicGame,debate:publicDebate,terms,standings,teams:race,debateGroups:members.length?Math.max(...members.map(x=>x.grp))+1:0,debateView,badges:BADGES,levels:LEVELS,points:POINTS,now:NOW()});
   }
   // Student
   const out={...head,game:publicGame,debate:publicDebate,terms,badges:BADGES,levels:LEVELS,points:POINTS,now:NOW(),me:{debate:statsOf(user.uid),raceWinner:false,team:null}};

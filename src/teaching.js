@@ -86,6 +86,10 @@ export async function handleTeachingRoutes(c){
       await run(db,'DELETE FROM library_reports WHERE code IN (SELECT code FROM library WHERE owner_uid=?)',user.uid);
       await run(db,'DELETE FROM library_reports WHERE uid=?',user.uid);
       await run(db,'DELETE FROM library WHERE owner_uid=?',user.uid)}catch{}
+    try{const games=(await rows(db,'SELECT id FROM party_games WHERE owner_uid=?',user.uid)).map(r=>r.id);
+      for(const g of games)for(const t of ['party_votes','party_answers','party_players'])await run(db,'DELETE FROM '+t+' WHERE game_id=?',g);
+      await run(db,'DELETE FROM party_games WHERE owner_uid=?',user.uid);
+      await run(db,'DELETE FROM party_votes WHERE voter_uid=?',user.uid);await run(db,'DELETE FROM party_answers WHERE uid=?',user.uid);await run(db,'DELETE FROM party_players WHERE uid=?',user.uid)}catch{}
     try{await run(db,'DELETE FROM debate_votes WHERE voter_uid=? OR target_uid=?',user.uid,user.uid);await run(db,'DELETE FROM debate_entries WHERE uid=?',user.uid);await run(db,'DELETE FROM debate_members WHERE uid=?',user.uid)}catch{}
     await run(db,'DELETE FROM project_group_members WHERE uid=?',user.uid);
     await run(db,'DELETE FROM submissions WHERE uid=?',user.uid);

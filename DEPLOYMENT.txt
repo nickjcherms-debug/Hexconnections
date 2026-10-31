@@ -1,3 +1,9 @@
+HEX PARTY 4.18.0
+================
+Database: migrations/0011_party.sql (party_games, party_players, party_answers,
+party_votes). Applied to the live database on 2026-10-31. Other databases:
+  npx wrangler d1 execute hex-connections --remote --file migrations/0011_party.sql
+
 SYSTEM CHECK 4.17.0
 ===================
 Database: migrations/0010_debate_index.sql (one index). Applied to the live
