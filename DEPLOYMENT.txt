@@ -1,3 +1,12 @@
+PICTURES AND ROSTER 4.14.0
+==========================
+Database: migrations/0008_images_roster.sql (additive: images table). Applied to
+the live database on 2026-10-31. Other databases:
+  npx wrangler d1 execute hex-connections --remote --file migrations/0008_images_roster.sql
+Images are stored in D1 (180 KB max each, 600 per teacher) and served publicly
+from /api/img/<id> with long cache headers; ids are 24 random characters.
+Deleting an account deletes its images. 4.12 and 4.13 need no migration.
+
 CLASSROOM TOOLS 4.7.0
 =====================
 Database: migrations/0007_classroom_tools.sql (additive: submissions.variant and

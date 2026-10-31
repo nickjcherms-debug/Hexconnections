@@ -5617,7 +5617,7 @@ function submissionsTable(postId,a,subs){
       el('div',{class:'subs-tools'},
         el('div',{class:'filter-chips',role:'group','aria-label':'Show'},chip('all','All'),chip('needs','Needs grading'),chip('graded','Graded'),chip('late','Late'),chip('working','Still working')),
         el('div',{class:'row',style:'gap:8px'},sort,
-          el('button',{class:'btn primary',disabled:!queue.length,onclick:function(){openGrader(queue,0)},text:queue.length?'Grade next ungraded ('+queue.length+')':'All graded ✓'}))),
+          el('button',{class:'btn primary',disabled:!queue.length,onclick:function(){openGrader(queue,0)},text:queue.length?'Grade next ungraded ('+queue.length+')':(rows.some(function(x){return x._payload})?'All graded ✓':'Nothing to grade yet')}))),
       shown.length?el('div',{class:'subs-table',role:'table','aria-label':'Students'},
         el('div',{class:'subs-row subs-head',role:'row'},['Student','Status','Terms','Links','Turned in','Notes','Grade',''].map(function(h){return el('span',{role:'columnheader',text:h})})),
         shown.map(function(p){
