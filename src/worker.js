@@ -4,7 +4,7 @@ import { generateVocabulary } from './vocabulary.js';
 import {handleShareRoutes} from './shares.js';
 import {handlePostingRoutes,assertStarted,isLate} from './postings.js';
 import {handleTeachingRoutes} from './teaching.js';
-import {handleClassToolRoutes,studentAct,variantAct,fitDraft,cleanReflection,cleanHistory,isOwner} from './classtools.js';
+import {handleClassToolRoutes,flowRequired,flowGroups,studentAct,variantAct,fitDraft,cleanReflection,cleanHistory,isOwner} from './classtools.js';
 // Cloudflare Worker. Firebase verifies accounts; every SQL query enforces ownership.
 // Google access tokens are used only for the current request and never persisted.
 const NOW = () => new Date().toISOString();
@@ -176,6 +176,7 @@ function submissionPayload(draft, post, user, variant) {
     validConns.push({ num:validConns.length+1, a,b,why:c.why });
   }
   const used = new Set(validConns.flatMap(c=>[c.a,c.b]).filter(n=>n<1000)).size;
+  if (flowRequired(info) && Object.keys(draft.place).length > 1 && flowGroups(Object.keys(draft.place), validConns).length > 1) fail(400, 'Connect every hexagon into one group before turning in: each one must link to the rest through explained connections.', 'flow-broken');
   const need = act.minTerms === '' || act.minTerms == null ? act.terms.length : Math.min(act.terms.length,Math.max(0,Number(act.minTerms)||0));
   if (used < need) fail(400, 'Use the required number of terms with justified connections before submitting.');
   return { activitySnapshot:act,activityId:act.id,activityTitle:act.title,classId:info.cls.id,className:info.cls.name,period:info.cls.name,

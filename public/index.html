@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Hexagonal thinking boards for classrooms: students arrange vocabulary hexagons and explain every connection, with optional Depth and Complexity icons.">
-<meta name="hex-connections-build" content="4.9.0">
+<meta name="hex-connections-build" content="4.10.0">
 <title>Hex Connections</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0F6E6E">
@@ -653,6 +653,8 @@ h2,h3,.brand h1,.aitem b,.act-head h2,.modal h3{overflow-wrap:anywhere}
 .dir-subs{white-space:nowrap}
 .dir-empty{display:flex;flex-direction:column;gap:10px;align-items:flex-start;background:var(--panel);border:1px dashed var(--line);border-radius:14px;padding:16px}
 @media (max-width:700px){.dir-row{grid-template-columns:minmax(0,1fr) auto}.dir-classes{grid-column:1/-1;order:3}.dir-subs{display:none}.sync-pill{left:8px;bottom:8px}}
+.flow-stat.done b{color:var(--ok)}
+.hexg.flow-off .hx{stroke:var(--danger);stroke-width:3;stroke-dasharray:6 4}
 </style>
 <div id="root"></div>
 <script type="application/json" id="hx-data">{"version":4,"classes":[],"activities":[]}</script>
@@ -3386,7 +3388,7 @@ function copyShared(code,folderId,btn){
     if(!TW){if(PX.teacherData)DATA=clone(PX.teacherData);TW=clone(DATA);var local=lsGet('hx-teacher-work');if(local&&Array.isArray(local.activities))TW=local;}
     TW.folders=TW.folders||[];
     if(folderId&&!folderById(folderId))folderId=null;
-    var act={id:nid,title:t.title,instructions:t.instructions||'',minTerms:t.minTerms==null?null:t.minTerms,minWords:t.minWords||0,assign:{},dcOn:!!t.dcOn,dc:t.dc||[],board:t.board||{shape:'hexagon',size:'roomy',orient:'pointy',rotate:true},starters:t.starters!==false,reflect:t.reflect!==false,noPaste:t.noPaste===true,createdAt:new Date().toISOString(),
+    var act={id:nid,title:t.title,instructions:t.instructions||'',minTerms:t.minTerms==null?null:t.minTerms,minWords:t.minWords||0,assign:{},dcOn:!!t.dcOn,dc:t.dc||[],board:t.board||{shape:'hexagon',size:'roomy',orient:'pointy',rotate:true},starters:t.starters!==false,reflect:t.reflect!==false,noPaste:t.noPaste===true,flow:t.flow!==false,createdAt:new Date().toISOString(),
       terms:t.terms.map(function(x,i){return {n:i+1,id:x.id||i+1,term:x.term,def:x.def||''}}),folder:folderId,sharedFrom:{code:r.code,by:r.sharedBy||''}};
     act.idSeq=act.terms.reduce(function(m,x){return Math.max(m,x.id)},0);
     TW.activities.push(act);TS.sel=nid;TS.tab='setup';TS.folder=folderId;if(folderId)revealFolder(folderId);remember();saveWork();
@@ -4122,7 +4124,7 @@ function deleteHexSpace(a){
 
 
 /* ---------- Editing Hex Spaces: clear Edit buttons, and pushing edits to open postings ---------- */
-function contentOf(a){return JSON.stringify({title:a.title||'',instructions:a.instructions||'',terms:(a.terms||[]).map(function(t){return [t.id,t.term,t.def||'']}),minTerms:a.minTerms==null?null:a.minTerms,minWords:a.minWords||0,dcOn:!!a.dcOn,dc:a.dc||[],board:a.board||null,starters:a.starters!==false,reflect:a.reflect!==false,noPaste:a.noPaste===true});}
+function contentOf(a){return JSON.stringify({title:a.title||'',instructions:a.instructions||'',terms:(a.terms||[]).map(function(t){return [t.id,t.term,t.def||'']}),minTerms:a.minTerms==null?null:a.minTerms,minWords:a.minWords||0,dcOn:!!a.dcOn,dc:a.dc||[],board:a.board||null,starters:a.starters!==false,reflect:a.reflect!==false,noPaste:a.noPaste===true,flow:a.flow!==false});}
 function openPostingsFor(ids){return (PX.posts||[]).filter(function(p){return ids.indexOf(p.activityId)>=0&&p.open!==false&&p.status==='PUBLISHED'});}
 function refreshPostings(list,done){
   if(!list.length)return;
@@ -4562,7 +4564,8 @@ var SUPPORTS=[
   {k:'translate',label:'Translate',hint:'Students can see terms and definitions in another language.'},
   {k:'reflect',label:'Reflection when turning in',hint:'Two short, optional questions before turning in.'},
   {k:'gallery',label:'Allow a gallery walk',hint:'You choose when to open it from the posting’s page.'},
-  {k:'noPaste',label:'Block pasting',hint:'Students must type their connections. You see how many paste attempts were blocked.'}];
+  {k:'noPaste',label:'Block pasting',hint:'Students must type their connections. You see how many paste attempts were blocked.'},
+  {k:'flow',label:'One connected board',hint:'Every hexagon must link into one group through explained connections before turning in.'}];
 var LANGS={es:'Español',zh:'中文',vi:'Tiếng Việt',ar:'العربية',tl:'Tagalog',ko:'한국어',ru:'Русский',pt:'Português',fr:'Français',ht:'Kreyòl ayisyen',hi:'हिन्दी',ja:'日本語',uk:'Українська',so:'Soomaali'};
 function on(k){return !ST||!ST.act||ST.act[k]!==false;}
 function canSpeak(){return typeof window!=='undefined'&&!!window.speechSynthesis&&typeof SpeechSynthesisUtterance!=='undefined';}
@@ -4588,12 +4591,13 @@ function supportPanel(a,changed){
     el('p',{class:'hint',style:'margin:0',text:'Defaults for new postings. You can switch any support (including definitions, read aloud and translation) on or off each time you post.'}),
     box('starters','Sentence starters','Tap-to-insert openers that use the two terms’ names.'),
     box('reflect','Reflection when turning in','“Which connection are you proudest of?” and “Which was hardest?” Both optional.'),
-    box('noPaste','Block pasting in connection explanations','Students must type each explanation. Paste attempts are blocked and counted for you.',true));
+    box('noPaste','Block pasting in connection explanations','Students must type each explanation. Paste attempts are blocked and counted for you.',true),
+    box('flow','Require one connected board','Every hexagon on the board must link into a single group through explained connections; no separate islands. Depth & Complexity icons can be the bridge.'));
 }
 /* ---------- Post dialog: student supports and versions ---------- */
 function supportsEditor(opts,act){
   act=act||{};var boxes={};
-  function dflt(k){if(opts&&typeof opts[k]==='boolean')return opts[k];if(k==='starters')return act.starters!==false;if(k==='reflect')return act.reflect!==false;if(k==='noPaste')return act.noPaste===true;return true;}
+  function dflt(k){if(opts&&typeof opts[k]==='boolean')return opts[k];if(k==='starters')return act.starters!==false;if(k==='reflect')return act.reflect!==false;if(k==='noPaste')return act.noPaste===true;if(k==='flow')return act.flow!==false;return true;}
   var sum=el('summary',null);
   function count(){var n=SUPPORTS.filter(function(s){return boxes[s.k].checked}).length;sum.textContent='Student supports · '+n+' of '+SUPPORTS.length+' on';}
   var rowsEl=SUPPORTS.map(function(s){
@@ -5397,6 +5401,42 @@ route=function(){
     }
   }
   v48Route49();
+};
+
+
+/* ===================== 4.10: one connected board ===================== */
+/* Groups of placed hexagons joined by explained, touching connections (biggest first). */
+function flowGroups(place,conns){
+  var parent={};Object.keys(place||{}).forEach(function(k){parent[k]=k});
+  function find(x){while(parent[x]!==x){parent[x]=parent[parent[x]];x=parent[x];}return x;}
+  activeConns(place||{},conns||{}).forEach(function(c){var a=String(c.a),b=String(c.b);if(parent[a]!=null&&parent[b]!=null)parent[find(a)]=find(b);});
+  var g={};Object.keys(parent).forEach(function(k){var r=find(k);(g[r]=g[r]||[]).push(+k)});
+  return Object.keys(g).map(function(k){return g[k]}).sort(function(x,y){return y.length-x.length});
+}
+function flowOn(){return !!(ST&&ST.act&&ST.act.flow===true);}
+function flowState(){var gs=flowGroups(ST.d.place,ST.d.conns),off=[];gs.slice(1).forEach(function(x){off=off.concat(x)});return {groups:gs.length,off:off,placed:Object.keys(ST.d.place||{}).length};}
+var v49Update=updateStudent;
+updateStudent=function(){
+  v49Update.apply(this,arguments);
+  if(!ST||!flowOn()||!refs.status)return;
+  var f=flowState(),ok=f.groups<=1;
+  var chip=el('div',{class:'stat flow-stat'+(ok&&f.placed>1?' done':''),title:'Every hexagon must link into one group through explained connections.'},
+    el('b',{text:f.placed<2?'—':ok?'✓':String(f.groups)}),el('span',{class:'muted',text:f.placed<2?'one connected board needed':ok?'one connected board':'separate groups: connect them'}));
+  var row=refs.status.lastChild;if(row&&refs.status.insertBefore)refs.status.insertBefore(chip,row);else add(refs.status,chip);
+  /* Outline the hexagons that aren't joined to the main group yet. */
+  if(refs.board&&refs.board.querySelectorAll){
+    var off={};f.off.forEach(function(n){off[n]=1});
+    refs.board.querySelectorAll('.hexg').forEach(function(g){var n=g.getAttribute&&g.getAttribute('data-n');if(g.classList)g.classList.toggle('flow-off',!!off[n]);});
+  }
+};
+var v49Ready=checkReady;
+checkReady=function(){
+  if(!v49Ready.apply(this,arguments))return false;
+  if(!flowOn())return true;
+  var f=flowState();if(f.groups<=1)return true;
+  var H=ST.H,names=f.off.slice(0,4).map(function(n){return H[n]?H[n].name:'?'});
+  toast('Connect everything into one group first. Not linked to the rest yet: '+names.join(', ')+(f.off.length>4?' and '+(f.off.length-4)+' more':'')+'. Add an explained connection that joins each group to the others.');
+  return false;
 };
 
 /* The homepage is the starting page: a visit to the bare site address opens it,

@@ -126,7 +126,7 @@ export async function handlePostingRoutes(c){
   const dates=postDates(b,fail,prior);
   const asg={...prior,...dates};
   if(typeof b.open==='boolean')asg.open=b.open;
-  if(b.options!==undefined)asg.options=cleanOptions({...cleanOptions(asg.options,info.act),...(b.options||{})},info.act);
+  if(b.options!==undefined)asg.options=cleanOptions({...cleanOptions(asg.options,info.act),flow:asg.options?.flow===true,...(b.options||{})},info.act);
   if(b.versions!==undefined){const v=cleanVersions(b.versions,b.refresh===true?(workspace?.activities?.find(x=>x.id===post.activity_id)||info.act):info.act,fail);if(v)asg.versions=v;else delete asg.versions;}
   const title=cleanTitle(b.title,info.act?.title);
   let act={...info.act,title};
