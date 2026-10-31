@@ -4,8 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Hexagonal thinking boards for classrooms: students arrange vocabulary hexagons and explain every connection, with optional Depth and Complexity icons.">
-<meta name="hex-connections-build" content="4.6.1">
+<meta name="hex-connections-build" content="4.7.0">
 <title>Hex Connections</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#0F6E6E">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
 
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=JetBrains+Mono:wght@500;700&display=swap">
 <script>try{var hxa=JSON.parse(localStorage.getItem('hx-appearance')||'{}');if(hxa.theme&&hxa.theme!=='system')document.documentElement.setAttribute('data-theme',hxa.theme);if(hxa.text==='large')document.documentElement.setAttribute('data-text','large')}catch(e){}</script>
@@ -573,6 +576,50 @@ h2,h3,.brand h1,.aitem b,.act-head h2,.modal h3{overflow-wrap:anywhere}
 .privacy{max-width:760px}
 .privacy ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
 @media (max-width:900px){.grader,.ins-grid{grid-template-columns:minmax(0,1fr)}.grader-side{max-height:none}}
+.sup-box{border:1px solid var(--line);border-radius:12px;padding:8px 12px;background:var(--panel)}
+.sup-box>summary{cursor:pointer;font-weight:700;padding:4px 0}
+.sup-box[open]>summary{margin-bottom:8px}
+.sup-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}
+.sup-row{display:flex;gap:8px;align-items:flex-start;cursor:pointer}
+.sup-row input{margin-top:3px;flex:none}
+.sup-row>span{display:flex;flex-direction:column;gap:1px}
+.ver-card{border:1px dashed var(--line);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px}
+.ver-card input[type=text]{max-width:200px}
+.term-chips{display:flex;flex-wrap:wrap;gap:6px}
+.term-chip{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:999px;padding:3px 10px;font:inherit;font-size:.86rem;cursor:pointer;text-decoration:line-through}
+.term-chip.on{background:var(--teal-soft);color:var(--teal);border-color:var(--teal);text-decoration:none;font-weight:700}
+.chip.off{opacity:.7;text-decoration:line-through}
+.st-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 8px}
+.lang-pick{display:inline-flex;align-items:center;gap:6px;font-weight:700}.lang-pick select{min-height:36px;width:auto}
+.tr-block{margin:0;background:var(--t4,var(--honey-soft));border-radius:8px;padding:6px 10px;font-size:.92rem}
+.speak-btn{gap:4px}
+.writing-helps{margin-bottom:4px}
+.starter-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.starter{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:4px 10px;font:inherit;font-size:.86rem;cursor:pointer;text-align:left}
+.starter:hover,.starter:focus-visible{border-color:var(--teal);background:var(--teal-soft)}
+.reflect-box{background:var(--t1);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:4px}
+.reflect-box p{margin:0}
+.replay-board{max-height:60vh}
+.replay-ctl{gap:10px}.replay-ctl input[type=range]{flex:1;min-width:160px}
+.gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.g-card{display:flex;flex-direction:column;gap:8px}
+.g-card.mine{border-color:var(--teal);border-width:2px}
+.g-board{min-height:0}.g-board .board-svg{max-height:300px}
+.g-comments{display:flex;flex-direction:column;gap:6px}
+.g-cmt{display:flex;flex-wrap:wrap;gap:6px;align-items:baseline;border-radius:10px;padding:6px 10px;background:var(--t1)}
+.g-cmt.glow{background:var(--honey-soft)}.g-cmt.grow{background:var(--teal-soft)}
+.g-cmt.hidden-c{opacity:.55}
+.g-kind{font-weight:700;white-space:nowrap}
+.g-form{display:flex;flex-direction:column;gap:6px}
+.btn.kind.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.post-extras h4{margin:4px 0 0}
+.ver-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:6px}
+.ver-row{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--t1);border-radius:8px;padding:4px 8px}
+.lib-filters input[type=search]{flex:1;min-width:200px}
+.lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.lib-card{display:flex;flex-direction:column;gap:8px}
+.btn.microsoft{background:var(--panel);border:1px solid var(--line);color:var(--ink);gap:10px}
+@media (max-width:600px){.gallery-grid,.lib-grid{grid-template-columns:minmax(0,1fr)}.ver-card input[type=text]{max-width:none}}
 </style>
 <div id="root"></div>
 <script type="application/json" id="hx-data">{"version":4,"classes":[],"activities":[]}</script>
@@ -625,6 +672,9 @@ function keyToPath(key){
   if (key === 'teacher/editor') return '/teacher/hex-space';
   if (key === 'teacher/new') return '/teacher/hex-space/new';
   if (key === 'teacher/shared') return '/teacher/shared';
+  if (key === 'teacher/library') return '/teacher/library';
+  if (key === 'owner') return '/owner';
+  if ((m = key.match(/^gallery-(.+)$/))) return '/gallery/' + encSeg(m[1]);
   if ((m = key.match(/^c-(.+)$/))) return '/code/' + encSeg(m[1]);
   if ((m = key.match(/^share-(.+)$/))) return '/share/' + encSeg(m[1]);
   if ((m = key.match(/^teacher\/class-(.+)$/))) return '/teacher/classes/' + encSeg(decSeg(m[1]));
@@ -639,10 +689,11 @@ function pathToKey(path){
   var m;
   var exact = {'/':'#home','/index.html':'#home','/login':'#signin','/signup':'#signup','/code':'#code','/new':'#new','/privacy':'#privacy',
     '/teacher':'#teacher','/teacher/classes':'#teacher','/teacher/hex-space':'#teacher/editor','/teacher/hex-space/new':'#teacher/new',
-    '/teacher/shared':'#teacher/shared','/student':'','/student/assignments':''};
+    '/teacher/shared':'#teacher/shared','/teacher/library':'#teacher/library','/owner':'#owner','/student':'','/student/assignments':''};
   if (Object.prototype.hasOwnProperty.call(exact, path)) return exact[path];
   if ((m = path.match(/^\/code\/([^/]+)$/))) return '#c-' + decSeg(m[1]);
   if ((m = path.match(/^\/share\/([^/]+)$/))) return '#share-' + decSeg(m[1]);
+  if ((m = path.match(/^\/gallery\/([^/]+)$/))) return '#gallery-' + decSeg(m[1]);
   if ((m = path.match(/^\/teacher\/classes\/([^/]+)$/))) return '#teacher/class-' + encodeURIComponent(decSeg(m[1]));
   if ((m = path.match(/^\/teacher\/assignments\/([^/]+)$/))) return '#teacher/post-' + decSeg(m[1]);
   if ((m = path.match(/^\/teacher\/hex-space\/([^/]+)$/))) return '#teacher/edit-' + encodeURIComponent(decSeg(m[1]));
@@ -1285,7 +1336,7 @@ function renderDetail(){
   fill(refs.detail, 
     el('div',{class:'row',style:'justify-content:space-between'}, el('span',{class:'eyebrow mono',text:h.label}), el('button',{class:'btn ghost sm',onclick:function(){ select(null); },text:'Close'})),
     h.kind === 'dc' ? el('div',{class:'lens'}, glyphSVG(h.key, 28), el('div',null, el('h3',{text:h.name}), el('p',{style:'margin:2px 0 0;font-size:.88rem',text:h.def}))) : el('h3',{text:h.name}),
-    h.kind === 'dc' ? null : (h.def ? el('p',{class:'def',text:h.def}) : el('p',{class:'muted',style:'margin:0',text:'No definition provided.'})),
+    h.kind === 'dc' ? null : (h.def ? el('p',{class:'def',text:h.def}) : el('p',{class:'muted',style:'margin:0',text:ST.act.showDefs===false?'Definitions are hidden for this assignment.':'No definition provided.'})),
     mine.length ? el('ol',{class:'clist'}, mine.map(connRow)) : null,
     el('div',{class:'row'},
       !onBoard ? el('button',{class:'btn primary sm',onclick:function(){ autoPlace(n); },text:'Place on board'}) : null,
@@ -1942,6 +1993,7 @@ function setupPane(a){
     el('div',{class:'grid2'},
       field('f-mint','Minimum terms to use', minTermsInput(), 'Leave blank to require every term. A term counts once it’s on the board with a justified connection.'),
       field('f-minw','Minimum words per reason', bind(el('input',{type:'number',id:'f-minw',min:0,max:60,value:a.minWords||0}),'minWords',true), 'Checked in the connection popup')),
+    supportPanel(a,function(){ ensureBar(); }),
     boardPanel,
     el('div',{class:'panel stack',style:'gap:10px'},
       el('label',{class:'row',for:'f-dc',style:'font-weight:700'}, dcBox, 'Include Depth and Complexity icons'),
@@ -1949,7 +2001,8 @@ function setupPane(a){
       dcGrid),
     preview,
     el('div',{class:'row',style:'justify-content:space-between;border-top:1px solid var(--line);padding-top:14px'},
-      el('button',{class:'btn',id:'f-try',onclick:function(){ previewAsStudent(a); },disabled:!a.terms.length,text:'Try it as a student'}),
+      el('div',{class:'row'},el('button',{class:'btn',id:'f-try',onclick:function(){ previewAsStudent(a); },disabled:!a.terms.length,text:'Try it as a student'}),
+        el('button',{class:'btn',onclick:function(){ printTiles(a); },disabled:!a.terms.length,text:'Print tiles'})),
       el('button',{class:'btn danger sm',onclick:function(){ deleteHexSpace(a); },text:'Delete Hex Space'})
     )
   );
@@ -2233,7 +2286,7 @@ function loadPlatform(){
   if(PX.loading || !GA.user) return;
   PX.loading=true;PX.error='';
   var loadingUid=GA.user.uid;
-  platformApi('me').then(function(r){
+  platformApi('me').then(function(r){PX.owner=!!(r&&r.owner);
     if(PX.loginRole){
       var selected=PX.loginRole,signup=PX.signupRequested;PX.loginRole=null;PX.signupRequested=false;
       var endpoint=signup||!r.profile.role?'register':'profile';
@@ -2613,6 +2666,7 @@ function teacherPostDashboard(postId){
   dashboardAdd(body,el('h3',{text:a.title}),el('p',{class:'muted',style:'margin:0',text:a.courseName+' · '+(typeof postDatesText==='function'?postDatesText(a)+' · ':'')+(a.code?'code '+fmtCode(a.code)+' · ':'')+a.submissions+' submission'+(a.submissions===1?'':'s')}),el('div',{class:'row'},el('button',{class:'btn',onclick:function(){route()},text:'Refresh'}),el('a',{class:'btn ghost',href:'#teacher/edit-'+encodeURIComponent(a.activityId),text:'Edit Hex Space'})));
   var subs=r[1].submissions||[];PX.gradeList=subs;
   dashboardAdd(body,postToolsRow(a,subs));
+  dashboardAdd(body,postExtras(postId,a,subs));
   if(!subs.length)dashboardMessage(body,'No student submissions yet.');
   subs.forEach(function(p){dashboardAdd(body,el('div',{class:'panel row',style:'justify-content:space-between'},el('div',null,el('b',{text:p.name}),el('p',{class:'muted',text:(p.group?p.group.name+' · ':'')+({TURNED_IN:'Turned in',GRADED:'Graded',DRAFT:'Unsubmitted · still working',SAVED_PENDING_CLASSROOM:'Turning in…'}[p._status]||String(p._status||'').replace(/_/g,' ').toLowerCase())+(p._grade==null?'':' · '+p._grade+' / '+p._maxPoints)})),el('button',{class:'btn primary',onclick:function(){openGrader(subs,subs.indexOf(p))},text:p._feedback||p._grade!=null?'Review feedback':'View board & grade'})))});
   dashboardAdd(body,el('h3',{text:'Group project boards'}),el('p',{class:'muted',text:a.manual?'Create a group and give its code to the students in it. They build one shared board, and each member turns in their own copy.':'Create a group and share its code with enrolled students. Each member turns in their own Classroom assignment.'}),el('button',{class:'btn primary',style:'align-self:flex-start',disabled:!!r[2].setupError,onclick:function(){createProjectGroup(postId)},text:'Create group'}));
@@ -3253,7 +3307,8 @@ function openShare(a){
       el('div',{class:'row'},el('button',{class:'btn primary',onclick:function(){copyText(link,'Share link')},text:'Copy link'}),
         el('button',{class:'btn',title:'Teachers who open the link get your latest saved version',onclick:function(e){create(e&&e.target)},text:'Update shared copy'}),
         el('button',{class:'btn danger',onclick:function(){platformApi('shares/'+share.code+'/revoke',{}).then(function(){draw({revoked:true});toast('Sharing turned off. The link no longer works.')}).catch(platformError)},text:'Stop sharing'})),
-      el('p',{class:'hint',style:'margin:0',text:share.copies+' teacher'+(share.copies===1?' has':'s have')+' saved a copy · shared version from '+fmtTime(share.updatedAt)+'. Edits you make later reach the link only when you choose Update shared copy.'}));
+      el('p',{class:'hint',style:'margin:0',text:share.copies+' teacher'+(share.copies===1?' has':'s have')+' saved a copy · shared version from '+fmtTime(share.updatedAt)+'. Edits you make later reach the link only when you choose Update shared copy.'}),
+      libraryBox(share));
   }
   platformApi('shares').then(function(r){draw((r.shares||[]).filter(function(s){return s.activityId===a.id})[0])}).catch(function(e){
     if(e.code==='share-setup'){fill(status,el('p',{class:'err',role:'alert',text:e.message}));return;}draw(null);
@@ -3296,7 +3351,7 @@ function copyShared(code,folderId,btn){
     if(!TW){if(PX.teacherData)DATA=clone(PX.teacherData);TW=clone(DATA);var local=lsGet('hx-teacher-work');if(local&&Array.isArray(local.activities))TW=local;}
     TW.folders=TW.folders||[];
     if(folderId&&!folderById(folderId))folderId=null;
-    var act={id:nid,title:t.title,instructions:t.instructions||'',minTerms:t.minTerms==null?null:t.minTerms,minWords:t.minWords||0,assign:{},dcOn:!!t.dcOn,dc:t.dc||[],board:t.board||{shape:'hexagon',size:'roomy',orient:'pointy',rotate:true},createdAt:new Date().toISOString(),
+    var act={id:nid,title:t.title,instructions:t.instructions||'',minTerms:t.minTerms==null?null:t.minTerms,minWords:t.minWords||0,assign:{},dcOn:!!t.dcOn,dc:t.dc||[],board:t.board||{shape:'hexagon',size:'roomy',orient:'pointy',rotate:true},starters:t.starters!==false,reflect:t.reflect!==false,createdAt:new Date().toISOString(),
       terms:t.terms.map(function(x,i){return {n:i+1,id:x.id||i+1,term:x.term,def:x.def||''}}),folder:folderId,sharedFrom:{code:r.code,by:r.sharedBy||''}};
     act.idSeq=act.terms.reduce(function(m,x){return Math.max(m,x.id)},0);
     TW.activities.push(act);TS.sel=nid;TS.tab='setup';TS.folder=folderId;if(folderId)revealFolder(folderId);remember();saveWork();
@@ -3441,7 +3496,8 @@ function renderLogin(){
       el('div',{class:'role-picks'},roleCard('teacher','Teacher','Build Hex Spaces, organize folders and assign classes.'),roleCard('student','Student','Join classes with a code and build your boards.')),
       el('p',{class:'hint',style:'margin:0',text:'Choose carefully: the account type can’t be changed later.'})):null,
     el('button',{class:'btn google',type:'button',disabled:busy()||!ready,onclick:google},googleMark(),el('span',{text:GA.busy?'Connecting…':'Continue with Google'})),
-    el('p',{class:'hint',style:'margin:-4px 0 0',text:'Any Google account works, including school accounts.'}),
+    CFG.microsoft?el('button',{class:'btn microsoft',type:'button',disabled:busy()||!ready,onclick:function(){if(busy()||needRole())return;LG.err='';GA.error='';PX.loginRole=signup?LG.role:null;PX.signupRequested=signup;microsoftSignIn();}},microsoftMark(),el('span',{text:'Continue with Microsoft'})):null,
+    el('p',{class:'hint',style:'margin:-4px 0 0',text:CFG.microsoft?'Any Google or Microsoft account works, including school accounts. Google Classroom features need a Google account.':'Any Google account works, including school accounts.'}),
     el('div',{class:'or',role:'separator'},el('span',{text:'or use your email'})),
     el('form',{class:'stack',style:'gap:10px',novalidate:true,onsubmit:submit},
       signup?field('Name',name):null,
@@ -3491,7 +3547,7 @@ loadPlatform=function(){
   if(PX.loading||!GA.user)return;
   PX.loading=true;PX.error='';
   var loadingUid=GA.user.uid;
-  platformApi('me').then(function(r){
+  platformApi('me').then(function(r){PX.owner=!!(r&&r.owner);
     var selected=PX.loginRole||pendingSignupRole(),signup=PX.signupRequested;PX.loginRole=null;PX.signupRequested=false;
     if(!selected)return r;
     if(r.profile.role){
@@ -3543,6 +3599,7 @@ navItems=function(){
     {label:'Classes',href:'#teacher',match:/^#teacher(\/class-.*|\/post-.*|)$/},
     {label:'Hex Space',href:'#teacher/editor',match:/^#teacher\/(editor|edit-.*)$/},
     {label:'Shared links',href:'#teacher/shared',match:/^#teacher\/shared$/},
+    {label:'Library',href:'#teacher/library',match:/^#teacher\/library$/},
     {label:'+ New Hex Space',href:'#teacher/new',cta:true}];
   return [home,
     {label:'My assignments',href:'#',match:/^(#?|#a-.*)$/},
@@ -3778,6 +3835,7 @@ function openPostDialog(a,post){
   var pts=el('input',{type:'number',id:'pd-points',min:1,max:10000,value:editing?(post.maxPoints||100):100});
   var openBox=editing?el('input',{type:'checkbox',id:'pd-open',checked:post.open!==false}):null;
   var refresh=editing?el('input',{type:'checkbox',id:'pd-refresh',checked:true}):null;
+  var supports=supportsEditor(editing?post.options:null,editing?(W.activities||[]).find(function(x){return x.id===post.activityId})||a:a);
   var err=el('p',{class:'err',role:'alert'});
   var ptsRow=el('label',{class:'fld',for:'pd-points'},'Points',pts,el('span',{class:'hint',text:'Used for grades returned to Google Classroom.'}));
   function current(){return editing?cls:TW.classes.find(function(c){return c.id===classSel.value});}
@@ -3793,6 +3851,7 @@ function openPostDialog(a,post){
     var body={title:String(name.value).trim(),start:start.value||'',due:due.value||'',tz:TEACHER_TZ};
     if(c.classroomId)body.maxPoints=max;
     if(editing){body.open=openBox.checked;body.refresh=refresh.checked;}else{body.activityId=a.id;body.classId=c.id;}
+    body.options=supports.value();
     var classroom=!!c.classroomId;
     function send(){
       go.disabled=true;go.textContent=editing?'Saving…':'Posting…';
@@ -3816,6 +3875,7 @@ function openPostDialog(a,post){
       el('label',{class:'fld',for:'pd-due'},'Due date (optional)',due,el('span',{class:'hint',text:'Due at the end of the day. Late work is accepted and marked Late.'}))),
     ptsRow,
     editing?el('label',{class:'row',for:'pd-open',style:'font-weight:700'},openBox,'Open for students'):null,
+    supports.node,
     editing?el('label',{class:'row',for:'pd-refresh',style:'font-weight:400'},refresh,'Also update hexagons and settings from this Hex Space'):null,
     el('p',{class:'hint',style:'margin:0',text:'Dates use your time zone ('+TEACHER_TZ.replace(/_/g,' ')+').'}),
     err,
@@ -3828,7 +3888,8 @@ function postedDialog(r,c){
     el('p',{style:'margin:0',text:postDatesText(r)+'.'}),
     c.classroomId?el('p',{class:'muted',style:'margin:0',text:r.scheduled?'It’s scheduled in Google Classroom and appears there on the start date.':'It’s in Google Classroom now with a link students open to start.'}):el('p',{style:'margin:0',text:'Students go to '+location.host+', choose Enter a class code and type:'}),
     el('div',{class:'row'},el('span',{class:'codebig',text:fmtCode(r.code)}),el('button',{class:'btn sm',onclick:function(){copyText(fmtCode(r.code),'Code')},text:'Copy code'}),
-      c.classroomId?null:el('button',{class:'btn sm',onclick:function(){copyText(link,'Student link')},text:'Copy student link'})),
+      c.classroomId?null:el('button',{class:'btn sm',onclick:function(){copyText(link,'Student link')},text:'Copy student link'}),
+      c.classroomId?null:classroomShareButton(link,r.title)),
     r.classroomUrl?el('a',{class:'btn',href:r.classroomUrl,target:'_blank',rel:'noopener',text:'Open in Google Classroom ↗'}):null,
     el('div',{class:'row',style:'justify-content:flex-end'},el('button',{class:'btn primary','data-autofocus':true,onclick:closeModal,text:'Done'}))]);
 }
@@ -3925,7 +3986,8 @@ openPostDialog=function(a,post,opts){
   var boxes=classes.map(function(c){return {c:c,box:el('input',{type:'checkbox',id:'pd-c-'+c.id,checked:pre.indexOf(c.id)>=0||(classes.length===1)})}});
   var name=el('input',{type:'text',id:'pd-name',maxlength:200,value:chosen.title||''}),nameTouched=false;
   name.addEventListener('input',function(){nameTouched=true});
-  if(actSel)actSel.addEventListener('change',function(){chosen=acts.find(function(x){return x.id===actSel.value})||chosen;if(!nameTouched)name.value=chosen.title;});
+  var vers=versionsEditor(chosen),versBox=el('div',null,vers.node),supports=supportsEditor(null,chosen),supBox=el('div',null,supports.node);
+  if(actSel)actSel.addEventListener('change',function(){chosen=acts.find(function(x){return x.id===actSel.value})||chosen;if(!nameTouched)name.value=chosen.title;vers=versionsEditor(chosen);fill(versBox,vers.node);supports=supportsEditor(null,chosen);fill(supBox,supports.node);});
   var start=el('input',{type:'date',id:'pd-start',value:todayLocal()});
   var due=el('input',{type:'date',id:'pd-due',value:''});
   var pts=el('input',{type:'number',id:'pd-points',min:1,max:10000,value:100});
@@ -3944,7 +4006,8 @@ openPostDialog=function(a,post,opts){
     var classroom=list.some(function(c){return c.classroomId});
     var max=Number(pts.value);if(classroom&&(!Number.isFinite(max)||max<=0||max>10000)){err.textContent='Enter points between 1 and 10,000.';return;}
     if(classroom&&!classroomReady('teacher')){closeModal();connectClassroom('teacher',function(){openPostDialog(a,null,{pickActivity:opts.pickActivity,classIds:list.map(function(c){return c.id})});toast('Classroom connected. Choose Post again.')},true);return;}
-    var base={activityId:chosen.id,title:String(name.value).trim(),start:start.value||'',due:due.value||'',tz:TEACHER_TZ};
+    var vv=vers.value();if(vv&&vv.error){err.textContent=vv.error;return;}
+    var base={activityId:chosen.id,title:String(name.value).trim(),start:start.value||'',due:due.value||'',tz:TEACHER_TZ,options:supports.value()};if(vv)base.versions=vv;
     go.disabled=true;go.textContent='Posting…';
     var results=[];
     var chain=(TW?saveWorkspaceCloud():Promise.resolve());
@@ -3970,6 +4033,8 @@ openPostDialog=function(a,post,opts){
       el('label',{class:'fld',for:'pd-start'},'Start date',start,el('span',{class:'hint',text:'Students can open it from this day.'})),
       el('label',{class:'fld',for:'pd-due'},'Due date (optional)',due,el('span',{class:'hint',text:'Due at the end of the day. Late work is accepted and marked Late.'}))),
     ptsRow,
+    supBox,
+    versBox,
     el('p',{class:'hint',style:'margin:0',text:'Dates use your time zone ('+TEACHER_TZ.replace(/_/g,' ')+').'}),
     err,
     el('div',{class:'row',style:'justify-content:flex-end'},el('button',{class:'btn ghost',onclick:closeModal,text:'Cancel'}),go)]);
@@ -3985,7 +4050,7 @@ function postedSummary(results){
       return el('div',{class:'posted-row'},el('b',{text:x.c.name}),el('span',{class:'codebig sm',text:fmtCode(x.r.code)}),
         el('button',{class:'btn sm',onclick:function(){copyText(fmtCode(x.r.code),'Code')},text:'Copy code'}),
         x.c.classroomId?(x.r.classroomUrl?el('a',{class:'btn sm',href:x.r.classroomUrl,target:'_blank',rel:'noopener',text:x.r.scheduled?'Scheduled in Classroom ↗':'Open in Classroom ↗'}):null)
-          :el('button',{class:'btn sm',onclick:function(){copyText(siteLink('#c-'+x.r.code),'Student link')},text:'Copy student link'}));
+          :[el('button',{class:'btn sm',onclick:function(){copyText(siteLink('#c-'+x.r.code),'Student link')},text:'Copy student link'}),classroomShareButton(siteLink('#c-'+x.r.code),x.r.title)]);
     })),
     bad.length?el('div',{class:'stack',style:'gap:4px'},bad.map(function(x){return el('p',{class:'err',style:'margin:0',text:x.c.name+': '+(x.e.message||'Couldn’t post.')})})):null,
     el('div',{class:'row',style:'justify-content:flex-end'},el('button',{class:'btn primary','data-autofocus':true,onclick:closeModal,text:'Done'}))]);
@@ -4023,7 +4088,7 @@ function deleteHexSpace(a){
 
 
 /* ---------- Editing Hex Spaces: clear Edit buttons, and pushing edits to open postings ---------- */
-function contentOf(a){return JSON.stringify({title:a.title||'',instructions:a.instructions||'',terms:(a.terms||[]).map(function(t){return [t.id,t.term,t.def||'']}),minTerms:a.minTerms==null?null:a.minTerms,minWords:a.minWords||0,dcOn:!!a.dcOn,dc:a.dc||[],board:a.board||null});}
+function contentOf(a){return JSON.stringify({title:a.title||'',instructions:a.instructions||'',terms:(a.terms||[]).map(function(t){return [t.id,t.term,t.def||'']}),minTerms:a.minTerms==null?null:a.minTerms,minWords:a.minWords||0,dcOn:!!a.dcOn,dc:a.dc||[],board:a.board||null,starters:a.starters!==false,reflect:a.reflect!==false});}
 function openPostingsFor(ids){return (PX.posts||[]).filter(function(p){return ids.indexOf(p.activityId)>=0&&p.open!==false&&p.status==='PUBLISHED'});}
 function refreshPostings(list,done){
   if(!list.length)return;
@@ -4264,6 +4329,7 @@ function openGrader(list,index){
       el('div',{class:'board grader-board'},boardSVG(a,p.placements||{},conns,{})),
       el('div',{class:'grader-side'},
         el('p',{class:'muted',style:'margin:0'},(p.termsUsed!=null?p.termsUsed+' terms used · ':'')+cl.length+' connection'+(cl.length===1?'':'s')+'. Score each 0–2; the grade fills in from the scores.'),
+        graderExtras(p,list,index),
         cl.length?el('ol',{class:'gr-list'},rows()):el('p',{class:'muted',text:'No connections to score.'}),
         addBank)),
     el('div',{class:'grader-foot'},
@@ -4452,6 +4518,496 @@ accountItems=function(role,ready){
 };
 var v44Route45=route;
 route=function(){if((NAV.hash||'')==='#privacy'){PX.routeId++;ST=null;caps.teacher=false;renderPrivacy();return;}v44Route45();};
+
+/* ===================== 4.7: student supports, printable tiles, versions, gallery walk, library, replay, offline ===================== */
+var CFG={microsoft:false,analyticsToken:''};
+var SUPPORTS=[
+  {k:'defs',label:'Show definitions',hint:'Off: students see only the terms. Definitions are never sent to their device.'},
+  {k:'starters',label:'Sentence starters',hint:'Tap-to-insert openers in the connection box.'},
+  {k:'readAloud',label:'Read aloud',hint:'A speaker button reads terms, definitions and directions.'},
+  {k:'translate',label:'Translate',hint:'Students can see terms and definitions in another language.'},
+  {k:'reflect',label:'Reflection when turning in',hint:'Two short, optional questions before turning in.'},
+  {k:'gallery',label:'Allow a gallery walk',hint:'You choose when to open it from the posting’s page.'}];
+var LANGS={es:'Español',zh:'中文',vi:'Tiếng Việt',ar:'العربية',tl:'Tagalog',ko:'한국어',ru:'Русский',pt:'Português',fr:'Français',ht:'Kreyòl ayisyen',hi:'हिन्दी',ja:'日本語',uk:'Українська',so:'Soomaali'};
+function on(k){return !ST||!ST.act||ST.act[k]!==false;}
+function canSpeak(){return typeof window!=='undefined'&&!!window.speechSynthesis&&typeof SpeechSynthesisUtterance!=='undefined';}
+function speak(text){
+  if(!canSpeak()){toast('Read aloud isn’t available in this browser.');return;}
+  try{window.speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(String(text||''));u.lang='en-US';u.rate=0.95;window.speechSynthesis.speak(u);}catch(e){toast('Read aloud isn’t available in this browser.');}
+}
+function speakBtn(label,getText){return el('button',{type:'button',class:'btn ghost sm speak-btn','aria-label':label,title:label,onclick:function(){speak(getText())}},'🔊 ',el('span',{text:'Read aloud'}));}
+function fireInput(ta){
+  if(ta.dispatchEvent&&typeof Event!=='undefined')ta.dispatchEvent(new Event('input',{bubbles:true}));
+  else if(ta.listeners&&ta.listeners.input)ta.listeners.input({target:ta});
+  if(ta.focus)ta.focus();
+}
+
+/* ---------- Hex Space defaults (editor) ---------- */
+function supportPanel(a,changed){
+  function box(key,label,hint){
+    var cb=el('input',{type:'checkbox',id:'f-'+key,checked:a[key]!==false});
+    cb.addEventListener('change',function(){a[key]=cb.checked;changed();});
+    return el('label',{class:'sup-row',for:'f-'+key},cb,el('span',null,el('b',{text:label}),el('span',{class:'hint',text:hint})));
+  }
+  return el('div',{class:'panel stack',style:'gap:8px'},el('h3',{text:'Student supports'}),
+    el('p',{class:'hint',style:'margin:0',text:'Defaults for new postings. You can switch any support (including definitions, read aloud and translation) on or off each time you post.'}),
+    box('starters','Sentence starters','Tap-to-insert openers that use the two terms’ names.'),
+    box('reflect','Reflection when turning in','“Which connection are you proudest of?” and “Which was hardest?” Both optional.'));
+}
+/* ---------- Post dialog: student supports and versions ---------- */
+function supportsEditor(opts,act){
+  act=act||{};var boxes={};
+  function dflt(k){if(opts&&typeof opts[k]==='boolean')return opts[k];if(k==='starters')return act.starters!==false;if(k==='reflect')return act.reflect!==false;return true;}
+  var sum=el('summary',null);
+  function count(){var n=SUPPORTS.filter(function(s){return boxes[s.k].checked}).length;sum.textContent='Student supports · '+n+' of '+SUPPORTS.length+' on';}
+  var rowsEl=SUPPORTS.map(function(s){
+    var cb=el('input',{type:'checkbox',id:'ps-'+s.k,checked:dflt(s.k)});boxes[s.k]=cb;cb.addEventListener('change',count);
+    return el('label',{class:'sup-row',for:'ps-'+s.k},cb,el('span',null,el('b',{text:s.label}),el('span',{class:'hint',text:s.hint})));
+  });
+  count();
+  var node=el('details',{class:'sup-box'},sum,el('div',{class:'sup-grid'},rowsEl));
+  return {node:node,value:function(){var o={};SUPPORTS.forEach(function(s){o[s.k]=!!boxes[s.k].checked});return o;}};
+}
+function versionsEditor(act){
+  act=act||{terms:[]};var terms=act.terms||[],list=[],holder=el('div',{class:'stack',style:'gap:8px'});
+  var toggle=el('input',{type:'checkbox',id:'pv-on'});
+  var addBtn=el('button',{type:'button',class:'btn sm',text:'+ Add version',onclick:function(){if(list.length<4){list.push(newV(list.length));draw();}}});
+  function newV(i){return {name:'Version '+String.fromCharCode(65+i),terms:terms.map(function(t){return t.id||t.n}),starters:true};}
+  function draw(){
+    if(!toggle.checked){fill(holder);return;}
+    fill(holder,list.map(function(v,i){
+      var name=el('input',{type:'text',maxlength:40,value:v.name,'aria-label':'Version name'});name.addEventListener('input',function(){v.name=name.value});
+      var st=el('input',{type:'checkbox',id:'pv-st-'+i,checked:v.starters!==false});st.addEventListener('change',function(){v.starters=st.checked});
+      return el('div',{class:'ver-card'},
+        el('div',{class:'row',style:'gap:8px'},name,el('label',{class:'row',for:'pv-st-'+i,style:'gap:6px;font-size:.88rem'},st,'Sentence starters'),
+          list.length>2?el('button',{type:'button',class:'btn ghost sm',text:'Remove',onclick:function(){list.splice(i,1);draw();}}):null),
+        el('div',{class:'term-chips'},terms.map(function(t){
+          var id=t.id||t.n,onNow=v.terms.indexOf(id)>=0;
+          return el('button',{type:'button',class:'term-chip'+(onNow?' on':''),'aria-pressed':onNow?'true':'false',text:t.term||('T'+id),onclick:function(e){
+            var j=v.terms.indexOf(id);if(j>=0)v.terms.splice(j,1);else v.terms.push(id);draw();}});
+        })),
+        el('span',{class:'hint',text:v.terms.length+' of '+terms.length+' terms'}));
+    }),list.length<4?addBtn:null,el('p',{class:'hint',style:'margin:0',text:'Everyone starts in '+(list[0]?list[0].name:'the first version')+'. Move students between versions from the posting’s page once they’ve opened it. Students never see version names.'}));
+  }
+  toggle.addEventListener('change',function(){if(toggle.checked&&!list.length)list=[newV(0),newV(1)];draw();});
+  var node=el('details',{class:'sup-box'},el('summary',{text:'Differentiate: different terms for different students'}),
+    el('label',{class:'row',for:'pv-on',style:'font-weight:700;gap:8px'},toggle,'Use versions of this assignment'),holder);
+  return {node:node,value:function(){
+    if(!toggle.checked)return null;
+    for(var i=0;i<list.length;i++)if(!list[i].terms.length)return {error:'Give '+(list[i].name||'each version')+' at least one term.'};
+    return list.map(function(v){return {name:String(v.name||'').trim().slice(0,40),terms:v.terms.slice(),starters:v.starters!==false}});
+  }};
+}
+function classroomShareUrl(url,title){return 'https://classroom.google.com/share?url='+encodeURIComponent(url)+(title?'&title='+encodeURIComponent(title):'');}
+function classroomShareButton(url,title){return el('a',{class:'btn sm',href:classroomShareUrl(url,title),target:'_blank',rel:'noopener',title:'Post this link in Google Classroom',text:'Share to Classroom ↗'});}
+
+/* ---------- Printable tiles ---------- */
+function printTileHTML(a,opts){
+  function esc(t){return String(t||'').replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function tile(label,term,def,lens){
+    var pts=[];for(var i=0;i<6;i++){var ang=Math.PI/180*(60*i-30);pts.push((100+96*Math.cos(ang)).toFixed(1)+','+(100+96*Math.sin(ang)).toFixed(1));}
+    var tl=wrapText(term,14,3),dl=def?wrapText(def,26,6):[];
+    var ty=(def?84-dl.length*5:100)-(tl.length-1)*9,out='<svg class="t" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><polygon points="'+pts.join(' ')+'" fill="'+(lens?'#FFF4D6':'#fff')+'" stroke="#333" stroke-width="1.5" stroke-dasharray="5 4"/>';
+    out+='<text x="100" y="34" text-anchor="middle" font-size="11" fill="#666" font-family="monospace">'+esc(label)+'</text>';
+    tl.forEach(function(l,i){out+='<text x="100" y="'+(ty+i*18)+'" text-anchor="middle" font-size="17" font-weight="700" font-family="Arial,sans-serif">'+esc(l)+'</text>'});
+    dl.forEach(function(l,i){out+='<text x="100" y="'+(ty+tl.length*18+6+i*12)+'" text-anchor="middle" font-size="10" font-family="Arial,sans-serif" fill="#333">'+esc(l)+'</text>'});
+    return out+'</svg>';
+  }
+  var H=hexMap(a),list=hexList(a).filter(function(h){return opts.lenses||h.kind!=='dc'});
+  var tiles=list.map(function(h){return tile(h.label,h.name,opts.defs?(h.def||''):'',h.kind==='dc')}).join('');
+  return '<!doctype html><html><head><meta charset="utf-8"><title>'+esc(a.title||'Hex tiles')+' · printable tiles</title><style>'+
+    'body{font-family:Arial,sans-serif;margin:24px;color:#111}h1{font-size:18px;margin:0 0 4px}p{margin:0 0 12px;font-size:12px;color:#444}'+
+    '.grid{display:flex;flex-wrap:wrap;gap:4px}.t{width:2.4in;height:2.4in;break-inside:avoid;page-break-inside:avoid}'+
+    '@media print{body{margin:.3in}.noprint{display:none}}</style></head><body>'+
+    '<h1>'+esc(a.title||'Hex tiles')+'</h1><p>Cut along the dashed lines. Arrange the hexagons so touching sides share a connection, then explain each connection.'+(a.instructions?' '+esc(a.instructions):'')+'</p>'+
+    '<p class="noprint"><button onclick="print()">Print</button></p><div class="grid">'+tiles+'</div></body></html>';
+}
+function printTiles(a){
+  var defs=el('input',{type:'checkbox',id:'pt-defs',checked:true}),lenses=el('input',{type:'checkbox',id:'pt-lens',checked:!!a.dcOn});
+  openModal([el('div',{class:'eyebrow',text:'Printable tiles'}),el('h3',{style:'font-size:1.2rem',text:'Print “'+(a.title||'Untitled')+'”'}),
+    el('p',{style:'margin:0',text:'Opens a printable page of cut-out hexagons, about 2.4 inches across. Print it, or choose Save as PDF in the print dialog.'}),
+    el('label',{class:'row',for:'pt-defs'},defs,'Include definitions'),
+    a.dcOn&&(a.dc||[]).length?el('label',{class:'row',for:'pt-lens'},lenses,'Include Depth & Complexity hexagons'):null,
+    el('div',{class:'row',style:'justify-content:flex-end'},el('button',{class:'btn ghost',onclick:closeModal,text:'Cancel'}),
+      el('button',{class:'btn primary','data-autofocus':true,text:'Open printable page',onclick:function(){
+        var html=printTileHTML(a,{defs:defs.checked,lenses:lenses.checked});
+        var w=typeof window.open==='function'?window.open('','_blank'):null;
+        if(!w){downloadBlob((a.title||'hex-tiles').replace(/[^\w\- ]+/g,'').trim().replace(/\s+/g,'-')+'-tiles.html',html,'text/html');toast('Pop-ups are blocked, so the tiles were downloaded. Open the file and print it.');closeModal();return;}
+        w.document.open();w.document.write(html);w.document.close();closeModal();
+        setTimeout(function(){try{w.focus();w.print()}catch(e){}},400);
+      }}))]);
+}
+
+/* ---------- Student board: tools row, translation, read aloud ---------- */
+var TR={lang:rawGet('hx-lang')||'',cache:{},busy:false};
+function tr(text){var c=TR.lang&&TR.cache[TR.lang];return c&&text?c[text]||'':'';}
+function browserTranslate(lang,texts){
+  var T=typeof Translator!=='undefined'?Translator:null;
+  if(!T||!T.create)return Promise.reject(new Error('none'));
+  var work=Promise.resolve(T.availability?T.availability({sourceLanguage:'en',targetLanguage:lang}):'available').then(function(av){
+    /* Only use the browser's own translator when its language pack is already on the device. */
+    if(av!=='available'&&av!=='readily')throw new Error('none');
+    return T.create({sourceLanguage:'en',targetLanguage:lang});
+  }).then(function(t){return Promise.all(texts.map(function(x){return x?t.translate(x):''}))});
+  return Promise.race([work,new Promise(function(_,no){setTimeout(function(){no(new Error('slow'))},2500)})]);
+}
+function boardTexts(){
+  var out=[ST.act.title||'',ST.act.instructions||DEFAULT_INS];
+  (ST.act.terms||[]).forEach(function(t){out.push(t.term||'');if(t.def)out.push(t.def)});
+  return out.filter(function(x,i,arr){return x&&arr.indexOf(x)===i});
+}
+function setLanguage(lang){
+  TR.lang=lang;rawSet('hx-lang',lang||null);
+  if(!lang||!ST){renderStudentShell();return;}
+  var texts=boardTexts(),cache=TR.cache[lang]=TR.cache[lang]||{},need=texts.filter(function(t){return !cache[t]});
+  if(!need.length){renderStudentShell();return;}
+  TR.busy=true;renderStudentShell();
+  function store(list){need.forEach(function(t,i){if(list[i])cache[t]=list[i]})}
+  browserTranslate(lang,need).then(store,function(){return platformApi('translate',{lang:lang,texts:need}).then(function(r){store(r.translations||[])})})
+    .catch(function(e){toast(e&&e.message?e.message:'Translation isn’t available right now.')})
+    .then(function(){TR.busy=false;if(ST)renderStudentShell();});
+}
+function studentTools(){
+  if(!ST)return null;
+  var bits=[];
+  if(on('readAloud')&&canSpeak())bits.push(speakBtn('Read the directions aloud',function(){return (ST.act.title||'')+'. '+(ST.act.instructions||DEFAULT_INS)}));
+  if(on('translate')){
+    var sel=el('select',{id:'st-lang','aria-label':'Translate terms into'},el('option',{value:'',text:'English only'}),Object.keys(LANGS).map(function(k){return el('option',{value:k,text:LANGS[k],selected:TR.lang===k||null})}));
+    sel.addEventListener('change',function(){setLanguage(sel.value)});
+    bits.push(el('label',{class:'row lang-pick',for:'st-lang',style:'gap:6px'},'🌐',sel,TR.busy?el('span',{class:'hint',text:'Translating…'}):null));
+  }
+  var st=PX.postState,asg=st&&st.assignment&&st.assignment.asg,gal=asg&&asg.gallery&&asg.gallery.open&&on('gallery');
+  if(gal&&!ST.preview&&PX.activePost)bits.push(boardTurnedIn()?el('a',{class:'btn honey sm',href:'#gallery-'+PX.activePost,text:'Visit the gallery walk →'}):el('span',{class:'chip',text:'Gallery walk is open. Turn in your board to visit it.'}));
+  var ins=ST.act.instructions||DEFAULT_INS;if(TR.lang&&tr(ins))bits.push(el('p',{class:'tr-block',lang:TR.lang,text:tr(ins)}));
+  return bits.length?el('div',{class:'st-tools'},bits):null;
+}
+var v46Shell=renderStudentShell;
+renderStudentShell=function(){
+  v46Shell.apply(this,arguments);
+  if(!ST)return;
+  var tools=studentTools();if(!tools)return;
+  var head=root.querySelector&&root.querySelector('.act-head');
+  if(head&&head.parentNode===root)root.insertBefore(tools,head.nextSibling);else add(root,tools);
+};
+var v46Detail=renderDetail;
+renderDetail=function(){
+  v46Detail.apply(this,arguments);
+  if(!ST||ST.sel==null||!ST.H[ST.sel]||!refs.detail)return;
+  var h=ST.H[ST.sel],extra=[];
+  if(on('readAloud')&&canSpeak())extra.push(speakBtn('Read '+h.name+' aloud',function(){return h.name+(h.def?'. '+h.def:'')}));
+  if(TR.lang&&h.kind!=='dc'&&tr(h.name))extra.push(el('div',{class:'tr-block',lang:TR.lang},el('b',{text:tr(h.name)}),h.def&&tr(h.def)?el('span',{text:' — '+tr(h.def)}):null));
+  if(extra.length)add(refs.detail,el('div',{class:'stack',style:'gap:6px'},extra));
+};
+/* Sentence starters, read aloud and translation inside the connection box. */
+function startersFor(x,y){
+  var H=ST.H,A=H[x],B=H[y];if(!A||!B)return [];
+  var lens=A.kind==='dc'?A:B.kind==='dc'?B:null,term=lens===A?B:A;
+  if(lens)return ['Through the lens of '+lens.name+', '+term.name+' ','Looking at '+lens.name.toLowerCase()+', '+term.name+' shows ','A question about '+term.name+' and '+lens.name.toLowerCase()+' is '];
+  var a=A.name,b=B.name;
+  return [a+' and '+b+' are connected because ',a+' affects '+b+' by ',a+' is part of '+b+', so ','Without '+a+', '+b+' would ',a+' is like '+b+' because both ',a+' is different from '+b+' because '];
+}
+function writingHelps(taId,x,y){
+  var ta=document.getElementById(taId);if(!ta||!ta.parentNode)return;
+  var H=ST.H,A=H[x],B=H[y],bits=[];
+  if(on('starters')){
+    bits.push(el('div',{class:'starter-row',role:'group','aria-label':'Sentence starters'},el('span',{class:'hint',text:'Start with:'}),
+      startersFor(x,y).map(function(t){return el('button',{type:'button',class:'starter',text:t.trim()+'…',onclick:function(){var v=String(ta.value||'').trim();ta.value=v?v+' '+t:t;fireInput(ta);}})})));
+  }
+  var tools=[];
+  if(on('readAloud')&&canSpeak()&&A&&B)tools.push(speakBtn('Read both hexagons aloud',function(){return A.name+(A.def?': '+A.def:'')+'. '+B.name+(B.def?': '+B.def:'')}));
+  if(TR.lang&&A&&B&&(tr(A.name)||tr(B.name)))tools.push(el('span',{class:'tr-block',lang:TR.lang,text:(tr(A.name)||A.name)+' · '+(tr(B.name)||B.name)}));
+  if(tools.length)bits.push(el('div',{class:'row',style:'gap:8px'},tools));
+  if(bits.length)ta.parentNode.insertBefore(el('div',{class:'stack writing-helps',style:'gap:6px'},bits),ta);
+}
+var v46Justify=justifyQueue;
+justifyQueue=function(job){v46Justify.apply(this,arguments);if(ST&&job&&job.queue&&job.queue.length)writingHelps('why-text',Math.min(job.n,job.queue[0]),Math.max(job.n,job.queue[0]));};
+var v46ConnModal=connectionModal;
+connectionModal=function(cn){v46ConnModal.apply(this,arguments);if(ST&&cn)writingHelps('why-edit',cn.a,cn.b);};
+
+/* ---------- Build history (for the teacher's replay) ---------- */
+function recordHistory(){
+  if(!ST||ST.preview||(typeof GROUP!=='undefined'&&GROUP.current))return;
+  var d=ST.d;if(!ST._lastPlace){ST._lastPlace=clone(d.place||{});ST._lastConns=Object.keys(d.conns||{});return;}
+  if(!d.startedAt)d.startedAt=new Date().toISOString();
+  var t=Math.max(0,Date.now()-Date.parse(d.startedAt)),h=d.history=d.history||[],last=ST._lastPlace,now=d.place||{};
+  var keys={};Object.keys(last).forEach(function(k){keys[k]=1});Object.keys(now).forEach(function(k){keys[k]=1});
+  Object.keys(keys).forEach(function(k){
+    var a=last[k],b=now[k];
+    if(!b&&a)h.push([t,+k,null,null]);else if(b&&(!a||a[0]!==b[0]||a[1]!==b[1]))h.push([t,+k,b[0],b[1]]);
+  });
+  Object.keys(d.conns||{}).forEach(function(k){if(ST._lastConns.indexOf(k)<0&&d.conns[k]&&d.conns[k].why)h.push([t,k])});
+  if(h.length>800)d.history=h.slice(-800);
+  ST._lastPlace=clone(now);ST._lastConns=Object.keys(d.conns||{}).filter(function(k){return d.conns[k]&&d.conns[k].why});
+}
+var v46Save=saveDraft;
+saveDraft=function(){try{recordHistory()}catch(e){}return v46Save.apply(this,arguments);};
+var v46Start=startStudent;
+startStudent=function(){v46Start.apply(this,arguments);if(ST){ST._lastPlace=clone(ST.d.place||{});ST._lastConns=Object.keys(ST.d.conns||{}).filter(function(k){return ST.d.conns[k]&&ST.d.conns[k].why});}};
+
+/* ---------- Reflection before turning in ---------- */
+var v46Submit=submit;
+submit=function(){
+  if(!ST||ST.preview||ST._reflected||!on('reflect')||(typeof GROUP!=='undefined'&&GROUP.current))return v46Submit.apply(this,arguments);
+  if(typeof navigator!=='undefined'&&navigator.onLine===false){toast('You’re offline. Your board is saved on this device. Turn it in when you’re back online.');return;}
+  if(!checkReady())return;
+  var r=ST.d.reflection||{};
+  var proud=el('textarea',{id:'rf-proud',rows:2,maxlength:500,value:r.proud||'','data-autofocus':true});
+  var hard=el('textarea',{id:'rf-hard',rows:2,maxlength:500,value:r.hard||''});
+  function go(keep){
+    if(keep){var p2=String(proud.value||'').trim(),h2=String(hard.value||'').trim();if(p2||h2)ST.d.reflection={proud:p2,hard:h2};}
+    closeModal();saveDraft();ST._reflected=true;try{v46Submit()}finally{if(ST)ST._reflected=false;}
+  }
+  openModal([el('div',{class:'eyebrow',text:'Before you turn it in'}),el('h3',{style:'font-size:1.2rem',text:'Quick reflection'}),
+    el('label',{class:'fld',for:'rf-proud'},'Which connection are you proudest of, and why?',proud),
+    el('label',{class:'fld',for:'rf-hard'},'Which connection was hardest to explain?',hard),
+    el('p',{class:'hint',style:'margin:0',text:'Optional. Your teacher sees your answers with your board.'}),
+    el('div',{class:'row',style:'justify-content:flex-end'},el('button',{class:'btn ghost',onclick:function(){go(false)},text:'Skip'}),el('button',{class:'btn primary',onclick:function(){go(true)},text:'Turn in'}))]);
+};
+
+/* ---------- Grader: version, reflection and replay ---------- */
+function graderExtras(p,list,index){
+  var bits=[];
+  if(p.version)bits.push(el('span',{class:'chip',text:'Version: '+p.version}));
+  if(p.history&&p.history.length>1)bits.push(el('button',{type:'button',class:'btn sm',text:'▶ Watch how it was built',onclick:function(){openReplay(p,function(){openGrader(list,index)})}}));
+  var row=bits.length?el('div',{class:'row',style:'gap:8px'},bits):null;
+  var rf=p.reflection?el('div',{class:'reflect-box'},el('b',{text:'Student reflection'}),
+    p.reflection.proud?el('p',null,el('span',{class:'muted',text:'Proudest: '}),p.reflection.proud):null,
+    p.reflection.hard?el('p',null,el('span',{class:'muted',text:'Hardest: '}),p.reflection.hard):null):null;
+  return row||rf?el('div',{class:'stack',style:'gap:8px'},row,rf):null;
+}
+function replayStates(p){
+  var why={};(p.connections||[]).forEach(function(c){why[pkey(c.a,c.b)]=c.why});
+  var place={},made=[],states=[{place:{},conns:{},t:0}];
+  (p.history||[]).forEach(function(e){
+    if(typeof e[1]==='string'){if(made.indexOf(e[1])<0)made.push(e[1]);}
+    else if(e[2]===null)delete place[e[1]];else place[e[1]]=[e[2],e[3]];
+    var conns={};made.forEach(function(k,i){conns[k]={why:why[k]||'(changed later)',at:i+1}});
+    states.push({place:clone(place),conns:conns,t:e[0]});
+  });
+  return states;
+}
+function fmtDur(ms){var s=Math.round(ms/1000),m=Math.floor(s/60);return m?m+' min '+(s%60)+' s':s+' s';}
+function openReplay(p,back){
+  var a=p.activitySnapshot||(ST&&ST.act),states=replayStates(p),i=0,timer=null;
+  if(!a){toast('This board can’t be replayed.');return;}
+  var stage=el('div',{class:'board replay-board'}),label=el('span',{class:'hint',role:'status'});
+  var range=el('input',{type:'range',min:0,max:states.length-1,value:0,'aria-label':'Replay step'});
+  var play=el('button',{type:'button',class:'btn primary sm',text:'▶ Play'});
+  function show(){var s=states[i];fill(stage,boardSVG(a,s.place,s.conns,{orient:boardOf(a).orient}));range.value=i;label.textContent='Step '+i+' of '+(states.length-1)+(i?' · '+fmtDur(s.t)+' in':'');}
+  function stop(){clearInterval(timer);timer=null;play.textContent='▶ Play';}
+  play.addEventListener('click',function(){if(timer){stop();return;}if(i>=states.length-1)i=0;play.textContent='❚❚ Pause';timer=setInterval(function(){if(i>=states.length-1){stop();return;}i++;show();},650);});
+  range.addEventListener('input',function(){stop();i=+range.value;show();});
+  function close(){stop();closeModal();if(back)back();}
+  openModal([el('div',{class:'row',style:'justify-content:space-between'},el('div',null,el('div',{class:'eyebrow',text:'Replay'}),el('h3',{style:'font-size:1.2rem',text:(p.name||'Board')+' · how it was built'})),el('button',{class:'btn',onclick:close,text:'Back','data-autofocus':true})),
+    stage,el('div',{class:'row replay-ctl'},play,range,label),
+    el('p',{class:'hint',style:'margin:0',text:'Each step is a hexagon placed, moved or returned, or a connection explained. Fast placement with few explanations can mean guessing; long pauses before a connection can mean careful thinking.'})],{wide:true,onDismiss:close});
+  show();
+}
+
+/* ---------- Gallery walk ---------- */
+function renderGallery(id){
+  var seq=++PX.routeId;ST=null;caps.teacher=false;
+  var teacher=profileRole()==='teacher',body=el('div',{class:'stack'});
+  fill(root,topBar(),el('a',{class:'btn ghost sm back-link',href:teacher?'#teacher/post-'+id:'#a-'+id,text:teacher?'← Submissions':'← My board'}),el('h2',{text:'Gallery walk'}),body);
+  dashboardMessage(body,'Loading the gallery…');
+  platformApi('posts/'+id+'/gallery').then(function(r){if(seq===PX.routeId)drawGallery(body,id,r,teacher)}).catch(function(e){
+    if(seq!==PX.routeId)return;body.replaceChildren();
+    add(body,el('div',{class:'panel stack'},el('p',{class:e.code==='gallery-closed'||e.code==='gallery-turn-in'?'':'err',style:'margin:0',text:e.message}),el('a',{class:'btn',href:teacher?'#teacher/post-'+id:'#a-'+id,text:teacher?'Back to submissions':'Back to my board'})));
+  });
+}
+function drawGallery(body,id,r,teacher){
+  body.replaceChildren();
+  add(body,el('div',{class:'panel stack',style:'gap:6px'},el('h3',{text:r.title}),
+    el('p',{style:'margin:0',text:teacher?'Students see every turned-in board labelled Board A, B, C… without names. They leave a Glow (something strong) or a Grow (an idea to improve). You see who wrote each comment and can hide any of them.':'Look closely at your classmates’ boards. Leave a Glow ✨ for something strong and a Grow 🌱 for an idea to make it better. Be specific and kind. Names are hidden.'}),
+    teacher?el('div',{class:'row'},el('span',{class:'chip',text:r.open?'Open to students':'Closed to students'}),
+      el('button',{class:'btn sm',onclick:function(){platformApi('posts/'+id+'/gallery/open',{open:!r.open}).then(function(){toast(r.open?'Gallery walk closed.':'Gallery walk opened.');renderGallery(id)}).catch(platformError)},text:r.open?'Close gallery walk':'Open gallery walk'})):null));
+  if(!r.boards.length){dashboardMessage(body,'No turned-in boards yet.');return;}
+  var grid=el('div',{class:'gallery-grid'});add(body,grid);
+  var mineFirst=r.boards.slice().sort(function(x,y){return (y.mine?1:0)-(x.mine?1:0)});
+  mineFirst.forEach(function(b){add(grid,galleryCard(id,r,b,teacher))});
+}
+function galleryCard(id,r,b,teacher){
+  var conns={};(b.connections||[]).forEach(function(c,i){conns[pkey(c.a,c.b)]={why:c.why,at:i+1}});
+  var H=hexMap(r.act),list=activeConns(b.placements||{},conns);
+  var cl=el('div',{class:'g-comments'});
+  function drawComments(){
+    fill(cl,b.comments.length?b.comments.map(function(c){
+      return el('div',{class:'g-cmt '+c.kind+(c.hidden?' hidden-c':'')},el('span',{class:'g-kind',text:c.kind==='glow'?'✨ Glow':'🌱 Grow'}),el('span',{text:c.text}),
+        teacher?el('span',{class:'hint',text:'— '+(c.author||'')+(c.hidden?' · hidden':'')}):null,
+        teacher?el('button',{class:'btn ghost sm',text:c.hidden?'Show':'Hide',onclick:function(){platformApi('posts/'+id+'/gallery/hide',{id:c.id,hidden:!c.hidden}).then(function(){c.hidden=!c.hidden;drawComments()}).catch(platformError)}}):null);
+    }):el('p',{class:'hint',style:'margin:0',text:b.mine?'No comments yet.':'Be the first to comment.'}));
+  }
+  drawComments();
+  var form=null;
+  if(!teacher&&!b.mine){
+    var kind='glow',txt=el('input',{type:'text',maxlength:280,placeholder:'Be specific: which connection, and why?','aria-label':'Comment on '+b.label});
+    var gb=el('button',{type:'button',class:'btn sm kind on',text:'✨ Glow'}),wb=el('button',{type:'button',class:'btn sm kind',text:'🌱 Grow'});
+    function pick(k){kind=k;gb.className='btn sm kind'+(k==='glow'?' on':'');wb.className='btn sm kind'+(k==='grow'?' on':'');}
+    gb.addEventListener('click',function(){pick('glow')});wb.addEventListener('click',function(){pick('grow')});
+    var post=el('button',{type:'button',class:'btn primary sm',text:'Post',onclick:function(){
+      var t=String(txt.value||'').trim();if(t.length<3){toast('Write a few words first.');return;}
+      post.disabled=true;
+      platformApi('posts/'+id+'/gallery/comment',{board:b.board,kind:kind,text:t}).then(function(res){b.comments.push(res.comment);txt.value='';drawComments();toast('Comment posted.')}).catch(platformError).finally(function(){post.disabled=false});
+    }});
+    form=el('div',{class:'g-form'},el('div',{class:'row',style:'gap:6px'},gb,wb),txt,post);
+  }
+  return el('article',{class:'panel g-card'+(b.mine?' mine':'')},
+    el('div',{class:'row',style:'justify-content:space-between'},el('h3',{text:b.label+(teacher&&b.name?' · '+b.name:'')}),b.mine?el('span',{class:'chip',text:'Your board'}):null),
+    el('div',{class:'board g-board'},boardSVG(r.act,b.placements||{},conns,{})),
+    el('details',null,el('summary',{text:list.length+' connection'+(list.length===1?'':'s')}),
+      el('ol',{class:'clist'},list.map(function(c){return el('li',null,el('span',{class:'cnum',text:'C'+c.num}),el('div',null,el('b',{text:(H[c.a]?H[c.a].name:'?')+' – '+(H[c.b]?H[c.b].name:'?')}),el('div',{class:'why',text:c.why})))}))),
+    el('h4',{text:b.mine?'Comments from classmates':'Comments'}),cl,form);
+}
+
+/* ---------- Posting page: supports, gallery and versions ---------- */
+function postExtras(postId,a){
+  var W=TW||PX.teacherData||{activities:[]},act=(W.activities||[]).find(function(x){return x.id===a.activityId});
+  var o=a.options||{},onCount=SUPPORTS.filter(function(s){return o[s.k]!==false}).length;
+  var verBox=el('div',{class:'stack',style:'gap:6px'});
+  var panel=el('div',{class:'panel stack post-extras',style:'gap:10px'},
+    el('h3',{text:'Classroom tools'}),
+    el('div',{class:'row',style:'gap:6px'},el('span',{class:'hint',text:'Student supports:'}),SUPPORTS.map(function(s){return el('span',{class:'chip'+(o[s.k]===false?' off':''),text:(o[s.k]===false?'Off: ':'')+s.label})}),
+      el('button',{class:'btn ghost sm',text:'Change',onclick:function(){openPostDialog(act||{id:a.activityId,title:a.title,terms:[]},a)}})),
+    el('div',{class:'row'},
+      o.gallery===false?el('span',{class:'hint',text:'Gallery walk is switched off for this posting.'}):[
+        el('button',{class:a.gallery?'btn':'btn honey',text:a.gallery?'Close gallery walk':'Open gallery walk',onclick:function(e){var btn=e.currentTarget||e.target;btn.disabled=true;platformApi('posts/'+postId+'/gallery/open',{open:!a.gallery}).then(function(){toast(a.gallery?'Gallery walk closed.':'Gallery walk opened. Students who turned in can visit it from their board.');route()}).catch(function(err){btn.disabled=false;platformError(err)})}}),
+        el('a',{class:'btn ghost',href:'#gallery-'+postId,text:'View gallery & comments'})],
+      act?el('button',{class:'btn ghost',onclick:function(){printTiles(act)},text:'Print tiles'}):null),
+    verBox);
+  if((a.versions||[]).length>1){
+    fill(verBox,el('p',{class:'hint',style:'margin:0',text:'Loading versions…'}));
+    platformApi('posts/'+postId+'/progress').then(function(r){
+      var vs=a.versions;
+      fill(verBox,el('h4',{text:'Versions'}),
+        el('p',{class:'hint',style:'margin:0',text:vs.map(function(v){return v.name+': '+v.terms.length+' terms'}).join(' · ')+'. Students appear here once they open the assignment.'}),
+        r.students.length?el('div',{class:'ver-list'},r.students.map(function(s){
+          var sel=el('select',{'aria-label':'Version for '+s.name},vs.map(function(v,i){return el('option',{value:i,text:v.name,selected:(s.variant||0)===i||null})}));
+          sel.addEventListener('change',function(){platformApi('posts/'+postId+'/version',{studentUids:[s.uid],version:+sel.value}).then(function(x){toast(s.name+' now has '+x.name+'.')}).catch(platformError)});
+          return el('label',{class:'ver-row'},el('span',{text:s.name}),sel);
+        })):el('p',{class:'muted',style:'margin:0',text:'No students have opened it yet.'}));
+    }).catch(function(e){fill(verBox,el('p',{class:'err',text:e.message}))});
+  }
+  return panel;
+}
+
+/* ---------- Public library ---------- */
+var LIB={q:'',subject:'',grade:''};
+var LIB_SUBJECTS=['Science','Math','English / ELA','Social Studies','History','World Languages','Arts','Health & PE','Computer Science','Other'],LIB_GRADES=['K-2','3-5','6-8','9-12','College'];
+function renderLibrary(){
+  var seq=++PX.routeId;ST=null;caps.teacher=false;
+  var q=el('input',{type:'search',id:'lib-q',placeholder:'Search titles, terms, standards…',value:LIB.q,maxlength:80,'aria-label':'Search the library'});
+  var subj=el('select',{'aria-label':'Subject'},el('option',{value:'',text:'All subjects'}),LIB_SUBJECTS.map(function(x){return el('option',{value:x,text:x,selected:LIB.subject===x||null})}));
+  var gr=el('select',{'aria-label':'Grade band'},el('option',{value:'',text:'All grades'}),LIB_GRADES.map(function(x){return el('option',{value:x,text:x,selected:LIB.grade===x||null})}));
+  var results=el('div',{class:'lib-grid'}),mine=el('div',{class:'stack'});
+  function search(){LIB.q=q.value;LIB.subject=subj.value;LIB.grade=gr.value;load();}
+  q.addEventListener('keydown',function(e){if(e.key==='Enter')search()});subj.addEventListener('change',search);gr.addEventListener('change',search);
+  fill(root,topBar(),el('div',{class:'stack library'},
+    el('h2',{text:'Hex Space library'}),
+    el('p',{class:'muted',style:'margin:0',text:'Hex Spaces other teachers have shared. Preview one, then save your own copy to edit and post. To add yours, open a Hex Space, choose Share, then Add to the library.'}),
+    el('div',{class:'row lib-filters'},q,subj,gr,el('button',{class:'btn primary',onclick:search,text:'Search'})),
+    results,el('h3',{text:'Your library listings'}),mine));
+  function load(){
+    fill(results,el('p',{class:'muted',text:'Searching…'}));
+    var qs='library?q='+encodeURIComponent(LIB.q)+'&subject='+encodeURIComponent(LIB.subject)+'&grade='+encodeURIComponent(LIB.grade);
+    platformApi(qs).then(function(r){if(seq!==PX.routeId)return;
+      fill(results,r.items.length?r.items.map(libCard):el('p',{class:'muted',text:'Nothing matches yet. Try fewer words, or share one of your own.'}));
+    }).catch(function(e){if(seq===PX.routeId)fill(results,el('p',{class:'err',text:e.message}))});
+  }
+  load();
+  platformApi('library/mine').then(function(r){if(seq!==PX.routeId)return;
+    fill(mine,r.items.length?r.items.map(function(it){
+      return el('div',{class:'panel row',style:'justify-content:space-between'},el('div',null,el('b',{text:it.title}),el('p',{class:'muted',style:'margin:0',text:it.subject+' · '+it.grade+' · '+it.copies+' cop'+(it.copies===1?'y':'ies')+(it.listed?(it.hiddenByReports?' · hidden after reports':' · listed'):' · removed')})),
+        it.listed?el('button',{class:'btn sm danger-ghost',text:'Remove from library',onclick:function(){platformApi('library/'+it.code+'/unlist',{}).then(function(){toast('Removed from the library.');renderLibrary()}).catch(platformError)}}):null);
+    }):el('p',{class:'muted',style:'margin:0',text:'You haven’t added any Hex Spaces to the library.'}));
+  }).catch(function(){fill(mine)});
+}
+function libCard(it){
+  return el('article',{class:'panel lib-card'},
+    el('h3',{text:it.title}),
+    el('div',{class:'row',style:'gap:6px'},el('span',{class:'chip',text:it.subject}),el('span',{class:'chip',text:it.grade}),el('span',{class:'chip',text:it.terms+' terms'})),
+    it.summary?el('p',{style:'margin:0',text:it.summary}):null,
+    it.standards?el('p',{class:'hint',style:'margin:0',text:'Standards: '+it.standards}):null,
+    el('p',{class:'hint',style:'margin:0',text:'Shared by '+it.sharedBy+' · saved '+it.copies+' time'+(it.copies===1?'':'s')}),
+    el('div',{class:'row'},el('a',{class:'btn sm',href:'#share-'+it.code,text:'Preview'}),
+      el('button',{class:'btn primary sm',text:'Save a copy',onclick:function(e){copyShared(it.code,null,e.currentTarget||e.target)}}),
+      it.mine?el('span',{class:'chip',text:'Yours'}):el('button',{class:'btn ghost sm',disabled:it.reported,text:it.reported?'Reported':'Report',onclick:function(){reportLibrary(it)}})));
+}
+function reportLibrary(it){
+  promptDialog('Report “'+it.title+'”','What’s wrong? (wrong information, not appropriate for students, spam…)','',function(t){
+    platformApi('library/'+it.code+'/report',{reason:t}).then(function(){toast('Thanks. Hex Spaces reported by three teachers are hidden.');renderLibrary()}).catch(platformError);
+  },{max:300});
+}
+function libraryBox(share){
+  var subj=el('select',{id:'lb-subject'},el('option',{value:'',text:'Choose…'}),LIB_SUBJECTS.map(function(x){return el('option',{value:x,text:x})}));
+  var gr=el('select',{id:'lb-grade'},el('option',{value:'',text:'Choose…'}),LIB_GRADES.map(function(x){return el('option',{value:x,text:x})}));
+  var std=el('input',{type:'text',id:'lb-std',maxlength:200,placeholder:'e.g. MS-LS1-2, CCSS.ELA RL.7.4'}),sum=el('textarea',{id:'lb-sum',rows:2,maxlength:400,placeholder:'What students do and learn with it'});
+  var msg=el('p',{class:'hint',role:'status',style:'margin:0'});
+  var go=el('button',{class:'btn',text:'Add to the library',onclick:function(){
+    if(!subj.value||!gr.value){msg.textContent='Choose a subject and grade band.';return;}
+    go.disabled=true;platformApi('library',{code:share.code,subject:subj.value,grade:gr.value,standards:std.value,summary:sum.value}).then(function(){msg.textContent='Listed in the library. Every teacher on Hex Connections can find and copy it.';go.textContent='Update listing';}).catch(function(e){msg.textContent=e.message}).finally(function(){go.disabled=false});
+  }});
+  platformApi('library/mine').then(function(r){var it=(r.items||[]).find(function(x){return x.code===share.code});if(it&&it.listed){subj.value=it.subject;gr.value=it.grade;std.value=it.standards||'';sum.value=it.summary||'';go.textContent='Update listing';msg.textContent=it.hiddenByReports?'Hidden from the library after reports.':'Listed in the library.';}}).catch(function(){});
+  return el('details',{class:'sup-box'},el('summary',{text:'Add to the public library'}),
+    el('p',{class:'hint',style:'margin:0',text:'Any teacher can find it by subject, grade, standards or the words in it, and save their own copy. Remove it any time from Library.'}),
+    el('div',{class:'grid2'},el('label',{class:'fld',for:'lb-subject'},'Subject',subj),el('label',{class:'fld',for:'lb-grade'},'Grade band',gr)),
+    el('label',{class:'fld',for:'lb-std'},'Standards (optional)',std),el('label',{class:'fld',for:'lb-sum'},'Short description (optional)',sum),
+    el('div',{class:'row'},go),msg);
+}
+
+/* ---------- Microsoft sign-in (when the site owner turns it on) ---------- */
+function microsoftSignIn(){
+  if(GA.busy||!GA.auth)return;
+  GA.busy=true;GA.error='';
+  var provider=new GA.sdk.OAuthProvider('microsoft.com');provider.setCustomParameters({prompt:'select_account'});
+  var task;try{task=GA.sdk.signInWithPopup(GA.auth,provider)}catch(e){task=Promise.reject(e)}
+  route();
+  task.catch(function(e){GA.error=e&&e.code==='auth/account-exists-with-different-credential'?'That email already has an account. Sign in with Google or your email and password instead.':googleError(e);}).finally(function(){GA.busy=false;route();});
+}
+function microsoftMark(){return sv('svg',{width:18,height:18,viewBox:'0 0 21 21','aria-hidden':'true'},sv('rect',{x:1,y:1,width:9,height:9,fill:'#F25022'}),sv('rect',{x:11,y:1,width:9,height:9,fill:'#7FBA00'}),sv('rect',{x:1,y:11,width:9,height:9,fill:'#00A4EF'}),sv('rect',{x:11,y:11,width:9,height:9,fill:'#FFB900'}));}
+
+/* ---------- Site stats for the owner ---------- */
+function renderOwner(){
+  var seq=++PX.routeId;ST=null;caps.teacher=false;var body=el('div',{class:'stack'});
+  fill(root,topBar(),el('h2',{text:'Site stats'}),body);dashboardMessage(body,'Loading…');
+  platformApi('owner/stats').then(function(r){if(seq!==PX.routeId)return;body.replaceChildren();
+    function t(n,l){return el('div',{class:'ins-stat'},el('b',{text:String(n)}),el('span',{text:l}))}
+    add(body,el('div',{class:'ins-stats'},t(r.teachers,'teachers'),t(r.students,'students'),t(r.newThisWeek,'new accounts this week'),t(r.hexSpaces,'Hex Spaces'),t(r.postings,'postings'),t(r.postingsThisWeek,'postings this week'),t(r.boardsStarted,'boards started'),t(r.boardsTurnedIn,'boards turned in'),t(r.sharedLinks,'share links'),t(r.libraryItems,'library Hex Spaces'),t(r.galleryComments,'gallery comments'),t(r.aiToday.vocabulary+' / '+r.aiToday.translations,'AI vocabulary / translations today')));
+    if(r.libraryReported)add(body,el('p',{class:'err',text:r.libraryReported+' library Hex Space'+(r.libraryReported===1?' is':'s are')+' hidden after reports.'}));
+    add(body,el('p',{class:'hint',text:'Counts only; no names or student work. Visitor numbers and page views are in Cloudflare Web Analytics'+(CFG.analyticsToken?'.':' once you add the CF_ANALYTICS_TOKEN setting.')}));
+  }).catch(function(e){if(seq===PX.routeId){body.replaceChildren();dashboardError(body,e)}});
+}
+var v46Items=accountItems;
+accountItems=function(role,ready){var items=v46Items(role,ready);if(PX.owner&&role)items.splice(Math.max(0,items.length-1),0,{label:'Site stats',href:'#owner'});return items;};
+
+/* ---------- Routes ---------- */
+var v46Route47=route;
+route=function(){
+  var h=NAV.hash||'',m;
+  if(GA.ready&&GA.user&&PX.loaded&&PX.profile&&PX.profile.role&&!PX.needsVerify){
+    if((m=h.match(/^#gallery-(.+)$/))){renderGallery(m[1]);return;}
+    if(h==='#teacher/library'&&PX.profile.role==='teacher'){renderLibrary();return;}
+    if(h==='#owner'&&PX.owner){renderOwner();return;}
+  }
+  v46Route47();
+};
+
+/* ---------- Works offline: app shell cache, local saving, sync when back online ---------- */
+function setCloudStatus(t){var s=document.getElementById('hx-cloud-status');if(s)s.textContent=t;}
+function bootExtras(){
+  if(typeof fetch==='function'&&PATH_MODE){
+    fetch('/api/config').then(function(r){return r.ok?r.json():{}}).then(function(c){
+      CFG.microsoft=!!c.microsoft;CFG.analyticsToken=c.analyticsToken||'';
+      if(CFG.analyticsToken&&!document.getElementById('cf-beacon')){var s=document.createElement('script');s.id='cf-beacon';s.defer=true;s.src='https://static.cloudflareinsights.com/beacon.min.js';s.setAttribute('data-cf-beacon',JSON.stringify({token:CFG.analyticsToken}));document.head.appendChild(s);}
+      if(CFG.microsoft&&/^#(signin|signup)$/.test(NAV.hash||''))route();
+    }).catch(function(){});
+  }
+  if(typeof navigator!=='undefined'&&navigator.serviceWorker&&PATH_MODE&&location.protocol==='https:')navigator.serviceWorker.register('/sw.js').catch(function(){});
+  window.addEventListener('offline',function(){setCloudStatus('Offline · saving on this device');toast('You’re offline. Keep working: your board is saved on this device.');});
+  window.addEventListener('online',function(){
+    if(ST&&!ST.preview&&PX.activePost&&GA.user){queueCloudDraft();flushCloudDraft().then(function(){toast('Back online. Your board is saved online.')}).catch(function(){});}
+  });
+}
+bootExtras();
 
 /* The homepage is the starting page: a visit to the bare site address opens it,
    signed in or not. In-app links to "#" still go to the student dashboard. */

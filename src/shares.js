@@ -18,6 +18,8 @@ export function shareTemplate(act){
   minTerms:act.minTerms==null||act.minTerms===''?null:Math.max(1,Math.min(60,Number(act.minTerms)||1)),
   minWords:Math.max(0,Math.min(60,Number(act.minWords)||0)),
   dcOn:!!act.dcOn,
+  starters:act.starters!==false,
+  reflect:act.reflect!==false,
   dc:(Array.isArray(act.dc)?act.dc:[]).filter(k=>DC.includes(k)),
   board:{shape:['hexagon','wide','tall','open'].includes(board.shape)?board.shape:'hexagon',size:['snug','roomy','spacious','expansive'].includes(board.size)?board.size:'roomy',orient:board.orient==='flat'?'flat':'pointy',rotate:board.rotate!==false},
   terms:(act.terms||[]).slice(0,60).map((t,i)=>({n:i+1,id:Number(t.id||t.n)||i+1,term:String(t.term||'').slice(0,100),def:String(t.def||'').slice(0,1000)}))
@@ -47,6 +49,7 @@ export async function handleShareRoutes(c){
   const existing=await one(db,'SELECT * FROM shares WHERE owner_uid=? AND activity_id=?',user.uid,act.id);
   if(existing){
    await run(db,'UPDATE shares SET title=?,body=?,revoked=0,updated_at=? WHERE code=? AND owner_uid=?',template.title,body,NOW(),existing.code,user.uid);
+   try{await run(db,'UPDATE library SET title=?,terms=?,updated_at=? WHERE code=?',template.title,template.terms.length,NOW(),existing.code)}catch{}
    const row=await one(db,'SELECT * FROM shares WHERE code=?',existing.code);
    return json({share:shareView(row,user.name),updated:true});
   }
@@ -66,6 +69,7 @@ export async function handleShareRoutes(c){
  if(action==='revoke'&&request.method==='POST'){
   if(!row||row.owner_uid!==user.uid)fail(404,'Share link not found.');
   await run(db,'UPDATE shares SET revoked=1,updated_at=? WHERE code=? AND owner_uid=?',NOW(),code,user.uid);
+  try{await run(db,'UPDATE library SET listed=0 WHERE code=?',code)}catch{}
   return json({revoked:true});
  }
  if(!row||(row.revoked&&row.owner_uid!==user.uid))fail(404,'This share link was turned off or doesn’t exist. Ask the teacher who shared it for a new link.','share-missing');

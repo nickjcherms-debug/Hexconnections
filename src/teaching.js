@@ -50,22 +50,23 @@ export async function handleTeachingRoutes(c){
     const post=await one(db,'SELECT * FROM posts WHERE id=?',pr[1]);
     if(!post||post.owner_uid!==user.uid)fail(404,'Assignment not found.');
     const info=parse(post.body)||{},terms=(info.act?.terms||[]).length;
-    const list=await rows(db,'SELECT s.uid,s.draft,s.payload,s.status,s.updated_at,u.name FROM submissions s JOIN users u ON u.uid=s.uid WHERE s.post_id=?',post.id);
+    const list=await rows(db,'SELECT s.uid,s.draft,s.payload,s.status,s.updated_at,s.variant,u.name FROM submissions s JOIN users u ON u.uid=s.uid WHERE s.post_id=?',post.id);
     const students=list.map(r=>{
       const pay=parse(r.payload),d=pay?{place:pay.placements,conns:Object.fromEntries((pay.connections||[]).map(c=>[c.a+'-'+c.b,{why:c.why}]))}:parse(r.draft)||{};
       const placed=Object.keys(d.place||{}).filter(k=>Number(k)<1000).length;
       const conns=Object.entries(d.conns||{}).filter(([,v])=>v&&String(v.why||'').trim()).map(([k,v])=>({pair:k,why:String(v.why).slice(0,600)}));
-      return {uid:r.uid,name:r.name,status:r.status,placed,connections:conns.length,conns,updatedAt:r.updated_at};
+      return {uid:r.uid,name:r.name,status:r.status,variant:r.variant||0,placed,connections:conns.length,conns,updatedAt:r.updated_at};
     });
-    return json({terms,students,act:{title:info.act?.title||'',terms:(info.act?.terms||[]).map(t=>({id:t.id||t.n,n:t.n,term:t.term})),dc:info.act?.dcOn?info.act.dc||[]:[]}});
+    return json({terms,students,versions:(info.asg?.versions||[]).map(v=>({name:v.name,terms:v.terms.length})),gallery:!!info.asg?.gallery?.open,act:{title:info.act?.title||'',terms:(info.act?.terms||[]).map(t=>({id:t.id||t.n,n:t.n,term:t.term})),dc:info.act?.dcOn?info.act.dc||[]:[]}});
   }
 
   if(path==='/api/account/export'&&request.method==='GET'){
     const ws=await one(db,'SELECT body,updated_at FROM workspaces WHERE owner_uid=?',user.uid);
     const subs=await rows(db,'SELECT post_id,draft,payload,status,grade,feedback,updated_at FROM submissions WHERE uid=?',user.uid);
     const posts=await rows(db,'SELECT id,course_id,status,code,created_at FROM posts WHERE owner_uid=?',user.uid);
-    let shares=[];try{shares=await rows(db,'SELECT code,title,copies,revoked,created_at FROM shares WHERE owner_uid=?',user.uid)}catch{}
-    return json({exportedAt:NOW(),profile,workspace:parse(ws?.body),postings:posts,shares,
+    let shares=[],library=[],galleryComments=[];try{shares=await rows(db,'SELECT code,title,copies,revoked,created_at FROM shares WHERE owner_uid=?',user.uid)}catch{}
+    try{library=await rows(db,'SELECT code,title,subject,grade,standards,summary,listed FROM library WHERE owner_uid=?',user.uid);galleryComments=await rows(db,'SELECT post_id,kind,body,created_at FROM peer_comments WHERE author_uid=?',user.uid)}catch{}
+    return json({exportedAt:NOW(),profile,workspace:parse(ws?.body),postings:posts,shares,library,galleryComments,
       myWork:subs.map(s=>({postId:s.post_id,status:s.status,grade:s.grade,draft:parse(s.draft),submitted:parse(s.payload),feedback:parse(s.feedback),updatedAt:s.updated_at}))});
   }
 
@@ -78,7 +79,12 @@ export async function handleTeachingRoutes(c){
       await run(db,'DELETE FROM project_group_members WHERE post_id=?',id);
       await run(db,'DELETE FROM project_groups WHERE post_id=?',id);
       await run(db,'DELETE FROM submissions WHERE post_id=?',id);
+      try{await run(db,'DELETE FROM peer_comments WHERE post_id=?',id)}catch{}
     }
+    try{await run(db,'DELETE FROM peer_comments WHERE author_uid=? OR target_uid=?',user.uid,user.uid);
+      await run(db,'DELETE FROM library_reports WHERE code IN (SELECT code FROM library WHERE owner_uid=?)',user.uid);
+      await run(db,'DELETE FROM library_reports WHERE uid=?',user.uid);
+      await run(db,'DELETE FROM library WHERE owner_uid=?',user.uid)}catch{}
     await run(db,'DELETE FROM project_group_members WHERE uid=?',user.uid);
     await run(db,'DELETE FROM submissions WHERE uid=?',user.uid);
     await run(db,'DELETE FROM posts WHERE owner_uid=?',user.uid);

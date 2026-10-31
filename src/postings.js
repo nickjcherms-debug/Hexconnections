@@ -7,6 +7,7 @@ const run=(db,sql,...args)=>db.prepare(sql).bind(...args).run();
 const parse=s=>{try{return JSON.parse(s)}catch{return null}};
 const enc=encodeURIComponent;
 const NOW=()=>new Date().toISOString();
+import {cleanVersions,cleanOptions} from './classtools.js';
 const ALPHABET='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const DATE=/^\d{4}-\d{2}-\d{2}$/;
 
@@ -89,7 +90,8 @@ export async function handlePostingRoutes(c){
     if(dates.dueAt&&Date.parse(dates.dueAt)<=Date.now())fail(400,'Choose a due date that hasn’t passed.');
     const maxPoints=points(b.maxPoints,100,fail), title=cleanTitle(b.title,act.title);
     const code=await uniqueCode(db), id=crypto.randomUUID(), link=new URL('/#a-'+id,origin).href;
-    const asg={code,open:true,...dates};
+    const versions=cleanVersions(b.versions,act,fail);
+    const asg={code,open:true,...dates,...(versions?{versions}:{}),options:cleanOptions(b.options,act)};
     const snapAct={...act,title};
     if(!cls.classroomId){
       const courseId='manual:'+cls.id;
@@ -124,6 +126,8 @@ export async function handlePostingRoutes(c){
   const dates=postDates(b,fail,prior);
   const asg={...prior,...dates};
   if(typeof b.open==='boolean')asg.open=b.open;
+  if(b.options!==undefined)asg.options=cleanOptions({...cleanOptions(asg.options,info.act),...(b.options||{})},info.act);
+  if(b.versions!==undefined){const v=cleanVersions(b.versions,b.refresh===true?(workspace?.activities?.find(x=>x.id===post.activity_id)||info.act):info.act,fail);if(v)asg.versions=v;else delete asg.versions;}
   const title=cleanTitle(b.title,info.act?.title);
   let act={...info.act,title};
   if(b.refresh===true){
@@ -149,5 +153,5 @@ export async function handlePostingRoutes(c){
     await g(base+'?updateMask='+enc(mask.join(',')),'PATCH',updates);
   }
   await run(db,'UPDATE posts SET body=?,max_points=? WHERE id=? AND owner_uid=?',JSON.stringify(next),maxPoints,id,user.uid);
-  return json({id,title,code:asg.code,open:asg.open!==false,maxPoints,...dates});
+  return json({id,title,code:asg.code,open:asg.open!==false,maxPoints,versions:asg.versions||null,options:cleanOptions(asg.options,act),...dates});
 }

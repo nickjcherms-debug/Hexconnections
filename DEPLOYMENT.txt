@@ -1,3 +1,24 @@
+CLASSROOM TOOLS 4.7.0
+=====================
+Database: migrations/0007_classroom_tools.sql (additive: submissions.variant and
+tables peer_comments, library, library_reports, translations). Applied to the
+live database on 2026-10-30. Other databases:
+  npx wrangler d1 execute hex-connections --remote --file migrations/0007_classroom_tools.sql
+Optional settings (Workers > hex-connections > Settings > Variables, or wrangler.jsonc "vars"):
+- OWNER_EMAILS: comma-separated emails that see Site stats in the account menu.
+- CF_ANALYTICS_TOKEN: a Cloudflare Web Analytics site token (Analytics & Logs >
+  Web Analytics > Add a site > copy the token from the snippet). Cookie-free.
+- MICROSOFT_SIGN_IN=on shows "Continue with Microsoft". First enable the Microsoft
+  provider in Firebase (Authentication > Sign-in method > Microsoft) with an Azure
+  app registration whose redirect URI is the one Firebase shows, and add
+  hexconnections.com to Firebase's authorized domains. Google Classroom features
+  still need a Google account.
+Translation uses the existing AI binding (@cf/meta/m2m100-1.2b) only when the
+browser has no built-in translator; results are cached, with 400 texts per user
+and 3,000 per site each day.
+New files public/sw.js, public/manifest.webmanifest and public/icon.svg are served
+as static assets (offline app shell and install icon).
+
 GRADING, INSIGHTS, PRESENT MODE AND PRIVACY 4.5.0
 ================================================
 Database: migrations/0006_feedback.sql adds submissions.feedback. Applied to
