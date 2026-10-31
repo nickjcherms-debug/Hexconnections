@@ -4,10 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Hexagonal thinking boards for classrooms: students arrange vocabulary hexagons and explain every connection, with optional Depth and Complexity icons.">
-<meta name="hex-connections-build" content="4.3.0">
+<meta name="hex-connections-build" content="4.4.0">
 <title>Hex Connections</title>
 
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=JetBrains+Mono:wght@500;700&display=swap">
+<script>try{var hxa=JSON.parse(localStorage.getItem('hx-appearance')||'{}');if(hxa.theme&&hxa.theme!=='system')document.documentElement.setAttribute('data-theme',hxa.theme);if(hxa.text==='large')document.documentElement.setAttribute('data-text','large')}catch(e){}</script>
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-family:system-ui,-apple-system,sans-serif;font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
 <body>
@@ -16,14 +17,14 @@
 :root{
   --paper:#F1F7FF; --panel:#FFFFFF; --ink:#1E2A47; --muted:#55627F; --line:#D2DEEF; --cell:#DCE7F6;
   --tile:#FFFFFF; --tile-edge:#AFC3E2; --honey:#FFC229; --honey-soft:#FFF0BF; --honey-ink:#7A4E00;
-  --teal:#0B8A82; --teal-soft:#D3F4EF; --danger:#D9472F; --ok:#1E9A55; --shadow:rgba(30,42,71,.13);
+  --teal:#08756E; --teal-soft:#D3F4EF; --danger:#B83A24; --ok:#1E9A55; --shadow:rgba(30,42,71,.13);
   --blue:#2F6FED; --on-blue:#FFFFFF;
   --t1:#E1EFFF; --t2:#FFE6DE; --t3:#E2F7E8; --t4:#EEE6FF; --t5:#DDF6F5; --t6:#FFE5F0;
   --f-display:"Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
   --f-body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
   --f-mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+@media (prefers-color-scheme: dark){:root:not([data-theme]){
   --paper:#0F1730; --panel:#17213F; --ink:#EAF0FF; --muted:#A5B2D1; --line:#2B3962; --cell:#1F2B50;
   --tile:#1D2A4F; --tile-edge:#3C5088; --honey:#FFC94D; --honey-soft:#3E3414; --honey-ink:#FFE08A;
   --teal:#3FD0C4; --teal-soft:#12393A; --danger:#FF8A73; --ok:#5BD68A; --shadow:rgba(0,0,0,.45);
@@ -50,7 +51,7 @@ button,input,textarea,select{font:inherit;color:inherit}
 .chip.ok{color:var(--ok);border-color:currentColor}
 h2{font-family:var(--f-display);font-weight:800;font-size:1.6rem;line-height:1.15;letter-spacing:-.015em;margin:0;text-wrap:balance}
 h3{font-family:var(--f-display);font-weight:600;font-size:1.05rem;margin:0;text-wrap:balance}
-.eyebrow{font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.eyebrow{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
 .muted{color:var(--muted)}
 .mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:700;font-size:.9rem;line-height:1.2;min-height:38px;text-align:center}
@@ -131,12 +132,12 @@ textarea{resize:vertical;min-height:90px;line-height:1.45}
 .tray-empty{color:var(--muted);font-size:.85rem;padding:6px}
 .tile-w{filter:drop-shadow(0 1px 0 var(--tile-edge)) drop-shadow(0 2px 3px var(--shadow))}
 .tile{width:78px;aspect-ratio:0.866;max-width:100%;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:var(--tile);border:0;padding:14px 3px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;text-align:center}
-.tile .n{font-family:var(--f-mono);font-size:.66rem;color:var(--muted);font-weight:700}
+.tile .n{font-family:var(--f-mono);font-size:.7rem;color:var(--muted);font-weight:700}
 .tile .t{font-weight:700;font-size:.72rem;line-height:1.15;overflow-wrap:anywhere;hyphens:auto}
-.tile .t.l1{font-size:.62rem}
-.tile .t.l2{font-size:.54rem;letter-spacing:-.01em}
+.tile .t.l1{font-size:.68rem}
+.tile .t.l2{font-size:.62rem;letter-spacing:-.01em}
 .tile.dc{background:var(--honey-soft)}
-.tile.dc .t{font-size:.6rem}
+.tile.dc .t{font-size:.66rem}
 .tile.dc svg{width:18px;height:18px}
 .tile.sel{box-shadow:inset 0 0 0 4px var(--blue)}
 .drag-ghost{position:fixed;z-index:50;pointer-events:none;transform:translate(-50%,-50%) scale(1.06);filter:drop-shadow(0 8px 14px var(--shadow))}
@@ -192,7 +193,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.45}
 .dcopt svg{flex:none;width:20px;height:20px}
 .vt{display:flex;flex-direction:column;gap:6px}
 .vt-head,.vt-row{display:grid;grid-template-columns:48px minmax(0,1fr) minmax(0,2fr) 96px;gap:8px;align-items:center}
-.vt-head{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.vt-head{font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
 .vt-num{font-family:var(--f-mono);font-weight:700;font-size:.8rem;color:var(--ink);text-align:center;border-radius:8px;padding:8px 0;background:var(--paper);border:1px dashed var(--line)}
 .vt-num.c1{background:var(--t1);border:0}.vt-num.c2{background:var(--t2);border:0}.vt-num.c3{background:var(--t3);border:0}.vt-num.c4{background:var(--t4);border:0}.vt-num.c5{background:var(--t5);border:0}.vt-num.c6{background:var(--t6);border:0}
 .vt-del{min-height:36px;padding:4px 10px;border:1.5px solid var(--danger);background:var(--panel);color:var(--danger);font-size:.85rem;font-weight:700;gap:5px;justify-self:stretch;white-space:nowrap}
@@ -233,7 +234,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.45}
 .tscroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
 table{border-collapse:collapse;width:100%;font-size:.88rem}
 th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
-th{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--paper)}
+th{font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--paper)}
 tr:last-child td{border-bottom:0}
 td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
 .savebar{position:sticky;bottom:calc(10px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px;border-radius:12px;background:var(--ink);color:var(--paper);margin-top:16px;box-shadow:0 8px 24px var(--shadow)}
@@ -302,9 +303,9 @@ td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:now
 .step{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:8px}
 .step-n{width:34px;height:34px;display:grid;place-items:center;font-family:var(--f-mono);font-weight:700;color:var(--ink);background:var(--honey-soft);clip-path:polygon(25% 3%,75% 3%,100% 50%,75% 97%,25% 97%,0 50%)}
 .step p{margin:0;color:var(--muted)}
-.why{background:var(--t1);border-radius:16px;padding:18px 20px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
-.why b{display:block;margin-bottom:4px}
-.why p{margin:0;font-size:.92rem;color:var(--ink)}
+.home .why{background:var(--t1);border-radius:16px;padding:18px 20px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.home .why b{display:block;margin-bottom:4px}
+.home .why p{margin:0;font-size:.92rem;color:var(--ink)}
 .dc-group{display:flex;flex-direction:column;gap:10px}
 .dc-group h3{display:flex;align-items:baseline;gap:10px}
 .dc-group h3 small{font-family:var(--f-body);font-weight:400;font-size:.88rem;color:var(--muted)}
@@ -374,7 +375,7 @@ input[type=date]{border:1px solid var(--line);background:var(--panel);color:var(
 .uses{background:var(--t1);border-radius:16px;padding:18px 20px;display:flex;flex-direction:column;gap:12px}
 .uses-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 18px}
 .use{display:flex;flex-direction:column;gap:2px}
-.use-when{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.use-when{font-size:.76rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .use p{margin:0;font-size:.9rem}
 .dc-why{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;align-items:stretch}
 .dc-why-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
@@ -398,7 +399,7 @@ input[type=date]{border:1px solid var(--line);background:var(--panel);color:var(
 #hx-code{font-size:1.5rem;text-align:center;padding:12px}
 @media (max-width:860px){
   .hero{grid-template-columns:minmax(0,1fr)}
-  .steps,.why,.roles-2,.benefits,.uses-grid,.dc-why,.dc-why-list{grid-template-columns:minmax(0,1fr)}
+  .steps,.home .why,.roles-2,.benefits,.uses-grid,.dc-why,.dc-why-list{grid-template-columns:minmax(0,1fr)}
 }
 
 /* Hex Space sidebar: folders */
@@ -416,14 +417,14 @@ input[type=date]{border:1px solid var(--line);background:var(--panel);color:var(
 .tree-name.on{background:var(--panel);box-shadow:inset 0 0 0 1px var(--line)}
 .tree-name span.nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .tree-name svg{flex:none;width:18px;height:18px;color:var(--honey-ink)}
-.tree-count{font-family:var(--f-mono);font-size:.72rem;color:var(--muted);font-weight:500;margin-left:auto;padding-left:6px}
+.tree-count{font-family:var(--f-mono);font-size:.78rem;color:var(--muted);font-weight:500;margin-left:auto;padding-left:6px}
 .tree-more .btn{min-height:28px;padding:2px 8px}
 .tree-kids{display:flex;flex-direction:column;gap:2px;margin-left:12px;padding-left:10px;border-left:1px solid var(--line)}
 .tree .aitem{padding:7px 10px}
 .tree .aitem[draggable="true"]{cursor:grab}
 .tree-empty{font-size:.8rem;color:var(--muted);padding:4px 8px}
-.chip.gc{color:var(--teal);border-color:currentColor;font-size:.72rem}
-.chip.code{color:var(--honey-ink);background:var(--honey-soft);border-color:transparent;font-size:.72rem}
+.chip.gc{color:var(--teal);border-color:currentColor;font-size:.78rem}
+.chip.code{color:var(--honey-ink);background:var(--honey-soft);border-color:transparent;font-size:.78rem}
 .class-list{display:flex;flex-direction:column;gap:6px}
 .class-li{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:.9rem}
 .folder-pick{display:flex;align-items:center;gap:6px;font-size:.85rem;color:var(--muted)}
@@ -438,6 +439,84 @@ input[type=date]{border:1px solid var(--line);background:var(--panel);color:var(
 .share-terms dt{font-weight:700}
 .share-terms dd{margin:0;color:var(--muted);font-size:.9rem}
 .share-link{font-family:var(--f-mono);font-size:.85rem}
+
+/* ===== 4.4: themes, readable sizes, and layouts that fit each screen ===== */
+:root[data-theme="contrast"]{
+  --paper:#FFFFFF; --panel:#FFFFFF; --ink:#000000; --muted:#222222; --line:#1A1A1A; --cell:#6B6B6B;
+  --tile:#FFFFFF; --tile-edge:#000000; --honey:#FFC229; --honey-soft:#FFE07A; --honey-ink:#000000;
+  --teal:#00574F; --teal-soft:#C6F0EA; --danger:#9E0016; --ok:#06612A; --shadow:rgba(0,0,0,.28);
+  --blue:#0033B3; --on-blue:#FFFFFF;
+  --t1:#D3E4FF; --t2:#FFD6C7; --t3:#CDF0D8; --t4:#E2D5FF; --t5:#C9EFEC; --t6:#FFD2E6; color-scheme:light}
+:root[data-theme="contrast"] .btn,:root[data-theme="contrast"] .panel,:root[data-theme="contrast"] .chip,:root[data-theme="contrast"] input,:root[data-theme="contrast"] select,:root[data-theme="contrast"] textarea,:root[data-theme="contrast"] .tray{border-width:2px;border-color:#000}
+:root[data-theme="contrast"] .btn.primary{border-color:var(--blue)}
+:root[data-theme="contrast"] a{text-decoration:underline}
+:root[data-theme="contrast"] :focus-visible{outline:3px solid #000;box-shadow:0 0 0 6px #FFC229}
+:root[data-theme="contrast"] .hexg .hx{stroke-width:2.5}
+:root[data-text="large"]{font-size:18px}
+:root[data-text="large"] body{font-size:17px}
+a.btn,a.nav-link,a.menu-item,.btn{text-decoration:none}
+:root[data-theme="contrast"] a.btn{text-decoration:none}
+h2,h3,.brand h1,.aitem b,.act-head h2,.modal h3{overflow-wrap:anywhere}
+.panel{border-radius:14px}
+.page-title{margin-bottom:6px}
+.back-link{align-self:flex-start;margin:-6px 0 6px -8px}
+.board-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:-6px 0 6px}
+.board-top>.btn{margin:0 0 0 -8px}
+.board-top .row{gap:6px}
+.status-chip{display:inline-flex;align-items:center;border-radius:999px;padding:2px 10px;font-size:.8rem;font-weight:700;background:var(--t1);color:var(--ink)}
+.status-chip.done{background:var(--teal-soft);color:var(--teal)}
+.status-chip.late{background:var(--honey-soft);color:var(--honey-ink)}
+.stu-grid{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:18px;align-items:start}
+.stu-grid .code-col{display:flex;flex-direction:column;gap:12px}
+.stu-grid .code-col .row input{flex:1;min-width:0}
+.assign-card{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.assign-card h3{font-size:1.1rem}
+.appearance-pop .menu-item.on::before{content:'✓ ';font-weight:700}
+.appearance-btn{min-width:38px}
+/* Board fits the screen height; the tray column stays in view on wide screens. */
+.board-scroll,.board-svg{max-height:max(360px,calc(100vh - 230px))}
+.board-svg.zoomed{max-height:none}
+@media (min-width:901px){
+  .play .side{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;padding-right:2px}
+}
+@media (min-width:1600px){#root{max-width:1440px}.play{grid-template-columns:minmax(0,1fr) 340px}}
+@media (min-width:901px) and (max-height:820px){
+  .top{padding-block:10px 8px;margin-bottom:12px}
+  .act-head h2{font-size:1.35rem}
+  .act-head .ins{margin:2px 0 0}
+}
+/* Phones and tablets: the hexagon tray docks to the bottom of the screen so it is
+   always within reach while working on the board. */
+@media (max-width:900px){
+  .play .side>.stack:last-child{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--paper);border-top:1px solid var(--line);box-shadow:0 -6px 18px var(--shadow);padding:6px max(12px,env(safe-area-inset-left,0px)) calc(6px + env(safe-area-inset-bottom,0px));gap:2px}
+  .play .side>.stack:last-child>.row span.muted{display:none}
+  .play .side>.stack:last-child .tray{flex-wrap:nowrap;overflow-x:auto;min-height:0;padding:4px 6px;border-width:1px;scroll-snap-type:x proximity}
+  .play .side>.stack:last-child .tile-w{flex:none;scroll-snap-align:start}
+  .play .side>.stack:last-child .tray-empty{padding:10px 6px}
+  #root:has(.play){padding-bottom:160px}
+  .stu-grid{grid-template-columns:minmax(0,1fr)}
+  .stu-grid .code-col{order:-1}
+}
+/* Touch screens: larger tap targets. */
+@media (pointer:coarse){
+  .btn,.btn.sm,.nav-link,.menu-item,.acct-btn,.nav-mobile .btn{min-height:42px}
+  .board-tools .btn{min-height:40px;min-width:40px}
+  input[type=checkbox],input[type=radio]{width:20px;height:20px}
+  .tile{width:84px}
+  .tree-toggle{width:34px;height:38px}
+}
+@media (max-width:1024px){select,label.folder-pick select{min-height:42px}}
+.hs-toggle{display:none;width:100%;justify-content:space-between}
+@media (max-width:900px){.hs-toggle{display:flex}.hs-wrap:not(.open)>.hs-side{display:none}.hs-wrap{margin-bottom:12px;display:flex;flex-direction:column;gap:10px}}
+.appearance-btn{gap:6px}
+@media (max-width:600px){.appearance-label{display:none}}
+@media (max-width:1024px){
+  .btn,.btn.sm,.nav-link,.menu-item,.acct-btn,.nav-mobile .btn,.appearance-btn,.back-link{min-height:42px}
+  .board-tools .btn{min-height:40px;min-width:40px}
+  input[type=checkbox],input[type=radio]{width:20px;height:20px}
+}
+.tile .t{font-size:.78rem}.tile .t.l1{font-size:.72rem}.tile .t.l2{font-size:.68rem}.tile .n{font-size:.74rem}.tile.dc .t{font-size:.7rem}
+.tile{width:84px}
 </style>
 <div id="root"></div>
 <script type="application/json" id="hx-data">{"version":4,"classes":[],"activities":[]}</script>
@@ -2366,7 +2445,7 @@ codesPane=function(a){
 var oldSubs=subsPane;
 subsPane=function(a){var pane=oldSubs(a);pane.prepend(el('button',{class:'btn',onclick:refreshSubmissions,text:'Refresh online submissions'}));return pane};
 var oldView=viewSubmission;
-viewSubmission=function(a,p){oldView(p.activitySnapshot||a,p);if(p._postId){var box=document.querySelector('.modal');if(box)add(box,el('div',{class:'row'},el('span',{class:'chip',text:p._grade==null?'Not graded':p._grade+' / '+p._maxPoints}),el('button',{class:'btn primary',onclick:function(){gradeClassroom(p)},text:'Grade and return in Classroom'})));}};
+viewSubmission=function(a,p){oldView(p.activitySnapshot||a,p);if(p._postId){var box=document.querySelector('.modal');if(box)add(box,el('div',{class:'row'},el('span',{class:'chip',text:p._grade==null?'Not graded':p._grade+' / '+p._maxPoints}),el('button',{class:'btn primary',onclick:function(){gradeClassroom(p)},text:p._manual?'Grade':'Grade and return in Classroom'})));}};
 saveBar=function(){return el('div',{class:'savebar'},el('span',{style:'margin-right:auto;font-weight:700',text:'Workspace changes are saved in this browser. Save online to use another device. Use the Post tab to post or update assignments.'}),el('button',{class:'btn',disabled:PX.saving,onclick:publishNow,text:PX.saving?'Saving…':'Save workspace online'}))};
 publishNow=function(){saveWorkspaceCloud().then(function(){renderTeacher();toast('Workspace saved online. Use the Post tab to post it to a class.');}).catch(platformError)};
 var baseTopBar=topBar;
@@ -2422,7 +2501,7 @@ function dashboardMessage(parent,message){dashboardAdd(parent,el('p',{class:'mut
 function dashboardError(parent,error){dashboardAdd(parent,el('p',{class:'err',role:'alert',text:error.message||String(error)}))}
 function teacherDashboard(courseId){
  var seq=PX.routeId,body=el('div',{class:'stack'});
- fill(root,topBar(),el('div',{class:'row'},el('h2',{text:courseId?'Class assignments':'Your classes'}),el('a',{class:'btn',href:'#teacher/editor',text:'Open Hex Space'})),body);
+ fill(root,topBar(),courseId?el('a',{class:'btn ghost sm back-link',href:'#teacher',text:'← All classes'}):el('div',{class:'row page-title'},el('h2',{text:'Your classes'}),el('a',{class:'btn',href:'#teacher/editor',text:'Open Hex Space'})),body);
  dashboardMessage(body,'Loading classes…');
  var courseError=null;
  Promise.all([platformApi('teacher/dashboard'),classroomReady('teacher')?platformApi('classroom/courses?role=teacher',undefined,true).catch(function(e){courseError=e;return {courses:[]}}):Promise.resolve({courses:[]})]).then(function(results){
@@ -2445,9 +2524,8 @@ function teacherDashboard(courseId){
    el('button',{class:'btn ghost',onclick:addClassFromDashboard,text:'Add a code-only class'})));
   if(courseError)dashboardError(body,courseError);
   if(courseId){
-   dashboardAdd(body,el('a',{class:'btn ghost',href:'#teacher',text:'← All classes'}));
    var course=courses.get(courseId)||{id:courseId,name:'Classroom'};
-   dashboardAdd(body,el('div',{class:'row',style:'justify-content:space-between'},el('h3',{text:course.name}),course.link?el('a',{class:'btn sm',href:course.link,target:'_blank',rel:'noopener',text:'Open in Google Classroom ↗'}):null),el('div',{class:'row'},course.classId?el('button',{class:'btn primary',onclick:function(){openPostDialog(null,null,{pickActivity:true,classIds:[course.classId]})},text:'Post an assignment'}):null,el('button',{class:'btn',onclick:function(){newCourseAssignment(course)},text:'New Hex Space for this class'})));
+   dashboardAdd(body,el('div',{class:'row page-title',style:'justify-content:space-between'},el('h2',{text:course.name}),course.link?el('a',{class:'btn sm',href:course.link,target:'_blank',rel:'noopener',text:'Open in Google Classroom ↗'}):null),el('div',{class:'row'},course.classId?el('button',{class:'btn primary',onclick:function(){openPostDialog(null,null,{pickActivity:true,classIds:[course.classId]})},text:'Post an assignment'}):null,el('button',{class:'btn',onclick:function(){newCourseAssignment(course)},text:'New Hex Space for this class'})));
    var issued=assignments.filter(function(a){return a.courseId===courseId});
    PX.posts=assignments;
    dashboardAdd(body,el('h3',{class:'list-h',text:'Postings ('+issued.length+')'}));
@@ -2469,15 +2547,17 @@ function newCourseAssignment(course){
 }
 function teacherPostDashboard(postId){
  var seq=PX.routeId,body=el('div',{class:'stack'});
- fill(root,topBar(),el('a',{class:'btn ghost',href:'#teacher',text:'← Classrooms'}),el('h2',{text:'Assignment submissions'}),body);dashboardMessage(body,'Loading submissions…');
+ var back=el('a',{class:'btn ghost sm back-link',href:'#teacher',text:'← All classes'});
+ fill(root,topBar(),back,el('h2',{text:'Submissions'}),body);dashboardMessage(body,'Loading submissions…');
  Promise.all([platformApi('teacher/dashboard'),platformApi('submissions?postId='+encodeURIComponent(postId)),platformApi('posts/'+postId+'/groups').catch(function(e){if(e.code==='group-setup')return {groups:[],setupError:e.message};throw e})]).then(function(r){
   if(seq!==PX.routeId)return;body.replaceChildren();var a=r[0].assignments.find(function(x){return x.id===postId});
   if(!a){dashboardMessage(body,'Assignment not found in your classrooms.');return;}
-  dashboardAdd(body,el('h3',{text:a.title}),el('p',{class:'muted',text:a.courseName+' · '+a.submissions+' submissions'}),el('div',{class:'row'},el('a',{class:'btn',href:'#teacher/edit-'+encodeURIComponent(a.activityId),text:'Edit assignment'}),el('button',{class:'btn',onclick:function(){route()},text:'Refresh submissions'})));
+  back.setAttribute('href',routeHref('#teacher/class-'+encodeURIComponent(a.courseId)));back.textContent='← '+a.courseName;
+  dashboardAdd(body,el('h3',{text:a.title}),el('p',{class:'muted',style:'margin:0',text:a.courseName+' · '+(typeof postDatesText==='function'?postDatesText(a)+' · ':'')+(a.code?'code '+fmtCode(a.code)+' · ':'')+a.submissions+' submission'+(a.submissions===1?'':'s')}),el('div',{class:'row'},el('button',{class:'btn',onclick:function(){route()},text:'Refresh'}),el('a',{class:'btn ghost',href:'#teacher/edit-'+encodeURIComponent(a.activityId),text:'Edit Hex Space'})));
   var subs=r[1].submissions||[];
   if(!subs.length)dashboardMessage(body,'No student submissions yet.');
-  subs.forEach(function(p){dashboardAdd(body,el('div',{class:'panel row',style:'justify-content:space-between'},el('div',null,el('b',{text:p.name}),el('p',{class:'muted',text:(p.group?p.group.name+' · ':'')+p._status.replace(/_/g,' ').toLowerCase()+(p._grade==null?'':' · '+p._grade+' / '+p._maxPoints)})),el('button',{class:'btn primary',onclick:function(){var act=p.activitySnapshot||(PX.teacherData&&PX.teacherData.activities.find(function(x){return x.id===p.activityId}));if(act)viewSubmission(act,p);else toast('The activity snapshot is unavailable.')},text:'View board & grade'})))});
-  dashboardAdd(body,el('h3',{text:'Group project boards'}),el('p',{class:'muted',text:'Create a group and share its code with enrolled students. Each member submits their own Classroom assignment.'}),el('button',{class:'btn',disabled:!!r[2].setupError,onclick:function(){createProjectGroup(postId)},text:'Create group'}));
+  subs.forEach(function(p){dashboardAdd(body,el('div',{class:'panel row',style:'justify-content:space-between'},el('div',null,el('b',{text:p.name}),el('p',{class:'muted',text:(p.group?p.group.name+' · ':'')+({TURNED_IN:'Turned in',GRADED:'Graded',DRAFT:'Unsubmitted · still working',SAVED_PENDING_CLASSROOM:'Turning in…'}[p._status]||String(p._status||'').replace(/_/g,' ').toLowerCase())+(p._grade==null?'':' · '+p._grade+' / '+p._maxPoints)})),el('button',{class:'btn primary',onclick:function(){var act=p.activitySnapshot||(PX.teacherData&&PX.teacherData.activities.find(function(x){return x.id===p.activityId}));if(act)viewSubmission(act,p);else toast('The activity snapshot is unavailable.')},text:'View board & grade'})))});
+  dashboardAdd(body,el('h3',{text:'Group project boards'}),el('p',{class:'muted',text:a.manual?'Create a group and give its code to the students in it. They build one shared board, and each member turns in their own copy.':'Create a group and share its code with enrolled students. Each member turns in their own Classroom assignment.'}),el('button',{class:'btn primary',style:'align-self:flex-start',disabled:!!r[2].setupError,onclick:function(){createProjectGroup(postId)},text:'Create group'}));
   if(r[2].setupError)dashboardMessage(body,r[2].setupError);
   (r[2].groups||[]).forEach(function(g){dashboardAdd(body,el('div',{class:'panel stack'},el('h3',{text:g.name}),el('p',{text:g.members.length+' / '+g.maxMembers+' members'+(g.members.length?' · '+g.members.map(function(m){return m.name}).join(', '):'')}),el('div',{class:'row'},el('code',{class:'linkcode',text:groupCode(g.code)}),el('button',{class:'btn sm',onclick:function(){copyText(groupCode(g.code),'Group code')},text:'Copy group code'}),el('button',{class:'btn sm',onclick:function(){viewSubmission(r[2].activity,{name:g.name,placements:g.draft.place,connections:activeConns(g.draft.place,g.draft.conns),period:a.className})},text:'View shared board'}))))});
  }).catch(function(e){if(seq===PX.routeId){body.replaceChildren();dashboardError(body,e)}});
@@ -2724,7 +2804,7 @@ function renderHome(){
   var primary=!GA.user?[el('a',{class:'btn honey',href:'#code',text:'Enter a class code'}),el('a',{class:'btn primary',href:'#new',text:'New Hex Space (teachers)'})]
     :role==='teacher'?[el('a',{class:'btn primary',href:'#teacher',text:'Go to my classes'}),el('a',{class:'btn',href:'#teacher/new',text:'+ New Hex Space'})]
     :[el('a',{class:'btn primary',href:'#',text:'Go to my assignments'}),el('a',{class:'btn honey',href:'#code',text:'Enter a class code'})];
-  var signedInAs=GA.user?el('p',{class:'hero-login',text:'Signed in'+(GA.user.displayName?' as '+GA.user.displayName:'')+'.'}):el('p',{class:'hero-login'},'Already have an account? ',el('a',{href:'#signin',text:'Log in'}),' with your school Google account.');
+  var signedInAs=GA.user?el('p',{class:'hero-login',text:'Signed in'+(GA.user.displayName?' as '+GA.user.displayName:'')+'.'}):el('p',{class:'hero-login'},'Already have an account? ',el('a',{href:'#signin',text:'Log in'}),' with Google or your email.');
   var depth=DC.filter(function(d){return ['perspectives','change','across'].indexOf(d.k)<0});
   var complexity=DC.filter(function(d){return ['perspectives','change','across'].indexOf(d.k)>=0});
   fill(root,topBar(),el('main',{class:'home'},
@@ -3240,7 +3320,8 @@ var LG={role:'',err:'',info:'',email:'',busy:false};
 function field(label,input,hint){return el('label',{class:'field'},el('span',{class:'field-label',text:label}),input,hint?el('span',{class:'hint',text:hint}):null);}
 function renderLogin(){
   var signup=NAV.hash==='#signup',configured=googleConfigured(),ready=configured&&GA.auth;
-  var name=signup?el('input',{type:'text',id:'lg-name',autocomplete:'name',maxlength:80,placeholder:'e.g. Ms. Rivera or Ava Lopez'}):null;
+  var name=signup?el('input',{type:'text',id:'lg-name',autocomplete:'name',maxlength:80,placeholder:'e.g. Ms. Rivera or Ava Lopez',value:LG.name||''}):null;
+  if(name)name.addEventListener('input',function(){LG.name=name.value});
   var email=el('input',{type:'email',id:'lg-email',autocomplete:'email',maxlength:200,placeholder:'you@school.org',value:LG.email||''});
   var pass=el('input',{type:'password',id:'lg-pass',autocomplete:signup?'new-password':'current-password',maxlength:200,placeholder:signup?'At least 8 characters':''});
   var err=el('p',{class:'err',role:'alert',text:LG.err||GA.error||''});
@@ -3966,6 +4047,108 @@ folderPicker=function(a){
     moveActivity(a,sel.value||null);
   });
   return el('label',{class:'folder-pick',for:'f-folder'},folderIcon(),sel);
+};
+
+
+/* ===================== 4.4: appearance (themes, text size), friendlier student pages ===================== */
+var APPEAR=(function(){try{return JSON.parse(localStorage.getItem('hx-appearance')||'{}')}catch(e){return {}}})();
+function applyAppearance(){
+  var d=document.documentElement;if(!d||!d.setAttribute)return;
+  if(APPEAR.theme&&APPEAR.theme!=='system')d.setAttribute('data-theme',APPEAR.theme);else if(d.removeAttribute)d.removeAttribute('data-theme');
+  if(APPEAR.text==='large')d.setAttribute('data-text','large');else if(d.removeAttribute)d.removeAttribute('data-text');
+}
+function setAppearance(k,v){APPEAR[k]=v;try{localStorage.setItem('hx-appearance',JSON.stringify(APPEAR))}catch(e){}applyAppearance();var h=root.querySelector&&root.querySelector('.top');if(h&&h.replaceWith)h.replaceWith(topBar());toast(k==='theme'?'Theme: '+({system:'matches your device',light:'Light',dark:'Dark',contrast:'High contrast'})[v]+'.':(v==='large'?'Larger text on.':'Standard text size.'));}
+function appearanceMenu(){
+  var t=APPEAR.theme||'system',x=APPEAR.text||'standard';
+  function item(label,k,v,on){return {label:label,onclick:function(){setAppearance(k,v)},cls:on?'on':''}}
+  var m=menuButton('◐',[
+    {note:'Theme'},
+    item('Match my device','theme','system',t==='system'),item('Light','theme','light',t==='light'),item('Dark','theme','dark',t==='dark'),item('High contrast','theme','contrast',t==='contrast'),
+    {sep:true},{note:'Text size'},
+    item('Standard','text','standard',x!=='large'),item('Larger text','text','large',x==='large')
+  ],{btnCls:'ghost sm appearance-btn',aria:'Appearance: theme and text size',title:'Appearance'});
+  if(m.className!==undefined)m.className+=' appearance-pop';
+  return m;
+}
+/* menuButton items can carry an extra class (used for the ✓ on the current choice). */
+var v43Menu=menuButton;
+menuButton=function(label,items,opts){
+  var w=v43Menu(label,items,opts),list=(items||[]).filter(function(it){return it&&!it.sep&&!it.note});
+  var nodes=w.querySelectorAll?w.querySelectorAll('.menu-item'):[];
+  list.forEach(function(it,i){if(it.cls&&nodes[i]&&nodes[i].classList){nodes[i].classList.add(it.cls);nodes[i].setAttribute('aria-checked','true')}});
+  return w;
+};
+var v43TopBar=topBar;
+topBar=function(){
+  var h=v43TopBar(),acct=h.querySelector&&h.querySelector('.acct-btn'),wrap=acct&&acct.parentNode;
+  var ap=appearanceMenu();
+  if(wrap&&wrap.parentNode===h)h.insertBefore(ap,wrap);else add(h,ap);
+  return h;
+};
+applyAppearance();
+
+/* Student board page: no name box for signed-in students (their account name is used),
+   and the saved status sits on the same line as the back link. */
+var v43Shell=renderStudentShell;
+renderStudentShell=function(){
+  v43Shell();
+  if(!ST||ST.preview||!PX.activePost)return;
+  var who=root.querySelector&&root.querySelector('.who');if(who&&who.remove)who.remove();
+  var kids=root.children||[],back=null,cloud=null;
+  for(var i=0;i<kids.length;i++){var k=kids[i];if(!back&&k.tagName==='BUTTON'&&/Your assignments/.test(k.textContent||''))back=k;if(!cloud&&k.querySelector&&k.querySelector('#hx-cloud-status'))cloud=k;}
+  if(back&&cloud&&back.parentNode===root){var bar=el('div',{class:'board-top'});root.insertBefore(bar,back);bar.appendChild(back);bar.appendChild(cloud);back.style.margin='';}
+};
+function friendlyStatus(a){
+  var s=String(a.classroomStatus||a.status||'').toUpperCase();
+  if(a.grade!=null&&(s==='RETURNED'||a.status==='GRADED'))return {t:'Returned · '+a.grade+(a.maxPoints?' / '+a.maxPoints:''),c:'done'};
+  if(s==='TURNED_IN')return {t:'Turned in',c:'done'};
+  if(s==='RETURNED')return {t:'Returned',c:'done'};
+  if(s==='RECLAIMED_BY_STUDENT')return {t:'In progress',c:''};
+  return {t:'Not started',c:''};
+}
+studentAssignmentCard=function(a){
+  var early=a.startAt&&Date.now()<Date.parse(a.startAt);
+  var late=!early&&a.dueAt&&Date.now()>Date.parse(a.dueAt);
+  var st=friendlyStatus(a);
+  return el('div',{class:'panel assign-card'},
+    el('div',{class:'stack',style:'gap:4px;min-width:0'},el('h3',{text:a.title}),
+      el('div',{class:'row',style:'gap:8px'},el('span',{class:'muted',text:a.className+(a.due?' · Due '+fmtDay(a.due):'')}),
+        early?null:el('span',{class:'status-chip '+st.c,text:st.t}),late&&st.c!=='done'?el('span',{class:'status-chip late',text:'Late work accepted'}):null)),
+    early?el('span',{class:'chip sched',text:'Opens '+fmtDay(a.start)}):el('a',{class:'btn primary',href:'#a-'+a.id,text:st.c==='done'?'View':'Open'}));
+};
+studentDashboard=function(){
+  var seq=PX.routeId,list=el('div',{class:'stack'}),side=el('div',{class:'code-col'},addCodePanel());
+  fill(root,topBar(),el('h2',{class:'page-title',text:'Your assignments'}),el('div',{class:'stu-grid'},list,side));
+  dashboardMessage(list,'Loading your assignments…');
+  platformApi('student/dashboard',undefined,classroomReady('student')).then(function(r){
+    if(seq!==PX.routeId)return;list.replaceChildren();
+    var active=r.active||[],done=r.submitted||[];
+    if(!active.length&&!done.length)add(list,el('div',{class:'panel stack'},el('h3',{text:'No assignments yet'}),el('p',{class:'muted',style:'margin:0',text:'Enter the class code from your teacher to get started.'})));
+    if(active.length){add(list,el('h3',{text:'To do ('+active.length+')'}));active.forEach(function(a){add(list,studentAssignmentCard(a))});}
+    if(done.length){add(list,el('h3',{text:'Turned in and returned ('+done.length+')'}));done.forEach(function(a){add(list,studentAssignmentCard(a))});}
+    if(r.needsClassroom)add(side,el('div',{class:'panel stack'},el('p',{class:'muted',style:'margin:0',text:emailOnly()?'Have assignments in Google Classroom? Connect your Google account to see them here.':'Have assignments in Google Classroom? Connect it to see them here.'}),
+      el('button',{class:'btn',style:'align-self:flex-start',onclick:function(){connectClassroom('student',function(){route()})},text:emailOnly()?'Connect Google account':'Connect Google Classroom'})));
+  }).catch(function(e){if(seq===PX.routeId){list.replaceChildren();dashboardError(list,e);add(list,el('button',{class:'btn',onclick:function(){connectClassroom('student',function(){route()})},text:'Reconnect Classroom'}))}});
+};
+
+
+/* Smaller screens: the Hex Space list folds into a toggle so the editor isn't pushed down,
+   and the folder holding the open Hex Space is always expanded. */
+var v43Sidebar=hexSpaceSidebar;
+var SIDE_OPEN=false;
+hexSpaceSidebar=function(){
+  var cur=TW&&curAct();if(cur&&cur.folder&&folderById(cur.folder))revealFolder(cur.folder);
+  var side=v43Sidebar();
+  var wrap=el('div',{class:'hs-wrap'+(SIDE_OPEN?' open':'')});
+  var btn=el('button',{class:'btn hs-toggle','aria-expanded':SIDE_OPEN?'true':'false',onclick:function(){SIDE_OPEN=!SIDE_OPEN;wrap.classList.toggle('open',SIDE_OPEN);btn.setAttribute('aria-expanded',SIDE_OPEN?'true':'false');btn.textContent=SIDE_OPEN?'Hide my Hex Spaces & classes ▴':'My Hex Spaces & classes ▾'},text:SIDE_OPEN?'Hide my Hex Spaces & classes ▴':'My Hex Spaces & classes ▾'});
+  add(wrap,[btn,side]);return wrap;
+};
+function themeIcon(){return sv('svg',{width:18,height:18,viewBox:'0 0 24 24','aria-hidden':'true'},sv('circle',{cx:12,cy:12,r:9,fill:'none',stroke:'currentColor','stroke-width':2}),sv('path',{d:'M12 3a9 9 0 0 1 0 18z',fill:'currentColor'}));}
+var v44Appear=appearanceMenu;
+appearanceMenu=function(){
+  var m=v44Appear(),b=m.querySelector&&m.querySelector('button');
+  if(b&&b.replaceChildren){b.replaceChildren();add(b,[themeIcon(),el('span',{class:'appearance-label',text:'Display'})]);}
+  return m;
 };
 
 /* The homepage is the starting page: a visit to the bare site address opens it,

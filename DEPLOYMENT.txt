@@ -1,3 +1,19 @@
+DISPLAY THEMES, SCREEN FITTING AND SIMULATION FIXES 4.4.0
+========================================================
+No database or Firebase step. Merging deploys through Workers Builds.
+- Display menu (half-circle icon in the header, for everyone): Match my
+  device, Light, Dark, High contrast; Standard or Larger text. Saved per
+  browser.
+- Layouts fit the screen: board height fits the window; the tray and
+  connections column stays in view on laptops/Chromebooks; on phones and
+  tablets the hexagon tray docks to the bottom of the screen; wider layout on
+  1600px+ screens; compact header on short (768px) screens; the Hex Space
+  list folds into "My Hex Spaces & classes" on tablets and phones.
+- Readability: stronger teal/red contrast, no labels under 12px except
+  hexagon names that shrink to fit long words, 42px tap targets on
+  touch-size screens, long titles wrap.
+- Fixes from 20 simulated teacher/student sessions: see TESTING.txt.
+
 POSTING, FOLDERS AND EDITING 4.3.0
 =================================
 No database or Firebase step. Merging deploys through Workers Builds.

@@ -23,7 +23,7 @@ function make(){
  const root=new Element('div'),store=new Map();
  const nodes={root,'hx-data':{textContent:'{"classes":[],"activities":[]}'},'hx-auth-config':{textContent:html.match(/id="hx-auth-config">([\s\S]*?)<\/script>/)[1]},'hx-main':{textContent:script},'hx-style':{textContent:''}};
  function search(n,id){return n.attrs?.id===id?n:(n.children||[]).map(c=>search(c,id)).find(Boolean)}
- const document={getElementById:id=>nodes[id]||search(root,id)||search(document.body,id)||null,createElement:t=>new Element(t),createElementNS:(ns,t)=>new Element(t),createTextNode:t=>({textContent:t}),addEventListener(){},body:new Element('body'),querySelector(){return null}};
+ const document={getElementById:id=>nodes[id]||search(root,id)||search(document.body,id)||null,createElement:t=>new Element(t),createElementNS:(ns,t)=>new Element(t),createTextNode:t=>({textContent:t}),addEventListener(){},removeEventListener(){},body:new Element('body'),querySelector(){return null}};
  const location={hash:'',protocol:'https:',hostname:'hexconnections.com',origin:'https://hexconnections.com',pathname:'/'};
  let hash='';Object.defineProperty(location,'hash',{get(){return hash},set(value){hash=value?(value.startsWith('#')?value:'#'+value):''}});
  const context={document,location,window:{addEventListener(){},innerWidth:1000},setTimeout(){},clearTimeout(){},console,TextDecoder,Uint8Array,Blob,URL,AbortController,DOMException,sessionStorage:(()=>{const m=new Map();return {getItem:k=>m.has(k)?m.get(k):null,setItem:(k,v)=>m.set(k,String(v)),removeItem:k=>m.delete(k)}})(),localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v)}};
@@ -181,12 +181,12 @@ test('teacher login lands on a classroom dashboard rather than the activity edit
  const {h,location,text}=make();h.GA.ready=true;h.GA.user={uid:'teacher'};h.PX.loaded=true;h.PX.profile={role:'teacher'};h.PX.token='token';h.PX.tokenRole='teacher';h.PX.tokenUntil=Date.now()+10000;h.PX.teacherData={version:4,classes:[{id:'gc-course',name:'Psychology',classroomId:'course'}],activities:[]};
  h.setApi(async path=>path==='teacher/dashboard'?{assignments:[{id:'post',courseId:'course',courseName:'Psychology',className:'Period 1',title:'Memory',status:'PUBLISHED',open:true,submissions:2,turnedIn:1}]}:{courses:[{id:'course',name:'Psychology'}]});
  location.hash='#teacher';h.route();await tick();assert.match(text(),/Your classes/);assert.match(text(),/Psychology/);assert.match(text(),/Open class/);assert.doesNotMatch(text(),/Vocabulary/);
- location.hash='#teacher/class-course';h.route();await tick();assert.match(text(),/Class assignments/);assert.match(text(),/Memory/);assert.match(text(),/View submissions & groups/);assert.match(text(),/New Hex Space for this class/);assert.match(text(),/← All classes/);
+ location.hash='#teacher/class-course';h.route();await tick();assert.match(text(),/Postings \(1\)/);assert.match(text(),/Memory/);assert.match(text(),/View submissions & groups/);assert.match(text(),/New Hex Space for this class/);assert.match(text(),/← All classes/);
 });
 test('student dashboard lists active and completed assignments and always offers an add-code box',async()=>{
  const {h,text}=make();h.GA.ready=true;h.GA.user={uid:'student'};h.PX.loaded=true;h.PX.profile={role:'student'};
  h.setApi(async path=>{assert.equal(path,'student/dashboard');return {active:[{id:'a',title:'Memory',className:'Psychology',classroomStatus:'NEW'}],submitted:[{id:'b',title:'Learning',className:'Psychology',classroomStatus:'TURNED_IN'}],needsClassroom:false}});
- h.route();await tick();assert.match(text(),/Active assignments/);assert.match(text(),/Memory/);assert.match(text(),/Submitted and returned/);assert.match(text(),/Enter a class code/);
+ h.route();await tick();assert.match(text(),/To do \(1\)/);assert.match(text(),/Memory/);assert.match(text(),/Turned in and returned \(1\)/);assert.match(text(),/Not started/);assert.match(text(),/Enter a class code/);
 });
 test('a student can join a shared project from the dashboard group-code box',async()=>{
  const {h,text,flatten,location}=make();h.GA.ready=true;h.GA.user={uid:'student'};h.PX.loaded=true;h.PX.profile={role:'student'};h.PX.token='token';h.PX.tokenRole='student';h.PX.tokenUntil=Date.now()+10000;
@@ -212,7 +212,7 @@ test('shared-board conflicts keep the student’s local edits and offer a safe r
 test('teacher assignment page renders submission controls and the create-group action',async()=>{
  const {h,location,text,flatten}=make();h.GA.ready=true;h.GA.user={uid:'teacher'};h.PX.loaded=true;h.PX.profile={role:'teacher'};
  h.setApi(async path=>path==='teacher/dashboard'?{assignments:[{id:'post',title:'Memory',courseName:'Psychology',submissions:1}]}:path.startsWith('submissions')?{submissions:[{name:'Alex',_status:'TURNED_IN',_grade:null}]}:{groups:[]});
- location.hash='#teacher/post-post';h.route();await tick();assert.match(text(),/Psychology · 1 submissions/);assert.match(text(),/Refresh submissions/);assert.match(text(),/Create group/);assert.match(text(),/View board & grade/);
+ location.hash='#teacher/post-post';h.route();await tick();assert.match(text(),/Psychology · No due date · 1 submission/);assert.match(text(),/Refresh/);assert.match(text(),/← Psychology/);assert.match(text(),/Create group/);assert.match(text(),/View board & grade/);
  flatten().find(n=>n.textContent==='Create group').listeners.click();assert.match(text(),/Create a project group/);assert.match(text(),/Create shared board/);
 });
 
@@ -423,9 +423,9 @@ test('students see a scheduled assignment as "Opens …" instead of an open butt
  const {h}=make();const all=n=>[n,...(n.children||[]).flatMap(all)];
  const future=new Date(Date.now()+3*86400000).toISOString();
  const card=h.v4.studentCard({id:'p1',title:'Cells',className:'Science club',start:dayOff(3),startAt:future,due:dayOff(9),dueAt:''});
- const words=all(card).map(n=>n.textContent).join(' ');assert.match(words,/Opens /);assert.doesNotMatch(words,/Open assignment/);
+ const words=all(card).map(n=>n.textContent).join(' ');assert.match(words,/Opens /);assert.doesNotMatch(words,/ Open$/);assert.doesNotMatch(words,/Not started/);
  const open=h.v4.studentCard({id:'p2',title:'Cells',className:'Science club',start:dayOff(-1),startAt:new Date(Date.now()-86400000).toISOString(),due:dayOff(9)});
- assert.match(all(open).map(n=>n.textContent).join(' '),/Open assignment/);
+ assert.match(all(open).map(n=>n.textContent).join(' '),/Not started Open/);
 });
 
 function teacher2(h){
@@ -486,4 +486,13 @@ test('saving changes to a posted Hex Space offers to update its open postings',a
  assert.match(text(),/Update the posted copy too\?/);assert.match(text(),/Cells · Science club/);assert.doesNotMatch(text(),/Atoms · Period 4/);
  everything(t).find(n=>n.textContent==='Update postings').listeners.click();await settle();
  assert.equal(JSON.stringify(calls.filter(c=>c[0].startsWith('posts/'))),JSON.stringify([['posts/p1/edit',true]]));assert.match(text(),/Updated 1 posting/);
+});
+
+test('appearance menu switches theme and text size and remembers the choice',()=>{
+ const t=make();const {h,store}=t;h.GA.ready=true;h.route();
+ const ap=t.flatten().find(n=>n.attrs?.['aria-label']==='Appearance: theme and text size');assert.ok(ap,'appearance button in header');
+ const item=label=>t.flatten().find(n=>n.textContent===label&&String(n.attrs?.class||'').includes('menu-item'));
+ item('High contrast').listeners.click({});
+ assert.equal(JSON.parse(store.get('hx-appearance')).theme,'contrast');
+ item('Larger text').listeners.click({});assert.equal(JSON.parse(store.get('hx-appearance')).text,'large');
 });
