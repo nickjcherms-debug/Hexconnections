@@ -1,10 +1,14 @@
-VERIFICATION — VERSION 4.10.0
+VERIFICATION — VERSION 4.11.1
 ============================
 108 automated tests pass (52 backend, 56 frontend) using in-memory SQLite,
 simulated Firebase/Classroom responses, and execution of the actual frontend
 script in a DOM test harness. No real Google Classroom assignment was created
 or modified by these tests.
 
+New in 4.11.1: 50 simulated teachers ran the real site in Chromium (varied
+devices, themes, subjects and features) with 239 simulated students turning in or
+saving work through the real API; every persona finished every step after the
+fixes listed in the commit. Guide/homepage unit test. 132 tests.
 New in 4.10.0: 131 tests. One connected board: default on for new postings,
 turn-in refused with code flow-broken when explained connections leave separate
 groups, a D&C hexagon bridges terms, switched off per posting, older postings

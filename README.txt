@@ -116,6 +116,13 @@ Tiles and text retain their original size, and zoom/scroll remain available.
 A hexagon still has six sides: extra space supports more arrangements, not more
 than six simultaneous neighboring tiles per hexagon.
 
+HOW TO USE GUIDE (4.11)
+Menu > How to use (/guide, public) explains every teacher feature (building,
+icons, folders, assigning, student supports, versions, printing, gallery walk,
+grading and replay, insights/Present/CSV, sharing and the library) and the
+student steps. The homepage has a "From vocabulary list to visible thinking"
+section whose cards open the matching guide section (/guide/<section>).
+
 ONE CONNECTED BOARD (4.10)
 By default every hexagon a student places must link into a single group through
 explained (locked-in) connections: no separate islands. Depth & Complexity icon
