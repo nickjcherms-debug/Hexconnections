@@ -116,6 +116,54 @@ Tiles and text retain their original size, and zoom/scroll remain available.
 A hexagon still has six sides: extra space supports more arrangements, not more
 than six simultaneous neighboring tiles per hexagon.
 
+GAMES AND DEFEND THE LINK (4.15)
+Menu > Games (/games) lists the teacher's assignments; Open game console
+(/teacher/games/<posting>) runs everything for one posting:
+- Game mode: students see points, level (every 150 points), streak and badges
+  above their board. Points come only from the board (terms placed, explained
+  touching connections, detailed reasons, D&C links, streaks, one connected
+  board, every term used); repeated or under-3-word reasons don't score. The
+  scoring lives in src/gamescore.js and is mirrored in index.html.
+- Timed challenge round: target + time; a countdown shows on every board.
+  Connections first explained inside the window earn extra points (the browser
+  sends its clock so the server corrects for clock differences).
+- Team race: Make teams puts students who opened it onto shared group boards.
+  A student's points are their own board plus their team's board.
+- Leaderboard: students see nicknames, first name + last initial, or only their
+  own points; Project leaderboard is a full-screen view for the projector.
+- Defend the link: groups of 2-6, live (timed phases, auto-advanced while the
+  console is open) or self-paced (a group votes once everyone has defended).
+  Students defend one of their connections or a pair the teacher picks, then vote
+  anonymously (not for themselves); only the winner's name is revealed.
+- Grader and CSV show game results; Add to grade adds an optional bonus.
+Students: Menu > Games and /student/games/<posting> (debate, badges, leaderboard).
+
+GRADING, GALLERY, CONVENIENCES AND PICTURES (4.12–4.14)
+- Submissions is a table: one row per student, including students still
+  working (Peek shows their last-saved board; they can't tell you looked).
+  Filters: All, Needs grading, Graded, Late, Still working. Sort by name,
+  status, time, fewest connections or grade. "Grade next ungraded" walks the
+  queue. In the grader: 0/1/2 score the next connection, Enter saves and opens
+  the next student, arrow keys change student. The board zooms (up to 400%);
+  tapping a C-number jumps to its reason.
+- The CSV adds Version, Paste attempts blocked and both reflection answers.
+- Open gallery walk asks how many boards each student visits (each student
+  gets their own rotation) and the minimum comments; the teacher sees a chip
+  per student with their comment count. Class insights and Present list the
+  least-connected terms to reteach.
+- Duplicate a Hex Space (editor or directory ⋯ menu). A Getting started
+  checklist on an empty directory (Hide removes it). Titles over 60 characters
+  get a warning. "Skip to main content" link on every page. The Post dialog
+  can preset the translation language for the class.
+- Pictures on hexagons: the picture button on each vocabulary row uploads an
+  image (resized in the browser to about 320 px, 180 KB max, 600 per teacher).
+  It shows on the board, tray, detail panel and printed tiles. Picture URLs are
+  public but unguessable (24 random characters), so students can load them
+  without signing in; don't upload anything private.
+- Class roster on the submissions page: who hasn't opened the assignment yet
+  (from this class's other postings, plus the Google Classroom roster when
+  connected). With versions, choose a student's version before they open it.
+
 HOW TO USE GUIDE (4.11)
 Menu > How to use (/guide, public) explains every teacher feature (building,
 icons, folders, assigning, student supports, versions, printing, gallery walk,

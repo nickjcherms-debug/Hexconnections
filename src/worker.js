@@ -1,10 +1,12 @@
+import {handleGameRoutes} from './games.js';
 import {handleGroupRoutes,groupForUser} from './groups.js';
 import {handleDashboardRoutes} from './dashboards.js';
 import { generateVocabulary } from './vocabulary.js';
 import {handleShareRoutes} from './shares.js';
 import {handlePostingRoutes,assertStarted,isLate} from './postings.js';
 import {handleTeachingRoutes} from './teaching.js';
-import {handleClassToolRoutes,flowRequired,flowGroups,studentAct,variantAct,fitDraft,cleanReflection,cleanHistory,isOwner} from './classtools.js';
+import {serveImage,handleImageRoutes} from './images.js';
+import {handleClassToolRoutes,applyVersionPlan,flowRequired,flowGroups,studentAct,variantAct,fitDraft,cleanReflection,cleanHistory,isOwner} from './classtools.js';
 // Cloudflare Worker. Firebase verifies accounts; every SQL query enforces ownership.
 // Google access tokens are used only for the current request and never persisted.
 const NOW = () => new Date().toISOString();
@@ -135,6 +137,7 @@ function validateWorkspace(body) {
     for (const t of a.terms) {
       const id = t.id || t.n;
       if (!Number.isInteger(id) || id < 1 || id >= 1000 || ids.has(id) || typeof t.term !== 'string' || t.term.length > 100 || (t.def && (typeof t.def !== 'string' || t.def.length > 1000))) fail(400, 'Invalid activity term.');
+      if (t.img != null && t.img !== '' && (typeof t.img !== 'string' || !/^[A-Za-z0-9_-]{16,40}$/.test(t.img))) fail(400, 'Invalid term picture.');
       ids.add(id);
     }
     acts.add(a.id);
@@ -157,9 +160,12 @@ function boardDraft(value, act) {
   for (const [key,c] of Object.entries(value.conns)) {
     const pair = key.split('-');
     if (pair.length !== 2 || Number(pair[0]) >= Number(pair[1]) || !pair.every(id => allowed.has(id)) || !c || typeof c.why !== 'string' || c.why.length > 600) fail(400, 'Invalid connection.');
-    conns[key] = { why: c.why, at: Number.isFinite(c.at) ? c.at : 0 };
+    conns[key] = { why: c.why, at: Number.isFinite(c.at) ? c.at : 0, ...(Number.isFinite(c.first) && c.first > 0 ? { first: c.first } : {}) };
   }
   const out = { name: String(value.name || '').slice(0,60), place, conns, view: { orient: value.view?.orient === 'flat' ? 'flat' : 'pointy' }, _savedAt: NOW(), submittedAt: value.submittedAt || null };
+  // Games: the browser's clock offset, so timed rounds compare connection times with the server's clock.
+  if (Number.isFinite(value.clock)) out._skew = Math.max(-864e5, Math.min(864e5, Math.round(Date.now() - value.clock)));
+  else if (Number.isFinite(value._skew)) out._skew = value._skew;
   const reflection = cleanReflection(value.reflection); if (reflection) out.reflection = reflection;
   const pastes = Number(value.pasteBlocked); if (Number.isInteger(pastes) && pastes > 0) out.pasteBlocked = Math.min(pastes, 9999);
   const history = cleanHistory(value.history, allowed); if (history.length) { out.history = history; out.startedAt = typeof value.startedAt === 'string' ? value.startedAt.slice(0,40) : null; }
@@ -222,6 +228,7 @@ export async function handle(request, env, net = fetch) {
     if (!['GET','POST'].includes(request.method)) fail(405,'Unsupported method.');
     const origin = request.headers.get('Origin');
     if (origin && origin !== url.origin) fail(403,'Use this site directly.');
+    { const im = url.pathname.match(/^\/api\/img\/([A-Za-z0-9_-]{16,40})$/); if (im && request.method==='GET') return serveImage(env, im[1]); }
     if (url.pathname==='/api/config' && request.method==='GET') return json({analyticsToken:String(env.CF_ANALYTICS_TOKEN||'').slice(0,64),microsoft:env.MICROSOFT_SIGN_IN==='on'});
     if (!env.DB || !env.FIREBASE_API_KEY) fail(503,'The site owner needs to deploy the Cloudflare backend and database.','backend-setup');
     const user = await authenticate(request,env,net), db=env.DB;
@@ -235,6 +242,8 @@ export async function handle(request, env, net = fetch) {
     const dashboard=await handleDashboardRoutes(context);if(dashboard)return dashboard;
     const groupRoute=await handleGroupRoutes(context);if(groupRoute)return groupRoute;
     const toolRoute=await handleClassToolRoutes({...context,env});if(toolRoute)return toolRoute;
+    const imgRoute=await handleImageRoutes(context);if(imgRoute)return imgRoute;
+    const gameRoute=await handleGameRoutes(context);if(gameRoute)return gameRoute;
     if (path==='/api/me' && request.method==='GET') return json({profile,owner:isOwner(env,user)});
     if(path==='/api/register' && request.method==='POST'){
       const {role}=await input(request);
@@ -388,6 +397,7 @@ export async function handle(request, env, net = fetch) {
           else await g('/courses/'+enc(post.course_id)+'/teachers/me');
         }
         const s=await one(db,'SELECT draft,status,grade,classroom_status,feedback,variant FROM submissions WHERE post_id=? AND uid=?',id,user.uid);
+        if(s&&post.owner_uid!==user.uid&&s.variant==null){const pv=await applyVersionPlan(db,info,id,user);if(pv!=null)s.variant=pv;}
         const mineAct=post.owner_uid===user.uid?info.act:studentAct(info,s?.variant);
         const group=await groupForUser(db,id,user.uid);
         const groupData=group?await (await handleGroupRoutes({...context,url:new URL('/api/posts/'+id+'/group',url.origin)})).json():null;

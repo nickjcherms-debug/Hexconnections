@@ -55,7 +55,7 @@ export async function handleTeachingRoutes(c){
       const pay=parse(r.payload),d=pay?{place:pay.placements,conns:Object.fromEntries((pay.connections||[]).map(c=>[c.a+'-'+c.b,{why:c.why}]))}:parse(r.draft)||{};
       const placed=Object.keys(d.place||{}).filter(k=>Number(k)<1000).length;
       const conns=Object.entries(d.conns||{}).filter(([,v])=>v&&String(v.why||'').trim()).map(([k,v])=>({pair:k,why:String(v.why).slice(0,600)}));
-      return {uid:r.uid,name:r.name,status:r.status,variant:r.variant||0,placed,connections:conns.length,conns,updatedAt:r.updated_at};
+      return {uid:r.uid,name:r.name,status:r.status,variant:r.variant||0,placed,connections:conns.length,conns,place:d.place||{},turnedIn:!!pay,updatedAt:r.updated_at};
     });
     return json({terms,students,versions:(info.asg?.versions||[]).map(v=>({name:v.name,terms:v.terms.length})),gallery:!!info.asg?.gallery?.open,act:{title:info.act?.title||'',terms:(info.act?.terms||[]).map(t=>({id:t.id||t.n,n:t.n,term:t.term})),dc:info.act?.dcOn?info.act.dc||[]:[]}});
   }
@@ -80,15 +80,18 @@ export async function handleTeachingRoutes(c){
       await run(db,'DELETE FROM project_groups WHERE post_id=?',id);
       await run(db,'DELETE FROM submissions WHERE post_id=?',id);
       try{await run(db,'DELETE FROM peer_comments WHERE post_id=?',id)}catch{}
+      for(const t of ['debate_votes','debate_entries','debate_members'])try{await run(db,'DELETE FROM '+t+' WHERE post_id=?',id)}catch{}
     }
     try{await run(db,'DELETE FROM peer_comments WHERE author_uid=? OR target_uid=?',user.uid,user.uid);
       await run(db,'DELETE FROM library_reports WHERE code IN (SELECT code FROM library WHERE owner_uid=?)',user.uid);
       await run(db,'DELETE FROM library_reports WHERE uid=?',user.uid);
       await run(db,'DELETE FROM library WHERE owner_uid=?',user.uid)}catch{}
+    try{await run(db,'DELETE FROM debate_votes WHERE voter_uid=? OR target_uid=?',user.uid,user.uid);await run(db,'DELETE FROM debate_entries WHERE uid=?',user.uid);await run(db,'DELETE FROM debate_members WHERE uid=?',user.uid)}catch{}
     await run(db,'DELETE FROM project_group_members WHERE uid=?',user.uid);
     await run(db,'DELETE FROM submissions WHERE uid=?',user.uid);
     await run(db,'DELETE FROM posts WHERE owner_uid=?',user.uid);
     try{await run(db,'DELETE FROM shares WHERE owner_uid=?',user.uid)}catch{}
+    try{await run(db,'DELETE FROM images WHERE owner_uid=?',user.uid)}catch{}
     await run(db,'DELETE FROM workspaces WHERE owner_uid=?',user.uid);
     await run(db,'DELETE FROM users WHERE uid=?',user.uid);
     return json({deleted:true,postings:owned.length});

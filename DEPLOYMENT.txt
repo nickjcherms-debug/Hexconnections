@@ -1,3 +1,21 @@
+GAMES 4.15.0
+============
+Database: migrations/0009_games.sql (additive: debate_members, debate_entries,
+debate_votes). Applied to the live database on 2026-10-31. Other databases:
+  npx wrangler d1 execute hex-connections --remote --file migrations/0009_games.sql
+Game settings and round state are stored in each posting's body. Polling: game
+consoles every 4 s, students on a board every 6 s (20 s when no game is on), the
+student play page every 4 s with the full leaderboard every 30 s.
+
+PICTURES AND ROSTER 4.14.0
+==========================
+Database: migrations/0008_images_roster.sql (additive: images table). Applied to
+the live database on 2026-10-31. Other databases:
+  npx wrangler d1 execute hex-connections --remote --file migrations/0008_images_roster.sql
+Images are stored in D1 (180 KB max each, 600 per teacher) and served publicly
+from /api/img/<id> with long cache headers; ids are 24 random characters.
+Deleting an account deletes its images. 4.12 and 4.13 need no migration.
+
 CLASSROOM TOOLS 4.7.0
 =====================
 Database: migrations/0007_classroom_tools.sql (additive: submissions.variant and

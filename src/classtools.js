@@ -27,12 +27,13 @@ export function cleanOptions(o,act){
   const src=o&&typeof o==='object'?o:{},out={};
   const dflt={starters:act?.starters!==false,reflect:act?.reflect!==false,noPaste:act?.noPaste===true,flow:act?.flow!==false};
   for(const k of OPTION_KEYS)out[k]=typeof src[k]==='boolean'?src[k]:(k in dflt?dflt[k]:true);
+  out.lang=LANGUAGES[src.lang]?src.lang:'';
   return out;
 }
 // What a student's browser receives: their version, with switched-off supports removed.
 export function studentAct(info,variant){
   const act=variantAct(info,variant),o=cleanOptions(info?.asg?.options,info?.act);
-  const out={...act,starters:act.starters!==false&&o.starters,reflect:act.reflect!==false&&o.reflect,readAloud:o.readAloud,translate:o.translate,gallery:o.gallery,showDefs:o.defs,noPaste:o.noPaste,flow:flowRequired(info)};
+  const out={...act,starters:act.starters!==false&&o.starters,reflect:act.reflect!==false&&o.reflect,readAloud:o.readAloud,translate:o.translate,gallery:o.gallery,showDefs:o.defs,noPaste:o.noPaste,flow:flowRequired(info),lang:o.translate?o.lang:''};
   if(!o.defs)out.terms=(act.terms||[]).map(t=>({...t,def:''}));
   return out;
 }
@@ -81,6 +82,17 @@ export function fitDraft(draft,act){
   for(const [k,p] of Object.entries(draft.place))if(ok.has(k))place[k]=p;
   for(const [k,c] of Object.entries(draft.conns||{})){const [a,b]=k.split('-');if(ok.has(a)&&ok.has(b))conns[k]=c}
   return {...draft,place,conns};
+}
+
+/* ---------- versions planned before students open the posting ---------- */
+const PLAN_KEY=/^(u|g):[A-Za-z0-9_.@-]{1,128}$/;
+export async function applyVersionPlan(db,info,postId,user){
+  const plan=info?.asg?.versionPlan,versions=info?.asg?.versions;
+  if(!plan||!Array.isArray(versions)||versions.length<2)return null;
+  let v=plan['u:'+user.uid];if(v==null&&user.googleSub)v=plan['g:'+user.googleSub];
+  if(!Number.isInteger(v)||v<0||v>=versions.length)return null;
+  await run(db,'UPDATE submissions SET variant=? WHERE post_id=? AND uid=? AND variant IS NULL',v,postId,user.uid);
+  return v;
 }
 
 /* ---------- reflection and build history (kept inside the board draft) ---------- */
@@ -136,6 +148,49 @@ export async function handleClassToolRoutes(c){
     return json({changed,version:b.version,name:versions[b.version].name});
   }
 
+  /* ---- class roster: who hasn't opened it, and versions planned ahead ---- */
+  if((m=path.match(/^\/api\/posts\/([a-zA-Z0-9-]+)\/(roster|version-plan)$/))){
+    teacher();const post=await ownedPost(db,m[1],user,fail),info=parse(post.body)||{};
+    const versions=info.asg?.versions||[];
+    if(m[2]==='version-plan'&&method==='POST'){
+      if(versions.length<2)fail(400,'This assignment has only one version.');
+      const b=await input(request),plan={};
+      if(!b.plan||typeof b.plan!=='object'||Array.isArray(b.plan))fail(400,'Send a plan.');
+      for(const [k,v] of Object.entries(b.plan)){
+        if(!PLAN_KEY.test(k))fail(400,'Unknown student.');
+        if(v===null)continue;
+        if(!Number.isInteger(v)||v<0||v>=versions.length)fail(400,'Choose a version.');
+        plan[k]=v;
+      }
+      if(Object.keys(plan).length>400)fail(400,'Too many students.');
+      info.asg={...(info.asg||{}),versionPlan:{...(info.asg?.versionPlan||{}),...plan}};
+      for(const [k,v] of Object.entries(b.plan))if(v===null)delete info.asg.versionPlan[k];
+      await run(db,'UPDATE posts SET body=? WHERE id=? AND owner_uid=?',JSON.stringify(info),post.id,user.uid);
+      // Students who already opened it move now.
+      for(const [k,v] of Object.entries(plan))if(k.startsWith('u:'))await run(db,'UPDATE submissions SET variant=? WHERE post_id=? AND uid=?',v,post.id,k.slice(2));
+      return json({plan:info.asg.versionPlan});
+    }
+    if(method!=='GET')fail(405,'Unsupported method.');
+    const here=await rows(db,'SELECT s.uid,s.google_sub,s.variant,s.payload IS NOT NULL AS turned,u.name FROM submissions s JOIN users u ON u.uid=s.uid WHERE s.post_id=?',post.id);
+    const members=new Map(),bySub=new Map();
+    for(const r of here){members.set('u:'+r.uid,{key:'u:'+r.uid,name:r.name,opened:true,turnedIn:!!r.turned,variant:r.variant??null});if(r.google_sub)bySub.set(r.google_sub,'u:'+r.uid)}
+    // Classmates from this teacher's other postings to the same class.
+    const others=await rows(db,'SELECT DISTINCT s.uid,u.name FROM submissions s JOIN posts p ON p.id=s.post_id JOIN users u ON u.uid=s.uid WHERE p.owner_uid=? AND p.class_id=? AND p.id<>?',user.uid,post.class_id,post.id);
+    for(const r of others)if(!members.has('u:'+r.uid))members.set('u:'+r.uid,{key:'u:'+r.uid,name:r.name,opened:false,turnedIn:false,variant:null});
+    let classroom='n/a';
+    if(!isManualPost(post)){
+      if(!request.headers.get('X-Classroom-Token'))classroom='needs-token';
+      else try{
+        const g=await c.getGoogle();const list=await c.allPages(g,'/courses/'+encodeURIComponent(post.course_id)+'/students','students');
+        for(const st of list){const key=bySub.get(st.userId)||'g:'+st.userId;if(!members.has(key))members.set(key,{key,name:st.profile?.name?.fullName||'Student',opened:false,turnedIn:false,variant:null})}
+        classroom='ok';
+      }catch{classroom='unavailable'}
+    }
+    const plan=info.asg?.versionPlan||{};
+    const list=[...members.values()].map(x=>({...x,planned:plan[x.key]??null})).sort((a,b)=>(a.opened-b.opened)||String(a.name).localeCompare(String(b.name)));
+    return json({members:list,versions:versions.map(v=>v.name),classroom,notOpened:list.filter(x=>!x.opened).length});
+  }
+
   /* ---- gallery walk ---- */
   if((m=path.match(/^\/api\/posts\/([a-zA-Z0-9-]+)\/gallery(?:\/(open|comment|hide))?$/))){
     const id=m[1],action=m[2];
@@ -147,9 +202,12 @@ export async function handleClassToolRoutes(c){
       if(!mine)fail(404,'Assignment not found.');
       const b=await input(request);
       if(b.open===true&&cleanOptions(info.asg?.options,info.act).gallery===false)fail(400,'The gallery walk is switched off for this posting. Turn it on in the posting’s student supports first.','gallery-off');
-      info.asg={...(info.asg||{}),gallery:{open:b.open===true,openedAt:b.open===true?NOW():(info.asg?.gallery?.openedAt||null)}};
+      const prev=info.asg?.gallery||{};
+      const visits=b.visits===undefined?(prev.visits||0):Math.max(0,Math.min(6,Number(b.visits)||0));
+      const minComments=b.minComments===undefined?(prev.minComments||0):Math.max(0,Math.min(6,Number(b.minComments)||0));
+      info.asg={...(info.asg||{}),gallery:{open:b.open===true,openedAt:b.open===true?NOW():(prev.openedAt||null),visits,minComments}};
       await run(db,'UPDATE posts SET body=? WHERE id=? AND owner_uid=?',JSON.stringify(info),id,user.uid);
-      return json({open:b.open===true});
+      return json({open:b.open===true,visits,minComments});
     }
     if(action==='hide'&&method==='POST'){
       if(!mine)fail(404,'Assignment not found.');
@@ -169,11 +227,18 @@ export async function handleClassToolRoutes(c){
     const keyed=[];for(const r of list)keyed.push({...r,key:await boardKey(id,r.uid)});
     keyed.sort((a,b)=>a.key<b.key?-1:1);
     const byKey=new Map(keyed.map((r,i)=>[r.key,{...r,label:'Board '+(i<26?String.fromCharCode(65+i):String.fromCharCode(65+Math.floor(i/26)-1)+String.fromCharCode(65+i%26))}]));
+    const gs=info.asg?.gallery||{},visits=Number(gs.visits)||0,minComments=Number(gs.minComments)||0;
+    // Each student visits the next few boards after their own (a fixed, fair rotation).
+    const ordered=[...byKey.values()],myIdx=mine?-1:ordered.findIndex(r=>r.uid===user.uid);
+    const assigned=new Set();
+    if(!mine&&visits>0&&myIdx>=0)for(let k=1;k<=Math.min(visits,ordered.length-1);k++)assigned.add(ordered[(myIdx+k)%ordered.length].key);
+    const canSee=r=>mine||visits===0||r.uid===user.uid||assigned.has(r.key);
     if(action==='comment'&&method==='POST'){
       if(mine)fail(403,'Teachers leave feedback in the grader.');
       const b=await input(request),target=byKey.get(String(b.board||''));
       if(!target)fail(404,'Board not found.');
       if(target.uid===user.uid)fail(400,'Leave comments on classmates’ boards.');
+      if(!canSee(target))fail(403,'Comment on the boards assigned to you.','gallery-not-assigned');
       if(!['glow','grow'].includes(b.kind))fail(400,'Choose Glow or Grow.');
       const body=text(b.text,280);
       if(body.length<3)fail(400,'Write a few words.');
@@ -185,14 +250,17 @@ export async function handleClassToolRoutes(c){
     }
     if(action||method!=='GET')fail(405,'Unsupported method.');
     const comments=await rows(db,'SELECT c.*,u.name AS author FROM peer_comments c LEFT JOIN users u ON u.uid=c.author_uid WHERE c.post_id=? ORDER BY c.created_at',id);
-    const boards=[...byKey.values()].map(r=>{
+    const boards=[...byKey.values()].filter(canSee).map(r=>{
       const p=parse(r.payload)||{},own=r.uid===user.uid;
       const cs=comments.filter(x=>x.target_uid===r.uid&&(mine||!x.hidden)).map(x=>({id:x.id,kind:x.kind,text:x.body,mine:x.author_uid===user.uid,...(mine?{author:x.author||'Removed account',hidden:!!x.hidden}:{})}));
       return {board:r.key,label:r.label,mine:own,...(mine?{name:r.name,studentUid:r.uid}:{}),placements:p.placements||{},connections:(p.connections||[]).map(x=>({num:x.num,a:x.a,b:x.b,why:x.why})),comments:cs};
     });
     const showDefs=mine||cleanOptions(info.asg?.options,info.act).defs;
     const act=showDefs?info.act:{...info.act,terms:(info.act?.terms||[]).map(t=>({...t,def:''}))};
-    return json({open,act,boards:boards.slice(0,80),title:info.act?.title||''});
+    const settings={visits,minComments};
+    const mineCount=mine?null:comments.filter(c=>c.author_uid===user.uid).length;
+    const progress=mine?ordered.map(r=>({name:r.name,label:r.label,comments:comments.filter(c=>c.author_uid===r.uid).length})).sort((x,y)=>x.comments-y.comments||String(x.name).localeCompare(String(y.name))):undefined;
+    return json({open,act,boards:boards.slice(0,80),title:info.act?.title||'',settings,...(mine?{progress}:{myComments:mineCount})});
   }
 
   /* ---- public library ---- */
